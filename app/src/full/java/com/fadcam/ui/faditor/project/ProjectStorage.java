@@ -550,6 +550,7 @@ public class ProjectStorage {
                 clipJson.addProperty("inPointMs", clip.getInPointMs());
                 clipJson.addProperty("outPointMs", clip.getOutPointMs());
                 clipJson.addProperty("sourceDurationMs", clip.getSourceDurationMs());
+                clipJson.addProperty("imageClip", clip.isImageClip());
                 clipJson.addProperty("speedMultiplier", clip.getSpeedMultiplier());
                 clipJson.addProperty("audioMuted", clip.isAudioMuted());
                 clipJson.addProperty("volumeLevel", clip.getVolumeLevel());
@@ -664,12 +665,15 @@ public class ProjectStorage {
                                 ? clipObj.get("cropRight").getAsFloat() : 1f;
                         float cropB = clipObj.has("cropBottom")
                                 ? clipObj.get("cropBottom").getAsFloat() : 1f;
+                        boolean imageClip = clipObj.has("imageClip")
+                                && clipObj.get("imageClip").getAsBoolean();
 
                         Clip clip = new Clip(clipId, sourceUri,
                                 inPointMs, outPointMs, sourceDurationMs,
                                 speed, audioMuted, volumeLevel,
                                 rotationDeg, flipH, flipV, crop,
                                 cropL, cropT, cropR, cropB);
+                        clip.setImageClip(imageClip);
                         project.getTimeline().addClip(clip);
                     }
                 }

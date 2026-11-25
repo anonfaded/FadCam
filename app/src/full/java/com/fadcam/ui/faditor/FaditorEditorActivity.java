@@ -2,11 +2,8 @@ package com.fadcam.ui.faditor;
 
 import com.fadcam.ui.faditor.util.FaditorPalette;
 
-import com.fadcam.Log;
 import com.fadcam.FLog;
-import android.content.ContentResolver;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
@@ -19,12 +16,9 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.io.InputStream;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -38,20 +32,21 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.media3.common.Player;
+import androidx.media3.transformer.Composition;
 import androidx.media3.transformer.ExportResult;
-import androidx.media3.ui.PlayerView;
 
 import com.fadcam.R;
-import com.fadcam.Constants;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.playback.FragmentedMp4Remuxer;
 import com.fadcam.ui.InputActionBottomSheetFragment;
+import com.fadcam.ui.faditor.composition.FaditorCompositionPlayer;
+import com.fadcam.ui.faditor.composition.TimelineCompositionBuilder;
 import com.fadcam.ui.faditor.export.ExportManager;
 import com.fadcam.ui.faditor.export.ExportService;
 import com.fadcam.ui.faditor.model.AudioClip;
 import com.fadcam.ui.faditor.model.Clip;
+import com.fadcam.ui.faditor.model.ExportSettings;
 import com.fadcam.ui.faditor.model.FaditorProject;
-import com.fadcam.ui.faditor.player.FaditorPlayerManager;
 import com.fadcam.ui.faditor.project.ProjectStorage;
 import com.fadcam.ui.faditor.timeline.EditorTimelineView;
 import com.fadcam.ui.faditor.model.Timeline;
@@ -63,7 +58,6 @@ import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
-import android.media.MediaPlayer;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -94,7 +88,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     // ── Core components ──────────────────────────────────────────────
     private FaditorProject project;
-    private FaditorPlayerManager playerManager;
+    @Nullable
+    private FaditorCompositionPlayer compositionPlayer;
     private ExportManager exportManager;
     private SharedPreferencesManager prefsManager;
     private FragmentedMp4Remuxer remuxer;
@@ -127,8 +122,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private ActivityResultLauncher<Intent> videoPickerLauncher;
 
     // ── Views ────────────────────────────────────────────────────────
-    private PlayerView playerView;
-    private View playerContainer;
+    private android.view.SurfaceView playerSurface;
     private EditorTimelineView editorTimeline;
     private TextView btnPlayPause;
     private TextView timeCurrent;
@@ -148,7 +142,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private View remuxProgressOverlay;
     private TextView remuxProgressText;
     private com.fadcam.ui.faditor.crop.CropOverlayView cropOverlay;
-    private android.widget.ImageView imagePreview;
 
     // ── Crop mode state ──────────────────────────────────────────────
     private boolean inCropMode = false;
@@ -156,6 +149,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private static final long BACK_PRESS_INTERVAL_MS = 2000;
     private String preCropPreset;           // saved on entering crop mode
     private float preCropLeft, preCropTop, preCropRight, preCropBottom; // saved custom bounds
+    /** Clip whose crop is skipped in the preview composition while its crop UI is open. */
+    @Nullable
+    private String croplessPreviewClipId;
     private View cropToolbar;
     private View controlsSection;
 
@@ -197,92 +193,131 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private long preAudioTrimOutMs = -1;
 
     // ── Multi-segment state ──────────────────────────────────────────
-    /** Index of the currently selected clip/segment in the timeline. */
     /** Index of the highlighted clip, or -1 when nothing is selected. */
     private int selectedClipIndex = -1;
 
     /**
-     * Index of the clip currently loaded in the player.
-     *
-     * <p>Deliberately separate from {@link #selectedClipIndex}: in a professional
-     * editor the preview follows the <em>playhead</em>, while the selection only says
-     * which clip an edit applies to. Coupling them is what made tapping a clip jump the
-     * timeline and made scrubbing silently re-target the toolbar.</p>
+     * True once playback reached the end; the playhead updater stays stopped until the
+     * user plays or seeks again.
      */
-    private int playbackClipIndex = 0;
-
-    /** Player position we expect after a seek; -1 when no guard is active. */
-    private long playbackSeekTargetMs = -1;
-    private long playbackSeekDeadlineMs = 0;
-    /** True once the queue/end of a clip has been reached; polling must stay stopped. */
     private boolean playbackFinished;
 
     // ── Audio extraction ─────────────────────────────────────────────
     private final ExecutorService audioExecutor = Executors.newSingleThreadExecutor();
 
-    /** MediaPlayers for audio clips — one per clip, synced with playhead. */
-    private final List<MediaPlayer> audioPlayers = new ArrayList<>();
-    /** Whether each audioPlayer is prepared and ready. */
-    private final List<Boolean> audioPlayersReady = new ArrayList<>();
-
-    // ── Audio-tail mode: playhead continues past video for audio ─────
-    private boolean audioTailActive = false;
-    private long audioTailStartWall = 0;   // SystemClock.elapsedRealtime() when tail started
-    private long audioTailStartMs = 0;     // playheadPositionMs when tail started
-
     // ── Persistence ──────────────────────────────────────────────────
     private ProjectStorage projectStorage;
     private final Handler autoSaveHandler = new Handler(Looper.getMainLooper());
     private static final long AUTO_SAVE_DELAY_MS = 3000;
+    /** Edits reach the preview quickly; saving can wait for the longer autosave delay. */
+    private static final long COMPOSITION_REBUILD_DELAY_MS = 350;
     private final Runnable autoSaveRunnable = () -> {
         if (project != null && projectStorage != null) {
             projectStorage.save(project);
-            FLog.d(TAG, "Project auto-saved");
         }
     };
-
-    /** True until we receive ExoPlayer's real duration and correct the project. */
-    private boolean durationCorrectionPending = true;
 
     /**
      * True while the user is actively touching/dragging the timeline (playhead or trim).
-     * Prevents {@link #updatePlayheadPosition()} from overwriting the drag position.
+     * Prevents the composition position from overwriting the drag position.
      */
     private boolean userDragging = false;
 
-    /**
-     * Remembers if the player was playing when a drag started,
-     * so we can resume after the drag finishes.
-     */
-    private boolean wasPlayingBeforeDrag = false;
-
-    /** Tracks the last playhead fraction set by the user (drag or trim). */
-    private float lastUserPlayheadFraction = 0f;
-
-    // ── Image clip playback ──────────────────────────────────────────
-    /** True while an image clip is being "played" via internal timer. */
-    private boolean imagePlaybackActive = false;
-    /** System time (ms) when image playback started, for computing elapsed. */
-    private long imagePlaybackStartSystemMs = 0;
-    /** Position within the image clip when playback started (ms). */
-    private long imagePlaybackStartOffsetMs = 0;
-
     // ── Playhead sync ────────────────────────────────────────────────
-    private final Handler playheadHandler = new Handler(Looper.getMainLooper());
-    private static final long PLAYHEAD_UPDATE_INTERVAL_MS = 50;
+    /** Frame-synced playhead so the timeline moves with the display, not a timer. */
+    private final android.view.Choreographer choreographer =
+            android.view.Choreographer.getInstance();
 
-    private final Runnable playheadUpdater = new Runnable() {
-        @Override
-        public void run() {
-            try {
-                updatePlayheadPosition();
-                syncAudioPlayerWithPlayhead();
-            } catch (Exception e) {
-                FLog.e(TAG, "Error in updatePlayheadPosition", e);
-            }
-            playheadHandler.postDelayed(this, PLAYHEAD_UPDATE_INTERVAL_MS);
-        }
-    };
+    private final android.view.Choreographer.FrameCallback playheadFrameCallback =
+            new android.view.Choreographer.FrameCallback() {
+                @Override
+                public void doFrame(long frameTimeNanos) {
+                    try {
+                        updatePlayheadFromComposition();
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Error updating playhead", e);
+                    }
+                    if (!playbackFinished && compositionPlayer != null
+                            && compositionPlayer.isPlayingOrBuffering()) {
+                        choreographer.postFrameCallback(this);
+                    }
+                }
+            };
+
+    /** Cached timeline duration; rebuilt only when the composition changes. */
+    private long compositionDurationMs;
+    /** Last whole second painted in the time label, to avoid a TextView update per frame. */
+    private long lastDisplayedSecond = -1;
+
+    /** True while a scrub gesture owns the preview (composition in scrubbing mode). */
+    private boolean scrubbing;
+    private long pendingScrubSeekMs = -1;
+    /** At most one seek may be in flight; CompositionPlayer tears down decoders per seek. */
+    private boolean scrubSeekInFlight;
+    private boolean scrubSeekScheduled;
+    private long lastScrubSeekAtMs;
+    private static final long MIN_SCRUB_SEEK_INTERVAL_MS = 120;
+    private static final long SCRUB_SEEK_TIMEOUT_MS = 300;
+    /** Last position handed to the player, so play does not repeat the same seek. */
+    private long lastSeekTargetMs = -1;
+
+    private final android.view.Choreographer.FrameCallback scrubSeekCallback =
+            new android.view.Choreographer.FrameCallback() {
+                @Override
+                public void doFrame(long frameTimeNanos) {
+                    scrubSeekScheduled = false;
+                    if (!scrubbing || compositionPlayer == null) return;
+
+                    long now = android.os.SystemClock.elapsedRealtime();
+                    if (scrubSeekInFlight
+                            && now - lastScrubSeekAtMs < SCRUB_SEEK_TIMEOUT_MS) {
+                        scheduleNextScrubFrame();
+                        return;
+                    }
+                    scrubSeekInFlight = false;
+
+                    long target = pendingScrubSeekMs;
+                    if (target < 0) return;
+
+                    if (now - lastScrubSeekAtMs < MIN_SCRUB_SEEK_INTERVAL_MS) {
+                        scheduleNextScrubFrame();
+                        return;
+                    }
+
+                    pendingScrubSeekMs = -1;
+                    scrubSeekInFlight = true;
+                    lastScrubSeekAtMs = now;
+                    seekCompositionTo(target);
+                    scheduleNextScrubFrame();
+                }
+            };
+
+    private void scheduleNextScrubFrame() {
+        if (!scrubbing || scrubSeekScheduled) return;
+        if (pendingScrubSeekMs < 0 && !scrubSeekInFlight) return;
+        scrubSeekScheduled = true;
+        choreographer.postFrameCallback(scrubSeekCallback);
+    }
+
+    /** Seeks the composition and remembers the target for the next play press. */
+    private void seekCompositionTo(long positionMs) {
+        if (compositionPlayer == null) return;
+        compositionPlayer.seekTo(positionMs);
+        lastSeekTargetMs = positionMs;
+    }
+
+    /** Records a scrub position; the frame callback sends only the latest one. */
+    private void scheduleScrubSeek(long positionMs) {
+        pendingScrubSeekMs = positionMs;
+        scheduleNextScrubFrame();
+    }
+
+    private void cancelScrubSeek() {
+        pendingScrubSeekMs = -1;
+        scrubSeekInFlight = false;
+        scrubSeekScheduled = false;
+        choreographer.removeFrameCallback(scrubSeekCallback);
+    }
 
     // ── Segment helpers ──────────────────────────────────────────────
 
@@ -313,16 +348,15 @@ public class FaditorEditorActivity extends AppCompatActivity {
         if (project == null) return;
         if (selectedClipIndex >= project.getTimeline().getClipCount()) {
             selectedClipIndex = -1;
-            playbackClipIndex = 0;
         }
-        // The clip list changed, so any queued playlist is stale.
-        playerManager.exitPlaylistMode();
         editorTimeline.setTimeline(project.getTimeline(), selectedClipIndex);
         editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
+        clampPlayheadToTimeline();
+        rebuildComposition();
         updateToolAvailability();
         refreshTotalTimeDisplay();
         FLog.d(TAG, "Timeline rebuilt: clips=" + project.getTimeline().getClipCount()
-                + " selected=" + selectedClipIndex + " playback=" + playbackClipIndex);
+                + " selected=" + selectedClipIndex);
     }
 
     /**
@@ -333,33 +367,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
         Timeline tl = project.getTimeline();
         int anchor = selectedClipIndex;
         if (anchor < 0) anchor = editorTimeline.getSegmentAtPlayhead();
-        if (anchor < 0) anchor = playbackClipIndex;
         if (anchor < 0 || anchor >= tl.getClipCount()) return tl.getClipCount();
         return anchor + 1;
-    }
-
-    /** Clip loaded in the player, mirroring the playhead. Defaults to the first clip. */
-    @Nullable
-    private Clip getPlaybackClip() {
-        if (project == null) return null;
-        Timeline tl = project.getTimeline();
-        if (tl.getClipCount() == 0) return null;
-        if (playbackClipIndex < 0 || playbackClipIndex >= tl.getClipCount()) {
-            playbackClipIndex = 0;
-        }
-        return tl.getClip(playbackClipIndex);
-    }
-
-    /**
-     * Returns the total effective video duration (sum of all video clips' trimmed durations).
-     */
-    private long totalEffectiveMs() {
-        long total = 0;
-        Timeline tl = project.getTimeline();
-        for (int i = 0; i < tl.getClipCount(); i++) {
-            total += tl.getClip(i).getTrimmedDurationMs();
-        }
-        return total;
     }
 
     /**
@@ -394,11 +403,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         // Tools read the selected clip; the preview and the playhead do NOT move.
         // In every professional editor, selection answers "what will the edit apply
-        // to" and the playhead answers "what moment am I looking at". Tapping a clip
-        // used to call setPlayheadFraction(), which is why the white line jumped to a
-        // clip edge on a tap.
-        updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
-        updateSpeedUI(clip.getSpeedMultiplier());
+        // to" and the playhead answers "what moment am I looking at".
+        if (clip.isImageClip()) {
+            // The audio/speed tools are unavailable for stills; show their idle read-out
+            // instead of a red "Muted" that implies an editable audio track.
+            updateVolumeUI(1f, false);
+            updateSpeedUI(1f);
+        } else {
+            updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
+            updateSpeedUI(clip.getSpeedMultiplier());
+        }
         updateRotateUI(clip.getRotationDegrees());
         updateFlipUI(clip.isFlipHorizontal(), clip.isFlipVertical());
         updateCropUI(clip.getCropPreset());
@@ -413,8 +427,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         FLog.d(TAG, "selectSegment: index=" + index + "/" + count
                 + " id=" + clip.getId()
                 + " (playhead untouched at "
-                + editorTimeline.getPlayheadPositionMs() + "ms, playbackClip="
-                + playbackClipIndex + ")");
+                + editorTimeline.getPlayheadPositionMs() + "ms)");
 
         // Update only the highlight. setTimeline() would rebuild every segment and call
         // centerPlayhead(), which silently scrolls the strip under a tap.
@@ -548,14 +561,27 @@ public class FaditorEditorActivity extends AppCompatActivity {
         
         // Reapply immersive fullscreen (in case it was cleared by edge swipes)
         com.fadcam.util.SystemBarUtil.hideSystemBars(getWindow().getDecorView());
-        
-        playheadHandler.post(playheadUpdater);
+
+        if (compositionPlayer != null && compositionPlayer.isPlayingOrBuffering()) {
+            startPlayheadUpdates();
+        } else {
+            updatePlayheadFromComposition();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        playheadHandler.removeCallbacks(playheadUpdater);
+        stopPlayheadUpdates();
+        cancelScrubSeek();
+        if (scrubbing && compositionPlayer != null) {
+            compositionPlayer.setScrubbingModeEnabled(false);
+            scrubbing = false;
+        }
+        if (compositionPlayer != null && compositionPlayer.isPlayingOrBuffering()) {
+            compositionPlayer.pause();
+            updatePlayPauseButton(false);
+        }
         // Save project on pause (e.g. user switches away)
         saveProjectNow();
     }
@@ -563,9 +589,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        playheadHandler.removeCallbacks(playheadUpdater);
-        autoSaveHandler.removeCallbacks(autoSaveRunnable);
-        releaseAudioPlayer();
+        stopPlayheadUpdates();
+        cancelScrubSeek();
+        autoSaveHandler.removeCallbacksAndMessages(null);
+        if (compositionPlayer != null) {
+            compositionPlayer.release();
+            compositionPlayer = null;
+        }
         audioExecutor.shutdownNow();
         saveProjectNow();
         // Unbind from export service but do NOT cancel — let it continue in background
@@ -603,10 +633,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        playerView = findViewById(R.id.player_view);
-        playerContainer = findViewById(R.id.player_container);
+        playerSurface = findViewById(R.id.player_surface);
         cropOverlay = findViewById(R.id.crop_overlay);
-        imagePreview = findViewById(R.id.image_preview);
         controlsSection = findViewById(R.id.controls_section);
         cropToolbar = findViewById(R.id.crop_toolbar);
         editorTimeline = findViewById(R.id.editor_timeline_view);
@@ -638,7 +666,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 clip.setOutPointMs((long)(endFraction * duration));
                 // View handles its own visual update during drag.
                 // setTrimFromClip is called in onTrimFinished for the final commit.
-                updateCurrentTimeDisplay(0);
+                updateCurrentTimeDisplay();
                 refreshTotalTimeDisplay();
             }
 
@@ -666,161 +694,77 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 clip.setInPointMs(newIn);
                 clip.setOutPointMs(newOut);
                 editorTimeline.setTrimFromClip(clip);
-                if (!clip.isImageClip()) {
-                    playerManager.updateTrimBounds(clip);
-                }
-                updateCurrentTimeDisplay(0);
+                clampPlayheadToTimeline();
+                rebuildComposition();
+                updateCurrentTimeDisplay();
                 refreshTotalTimeDisplay();
                 saveProjectNow();
             }
 
             @Override
             public void onPlayheadSeeked(int segmentIndex, float fractionInSegment, boolean isDragging) {
-                userDragging = true;
-                if (isDragging && imagePlaybackActive) {
-                    stopImagePlayback();
-                }
-                audioTailActive = false;  // Cancel audio-tail on seek
-                // Get clip directly — DON'T call selectSegment() during scrubbing.
-                // selectSegment triggers setPlayheadFraction → centerPlayhead which
-                // modifies scrollOffsetPx, causing a feedback loop that makes the
-                // timeline bounce between segments.
-                Timeline tl = project.getTimeline();
-                if (segmentIndex < 0 || segmentIndex >= tl.getClipCount()) return;
-                Clip clip = tl.getClip(segmentIndex);
-                if (clip == null) return;
-
-                // If crossing to a different segment and NOT actively dragging,
-                // load the new clip in the player (needed for correct seek bounds).
-                // During drag, we skip loading to prevent snapping at split points.
-                // When the drag ends, onPlayheadDragFinished() will load the new clip.
-                boolean playbackClipChanged = segmentIndex != playbackClipIndex;
-                if (playbackClipChanged) {
-                    playbackClipIndex = segmentIndex;
-                    editorTimeline.setPlaybackIndex(segmentIndex);
-                    // Scrubbing follows the playhead: it loads the clip under it so
-                    // seeking has the right bounds. It must never touch the selection —
-                    // dragging across clips used to re-target the toolbar behind the
-                    // user's back.
-
-                }
-                // The player is only reloaded once the drag has settled; doing it on
-                // every move made the preview snap between clips mid-gesture.
-                if (!isDragging && playbackClipChanged) {
-                    if (clip.isImageClip()) {
-                        // Image clip: show image preview instead of loading into ExoPlayer
-                        showImagePreview(clip.getSourceUri());
-                        stopImagePlayback();
-                    } else {
-                        // Video clip: load into ExoPlayer as usual
-                        hideImagePreview();
-                        playerManager.loadClip(clip);
-                        playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
-                        playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
-                        updatePreviewTransforms();
-                    }
-                }
-
-                // fractionInSegment is fraction of FULL source duration,
-                // convert back to source time then compute relative-to-trim-start position
-                long sourceMs = (long)(fractionInSegment * clip.getSourceDurationMs());
-                long trimDuration = clip.getOutPointMs() - clip.getInPointMs();
-                long seekPosition = Math.max(0, Math.min(sourceMs - clip.getInPointMs(), trimDuration));
-                if (!clip.isImageClip()) {
-                    // Only seek ExoPlayer for video clips.
-                    if (isDragging) {
-                        // Stop the running queue the moment a scrub begins: otherwise
-                        // it keeps playing (and advancing) underneath the finger and the
-                        // playhead poll drags the line back to the player's position.
-                        if (playerManager.isPlayingNow()) {
-                            playerManager.pause();
-                            updatePlayPauseButton(false);
-                            playbackFinished = true;
-                            FLog.d(TAG, "scrub: paused playback so the drag owns the playhead");
+                long playheadMs = editorTimeline.getPlayheadPositionMs();
+                if (isDragging) {
+                    userDragging = true;
+                    playbackFinished = true;
+                    stopPlayheadUpdates();
+                    if (!scrubbing) {
+                        scrubbing = true;
+                        if (compositionPlayer != null) {
+                            compositionPlayer.pause();
+                            compositionPlayer.setScrubbingModeEnabled(true);
                         }
-                        // Scrubbing used to seek on every move. That re-buffered the
-                        // player continuously (log showed a seek every ~7 ms), which is
-                        // exactly the stutter and the playhead fighting the finger.
-                        // The preview catches up once on drag end.
-
-                    } else {
-                        // Pause FIRST so ExoPlayer renders the decoded frame to
-                        // TextureView (the frame only becomes visible with
-                        // playWhenReady=false and a completed seek).
-                        playerManager.pause();
-                        playerManager.seekTo(seekPosition);
+                        updatePlayPauseButton(false);
                     }
+                    // One seek per display frame: the preview keeps up with the finger
+                    // without queueing a seek for every touch event.
+                    scheduleScrubSeek(playheadMs);
                 } else {
-                    // For image clips: store the seek position for playback resumption
-                    imagePlaybackStartOffsetMs = seekPosition;
+                    userDragging = false;
+                    playbackFinished = true;
+                    cancelScrubSeek();
+                    if (compositionPlayer != null) {
+                        compositionPlayer.pause();
+                        if (scrubbing) {
+                            compositionPlayer.setScrubbingModeEnabled(false);
+                            scrubbing = false;
+                        }
+                        if (lastSeekTargetMs != playheadMs) seekCompositionTo(playheadMs);
+                    }
+                    updatePlayPauseButton(false);
                 }
-                // Update both timeline playhead position AND time display
-                // Only update playhead fraction when NOT dragging to avoid calculated-position jumping
-                // During drag, updatePlayheadFromX already set correct playheadPositionMs
-                if (!isDragging) {
-                    editorTimeline.setPlayheadFraction(segmentIndex, fractionInSegment);
-                }
-                updateCurrentTimeDisplay(seekPosition);
+                updateCurrentTimeDisplay();
             }
 
             @Override
             public void onPlayheadDragFinished() {
                 userDragging = false;
-                // Scrubbing always ends playback. Any engine left running here produced
-                // a stale pause icon and a preview that kept moving on its own.
-                if (imagePlaybackActive) stopImagePlayback();
-                if (playerManager.isPlayingNow()) playerManager.pause();
                 playbackFinished = true;
-                updatePlayPauseButton(false);
-                
-                // Now that drag is finished, check if we crossed into a different segment
-                // If so, load that clip now (we skipped it during the drag to avoid snapping)
-                Timeline tl = project.getTimeline();
-                int segmentAtPlayhead = editorTimeline.getSegmentAtPlayhead();
-                if (segmentAtPlayhead >= 0 && segmentAtPlayhead != playbackClipIndex) {
-                    playbackClipIndex = segmentAtPlayhead;
-                    editorTimeline.setPlaybackIndex(segmentAtPlayhead);
-                    FLog.d(TAG, "drag finished: playbackClipIndex=" + segmentAtPlayhead
-                            + " (selection stays " + selectedClipIndex + ")");
-                    Clip clip = tl.getClip(segmentAtPlayhead);
-                    if (clip != null) {
-                        if (clip.isImageClip()) {
-                            showImagePreview(clip.getSourceUri());
-                            stopImagePlayback();
-                        } else {
-                            hideImagePreview();
-                            playerManager.loadClip(clip);
-                            playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
-                            playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
-                            updatePreviewTransforms();
-                        }
+                stopPlayheadUpdates();
+                cancelScrubSeek();
+                clampPlayheadToTimeline();
+                if (compositionPlayer != null) {
+                    compositionPlayer.pause();
+                    if (scrubbing) {
+                        compositionPlayer.setScrubbingModeEnabled(false);
+                        scrubbing = false;
                     }
+                    long target = editorTimeline.getPlayheadPositionMs();
+                    if (lastSeekTargetMs != target) seekCompositionTo(target);
                 }
-                
-                // Commit exactly one seek now that the finger is up. Everything the
-                // scrub did was visual; this is where the player catches up.
-                Clip playing = clipAt(segmentAtPlayhead >= 0 ? segmentAtPlayhead : playbackClipIndex);
-                if (playing != null && !playing.isImageClip()) {
-                    long playheadMs = editorTimeline.getPlayheadPositionMs();
-                    long segStartMs = editorTimeline.getSegmentStartTimeMs(playbackClipIndex);
-                    long localEff = Math.max(0, playheadMs - segStartMs);
-                    long localSrc = playing.getInPointMs()
-                            + (long) (localEff * playing.getSpeedMultiplier());
-                    localSrc = Math.max(playing.getInPointMs(),
-                            Math.min(localSrc, playing.getOutPointMs()));
-                    playerManager.pause();
-                    playerManager.seekTo(localSrc - playing.getInPointMs());
-                    armPlaybackSeekGuard(localSrc - playing.getInPointMs());
-                    FLog.d(TAG, "drag end: single seek to " + (localSrc - playing.getInPointMs())
-                            + "ms in clip " + playbackClipIndex);
-                }
+                updatePlayPauseButton(false);
+                updateCurrentTimeDisplay();
 
                 // The toolbar reflects the selection, which scrubbing does not change.
-                // It only needs refreshing if a clip is actually selected.
                 Clip selected = getSelectedClip();
                 if (selected != null) {
-                    updateVolumeUI(selected.getVolumeLevel(), selected.isAudioMuted());
-                    updateSpeedUI(selected.getSpeedMultiplier());
+                    if (selected.isImageClip()) {
+                        updateVolumeUI(1f, false);
+                        updateSpeedUI(1f);
+                    } else {
+                        updateVolumeUI(selected.getVolumeLevel(), selected.isAudioMuted());
+                        updateSpeedUI(selected.getSpeedMultiplier());
+                    }
                 }
             }
 
@@ -901,8 +845,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     ac.setInPointMs(inPointMs);
                     ac.setOutPointMs(outPointMs);
                     editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
-                    // Re-prepare audio player with new trim
-                    prepareAudioPlayer();
+                    rebuildComposition();
                     scheduleAutoSave();
                 }
             }
@@ -1005,9 +948,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void attemptRemuxAndLoad(@NonNull Uri videoUri) {
         File sourceFile = resolveToFile(videoUri);
 
-        // Build a file:// URI when the source resolves to a readable file.
-        // This ensures ExoPlayer uses FileDataSource (supports random-access
-        // seeking) instead of ContentDataSource (limited seeking).
+        // Build a file:// URI when the source resolves to a readable file. Local files
+        // support random-access seeking, which the editor and the exporter both need.
         Uri fileUri = (sourceFile != null) ? Uri.fromFile(sourceFile) : videoUri;
 
         if (sourceFile != null && remuxer.needsRemux(sourceFile)) {
@@ -1063,9 +1005,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
      * @param exportUri original URI kept for export (same content, original container)
      */
     private void continueLoadWithUri(@NonNull Uri playUri, @NonNull Uri exportUri) {
-        initProject(playUri);
+        if (!initProject(playUri)) return;
         initPlayer();
         initTimeline();
+        prepareCompositionPreview();
         initToolbar();
         initExport();
         initBackHandler();
@@ -1083,6 +1026,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         refreshTotalTimeDisplay();
         initPlayer();
         initTimeline();
+        prepareCompositionPreview();
         initToolbar();
         initExport();
         initBackHandler();
@@ -1093,11 +1037,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
             updateAudioToolUI();
         }
 
-        // Restore canvas preset
-        if (project.getCanvasPreset() != null
-                && !"original".equals(project.getCanvasPreset())) {
-            applyCanvasPreview(project.getCanvasPreset());
-        }
+        // Canvas is part of the composition; only the surface bounds need updating.
+        applyPreviewAspect();
 
         // Restore undo history from disk
         List<String> descriptions = new ArrayList<>();
@@ -1319,22 +1260,36 @@ public class FaditorEditorActivity extends AppCompatActivity {
      * rest to signal that there is no handle to grab.</p>
      */
     private void updateToolAvailability() {
-        boolean hasClip = getSelectedClip() != null;
-        float alpha = hasClip ? 1f : 0.35f;
-        View[] clipTools = {toolTrim, toolSpeed, toolMute, toolRotate, toolFlip,
-                toolCrop, toolAudio, toolSplit, toolDelete, toolDuplicate};
-        for (View tool : clipTools) {
-            if (tool == null) continue;
-            tool.setAlpha(alpha);
-            tool.setEnabled(hasClip);
-            tool.setClickable(hasClip);
+        Clip clip = getSelectedClip();
+        boolean hasClip = clip != null;
+        boolean hasAudio = hasClip && !clip.isImageClip();
+        float clipAlpha = hasClip ? 1f : 0.35f;
+        float audioAlpha = hasAudio ? 1f : 0.35f;
+
+        View[] visualTools = {toolTrim, toolRotate, toolFlip, toolCrop,
+                toolSplit, toolDelete, toolDuplicate};
+        for (View tool : visualTools) {
+            applyToolEnabled(tool, hasClip, clipAlpha);
         }
+        // A still image has no audio and no meaningful playback-rate change.
+        View[] audioTools = {toolMute, toolSpeed, toolAudio};
+        for (View tool : audioTools) {
+            applyToolEnabled(tool, hasAudio, audioAlpha);
+        }
+
         // Canvas is a project setting: never disable it.
         if (toolCanvas != null) {
             toolCanvas.setAlpha(1f);
             toolCanvas.setEnabled(true);
             toolCanvas.setClickable(true);
         }
+    }
+
+    private void applyToolEnabled(@Nullable View tool, boolean enabled, float alpha) {
+        if (tool == null) return;
+        tool.setAlpha(alpha);
+        tool.setEnabled(enabled);
+        tool.setClickable(enabled);
     }
 
     /**
@@ -1363,12 +1318,64 @@ public class FaditorEditorActivity extends AppCompatActivity {
         return tl.getClip(index);
     }
 
-    private void initProject(@NonNull Uri videoUri) {
+    /**
+     * Builds and displays the preview composition at the current playhead.
+     * This is the only playback engine: preview and export share the composition.
+     */
+    private void prepareCompositionPreview() {
+        if (project == null || compositionPlayer == null) return;
+        long position = editorTimeline != null
+                ? editorTimeline.getPlayheadPositionMs() : 0L;
+        applyComposition(position, false);
+    }
+
+    /** Rebuilds the composition after an edit, preserving playhead and play state. */
+    private void rebuildComposition() {
+        if (project == null || compositionPlayer == null) return;
+        long position = editorTimeline != null
+                ? editorTimeline.getPlayheadPositionMs() : 0L;
+        boolean play = compositionPlayer.isPlayingOrBuffering();
+        applyComposition(position, play);
+        if (play) startPlayheadUpdates();
+    }
+
+    /** Schedules a debounced rebuild for property edits (sliders, canvas, volume). */
+    private void scheduleCompositionRebuild() {
+        if (project == null || compositionPlayer == null || userDragging) return;
+        autoSaveHandler.removeCallbacks(compositionRefreshRunnable);
+        autoSaveHandler.postDelayed(compositionRefreshRunnable, COMPOSITION_REBUILD_DELAY_MS);
+    }
+
+    private void applyComposition(long positionMs, boolean play) {
+        if (project == null || compositionPlayer == null) return;
+        Composition composition;
+        try {
+            composition = TimelineCompositionBuilder.build(
+                    this, project, null, croplessPreviewClipId);
+        } catch (RuntimeException e) {
+            FLog.e(TAG, "Composition build failed", e);
+            return;
+        }
+        if (composition == null) {
+            FLog.w(TAG, "Composition not built: no playable clips");
+            return;
+        }
+        long end = TimelineCompositionBuilder.compositionDurationMs(project.getTimeline());
+        compositionDurationMs = end;
+        long at = Math.max(0L, Math.min(positionMs, end));
+        compositionPlayer.setComposition(composition, at, play);
+        lastSeekTargetMs = at;
+        applyPreviewAspect();
+    }
+
+    private boolean initProject(@NonNull Uri videoUri) {
         // Get video duration
         long durationMs = getVideoDuration(videoUri);
         if (durationMs <= 0) {
-            FLog.w(TAG, "Could not determine video duration, using fallback");
-            durationMs = 60_000; // Fallback 1 minute
+            FLog.e(TAG, "Could not read video duration for: " + videoUri);
+            Toast.makeText(this, R.string.faditor_error_read_video, Toast.LENGTH_SHORT).show();
+            finish();
+            return false;
         }
 
         // Create project with a single clip. The name starts as the source file's
@@ -1384,199 +1391,147 @@ public class FaditorEditorActivity extends AppCompatActivity {
         refreshTotalTimeDisplay();
 
         FLog.d(TAG, "Project created: duration=" + durationMs + "ms");
+        return true;
     }
 
     private void initPlayer() {
-        playerManager = new FaditorPlayerManager(this);
-        getLifecycle().addObserver(playerManager);
-        playerManager.setPlayerView(playerView);
-
-        // Load the clip at the playhead (nothing is selected on open)
-        Clip clip = getSelectedClip();
-        if (clip == null) clip = clipAt(0);
-        if (clip == null) return;
-        playerManager.loadClip(clip);
-
-        // Listen for playback state changes
-        playerManager.addListener(new Player.Listener() {
+        if (playerSurface == null) return;
+        compositionPlayer = new FaditorCompositionPlayer(this);
+        compositionPlayer.bindSurfaceView(playerSurface);
+        compositionPlayer.addListener(new Player.Listener() {
             @Override
             public void onIsPlayingChanged(boolean isPlaying) {
-                // Don't override button state during audio-tail (video paused, audio playing)
-                if (!audioTailActive) {
-                    updatePlayPauseButton(isPlaying);
+                if (!userDragging) {
+                    boolean showPlaying = !playbackFinished
+                            && (isPlaying || (compositionPlayer != null
+                            && compositionPlayer.getPlayWhenReady()));
+                    updatePlayPauseButton(showPlaying);
                 }
-                // Sync audio player with ExoPlayer state
-                if (isPlaying) {
-                    syncAndPlayAudioPlayer();
-                } else if (!audioTailActive) {
-                    pauseAudioPlayer();
-                }
-            }
-
-            @Override
-            public void onMediaItemTransition(@Nullable androidx.media3.common.MediaItem mediaItem,
-                                              int reason) {
-                if (!playerManager.isPlaylistMode()) return;
-                int index = playerManager.getCurrentPlaylistIndex();
-                Clip playing = playerManager.getCurrentPlaylistClip();
-                if (index < 0 || playing == null) return;
-                playbackClipIndex = index;
-                editorTimeline.setPlaybackIndex(index);
-                applyPlayingClipState(playing);
-                FLog.d(TAG, "media item transition: clip=" + index + " reason=" + reason);
+                if (isPlaying) startPlayheadUpdates();
             }
 
             @Override
             public void onPlaybackStateChanged(int playbackState) {
-                if (playbackState == Player.STATE_ENDED && !audioTailActive) {
-                    updatePlayPauseButton(false);
-                    playbackSeekTargetMs = -1;
-                    // Stop polling. playWhenReady stays true at the end of a queue, so
-                    // the updater kept running and re-wrote the playhead to the last
-                    // clip after the user had dragged somewhere else.
+                if (playbackState == Player.STATE_ENDED) {
                     playbackFinished = true;
-                    playheadHandler.removeCallbacks(playheadUpdater);
-                    FLog.d(TAG, "playback finished: updater stopped");
+                    stopPlayheadUpdates();
+                    updatePlayPauseButton(false);
+                    long end = compositionDurationMs;
+                    editorTimeline.setPlayheadPositionMs(end);
+                    updateCurrentTimeDisplay();
+                    FLog.d(TAG, "playback finished at " + end + "ms");
                 } else if (playbackState == Player.STATE_READY
                         || playbackState == Player.STATE_BUFFERING) {
                     playbackFinished = false;
+                    if (playbackState == Player.STATE_READY && scrubbing) {
+                        scrubSeekInFlight = false;
+                    }
+                    if (compositionPlayer != null && compositionPlayer.getPlayWhenReady()) {
+                        startPlayheadUpdates();
+                    }
                 }
-                // Once ExoPlayer is READY, correct the duration if needed.
-                // MediaMetadataRetriever is unreliable for fragmented MP4;
-                // ExoPlayer parses actual content and reports the real duration.
-                if (playbackState == Player.STATE_READY && durationCorrectionPending) {
-                    durationCorrectionPending = false;
-                    correctDurationFromPlayer();
-                }
+            }
+
+            @Override
+            public void onPlayerError(@NonNull androidx.media3.common.PlaybackException error) {
+                FLog.e(TAG, "Composition playback error: " + error.getMessage(), error);
+                playbackFinished = true;
+                stopPlayheadUpdates();
+                updatePlayPauseButton(false);
             }
         });
 
-        // Sync initial volume and speed from clip state
-        playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
-        playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+        playerSurface.post(this::applyPreviewAspect);
     }
 
     /**
      * Starts playback exactly where the playhead is.
      *
-     * <p>The playhead is the single source of truth. The clip under it is resolved
-     * from the timeline at press time, loaded into the player if it is not already
-     * there, and the player is seeked to the matching source position. Relying on a
-     * cached index here is what used to make play jump to the last clip: the player
-     * still held clip 0 while the playhead sat at 9s, the seek clamped to the end of
-     * clip 0, and the "at trim end" handler then auto-advanced clip after clip.</p>
+     * <p>The composition player's position is already project-timeline time, so there is
+     * no clip arithmetic and no clip to load: seeking is the whole operation.</p>
      */
     private void startPlaybackFromPlayhead() {
         if (project == null || project.getTimeline().isEmpty()) return;
-        playbackFinished = false;
+        if (compositionPlayer == null) {
+            initPlayer();
+            prepareCompositionPreview();
+        }
+        if (compositionPlayer == null) return;
 
+        playbackFinished = false;
+        editorTimeline.cancelActiveGesture();
+        cancelScrubSeek();
+        if (scrubbing) {
+            compositionPlayer.setScrubbingModeEnabled(false);
+            scrubbing = false;
+        }
+        long end = compositionDurationMs;
         long playheadMs = editorTimeline.getPlayheadPositionMs();
-        long videoEndMs = totalEffectiveMs();
-        long timelineEndMs = editorTimeline.getTimelineEndMs();
 
         // Sitting on the end means "play again from the start", like every editor.
-        // Otherwise the seek lands on the last frame and only the final moments replay.
-        if (videoEndMs > 0 && playheadMs >= videoEndMs - 1 && timelineEndMs <= videoEndMs + 1) {
+        if (end > 0 && playheadMs >= end - 1) {
             playheadMs = 0;
             editorTimeline.setPlayheadPositionMs(0);
-            FLog.d(TAG, "play: playhead was at the end, restarting from 0");
         }
 
-        // Playhead past the video but within an audio tail: play only audio.
-        if (playheadMs >= videoEndMs && timelineEndMs > videoEndMs) {
-            audioTailActive = true;
-            audioTailStartWall = android.os.SystemClock.elapsedRealtime();
-            audioTailStartMs = playheadMs;
-            btnPlayPause.setText("pause");
-            syncAndPlayAudioPlayer();
-            playheadHandler.post(playheadUpdater);
-            FLog.d(TAG, "Play from audio tail: playhead=" + playheadMs + "ms");
-            return;
-        }
-
-        int index = editorTimeline.getSegmentIndexAtTime(playheadMs);
-        if (index < 0) index = 0;
-        Clip clip = clipAt(index);
-        if (clip == null) return;
-        playbackClipIndex = index;
-        editorTimeline.setPlaybackIndex(index);
-
-        long segmentStartMs = editorTimeline.getSegmentStartTimeMs(index);
-        long localEffectiveMs = Math.max(0, playheadMs - segmentStartMs);
-        // The playhead counts timeline (effective) time; the player counts source time.
-        long localSourceMs = clip.getInPointMs()
-                + (long) (localEffectiveMs * clip.getSpeedMultiplier());
-        localSourceMs = Math.max(clip.getInPointMs(),
-                Math.min(localSourceMs, clip.getOutPointMs()));
-
-        FLog.d(TAG, "play: playhead=" + playheadMs + "ms index=" + index
-                + " segStart=" + segmentStartMs + " localEff=" + localEffectiveMs
-                + " localSrc=" + localSourceMs
-                + " loadedClip=" + (playerManager.getLoadedClip() != null
-                    ? playerManager.getLoadedClip().getId() : "none"));
-
-        if (clip.isImageClip()) {
-            // A queued playlist from a previous press would keep advancing underneath
-            // the still image — that is what made the playhead jump to the end.
-            if (playerManager.isPlayingNow() || playerManager.isPlaylistMode()) {
-                playerManager.pause();
-                playerManager.exitPlaylistMode();
-            }
-            showImagePreview(clip.getSourceUri());
-            startImagePlayback(localEffectiveMs);
-            updatePlayPauseButton(true);
-            playheadHandler.post(playheadUpdater);
-            return;
-        }
-
-        hideImagePreview();
-        updatePreviewTransforms(clip);
-
-        // Queue the entire video track. ExoPlayer then plays clip → clip without a
-        // setMediaItem()+prepare() stall, which was the visible pause at every cut.
-        // Timelines containing still images cannot be queued (an image has no media
-        // item), so those fall back to the single-clip path below.
-        java.util.List<Clip> clips = project.getTimeline().getClips();
-        boolean queued = playerManager.loadTimelineForPlayback(
-                clips, index, localSourceMs - clip.getInPointMs());
-        if (queued) {
-            playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
-            playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
-            // Guard the first frames: until the seek has actually landed the player
-            // still reports its old position, and using it yanked the playhead to the
-            // clip's start on short clips.
-            armPlaybackSeekGuard(localSourceMs - clip.getInPointMs());
-            updatePlayPauseButton(true);
-            syncAndPlayAudioPlayer();
-            playheadHandler.post(playheadUpdater);
-            FLog.d(TAG, "play: playlist queued at index=" + index
-                    + " offset=" + (localSourceMs - clip.getInPointMs()) + "ms");
-            return;
-        }
-
-        FLog.d(TAG, "play: playlist unavailable (image clip or empty) — single-clip mode");
-        if (playerManager.getLoadedClip() != clip) {
-            // Different source (or a different trim state): load it before seeking.
-            playerManager.loadClip(clip);
-        }
-        playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
-        playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
-
-        playerManager.seekTo(localSourceMs - clip.getInPointMs());
-        armPlaybackSeekGuard(localSourceMs - clip.getInPointMs());
-        playerManager.play();
+        // The drag released into a paused seek at this exact position. Seeking again
+        // discards that buffered frame and is what made play stall for a second; only
+        // seek when the player is genuinely somewhere else (or idle/ended).
+        long playerPosition = compositionPlayer.getPositionMs();
+        int state = compositionPlayer.getPlaybackState();
+        boolean needsSeek = state != Player.STATE_READY
+                || Math.abs(playerPosition - playheadMs) > 50;
+        if (needsSeek) seekCompositionTo(playheadMs);
+        compositionPlayer.play();
         updatePlayPauseButton(true);
-        syncAndPlayAudioPlayer();
-        playheadHandler.post(playheadUpdater);
+        startPlayheadUpdates();
+        FLog.d(TAG, "play: composition at " + playheadMs + "ms"
+                + (needsSeek ? " (seek)" : " (buffered)"));
     }
 
-    /**
-     * After a seek the player keeps reporting its previous position for a frame or two.
-     * Ignoring the playhead for that window stops it snapping to the clip start.
-     */
-    private void armPlaybackSeekGuard(long expectedRelativeMs) {
-        playbackSeekTargetMs = Math.max(0, expectedRelativeMs);
-        playbackSeekDeadlineMs = android.os.SystemClock.elapsedRealtime() + 600L;
+    private void startPlayheadUpdates() {
+        choreographer.removeFrameCallback(playheadFrameCallback);
+        if (!playbackFinished) choreographer.postFrameCallback(playheadFrameCallback);
+    }
+
+    private void stopPlayheadUpdates() {
+        choreographer.removeFrameCallback(playheadFrameCallback);
+    }
+
+    /** Reads the composition position and mirrors it onto the timeline playhead. */
+    private void updatePlayheadFromComposition() {
+        if (project == null || compositionPlayer == null) return;
+        if (userDragging || playbackFinished) return;
+        if (!compositionPlayer.isPlayingOrBuffering()) return;
+
+        long positionMs = compositionPlayer.getPositionMs();
+        if (compositionDurationMs > 0 && positionMs > compositionDurationMs) {
+            positionMs = compositionDurationMs;
+        }
+        if (positionMs != editorTimeline.getPlayheadPositionMs()) {
+            editorTimeline.setPlayheadPositionMs(positionMs);
+        }
+        long second = positionMs / 1000L;
+        if (second != lastDisplayedSecond) {
+            lastDisplayedSecond = second;
+            timeCurrent.setText(TimeFormatter.formatAuto(positionMs));
+        }
+    }
+
+    /** Keeps the playhead inside the project after a trim or delete. */
+    private void clampPlayheadToTimeline() {
+        if (editorTimeline == null) return;
+        long end = editorTimeline.getTimelineEndMs();
+        if (editorTimeline.getPlayheadPositionMs() > end) {
+            editorTimeline.setPlayheadPositionMs(end);
+        }
+    }
+
+    private void updateCurrentTimeDisplay() {
+        long absoluteMs = editorTimeline != null
+                ? editorTimeline.getPlayheadPositionMs() : 0L;
+        lastDisplayedSecond = absoluteMs / 1000L;
+        timeCurrent.setText(TimeFormatter.formatAuto(absoluteMs));
     }
 
     /**
@@ -1737,10 +1692,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // alive on the first tap. The player still shows clip 0 at the playhead.
         editorTimeline.setTimeline(project.getTimeline(), selectedClipIndex);
 
-        // If audio clips exist (e.g. from a saved project), load them
+        // If audio clips exist (e.g. from a saved project), show them on the track.
         if (project.getTimeline().hasAudioClips()) {
             editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
-            prepareAudioPlayer();
             updateAudioToolUI();
         }
 
@@ -1751,17 +1705,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void initToolbar() {
         // Play/Pause button
         btnPlayPause.setOnClickListener(v -> {
-            // Image clips play on their own timer, not on ExoPlayer, so they must be
-            // part of the "is something playing" test — otherwise pause did nothing
-            // while a still image was previewing.
-            if (audioTailActive || imagePlaybackActive || playerManager.isPlayingNow()) {
-                audioTailActive = false;
-                playerManager.pause();
-                if (imagePlaybackActive) stopImagePlayback();
-                pauseAudioPlayer();
+            if (compositionPlayer != null && compositionPlayer.isPlayingOrBuffering()) {
+                compositionPlayer.pause();
                 playbackFinished = true;
+                stopPlayheadUpdates();
                 updatePlayPauseButton(false);
-                FLog.d(TAG, "pause requested (image=" + imagePlaybackActive + ")");
                 return;
             }
             startPlaybackFromPlayhead();
@@ -1796,10 +1744,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Sync UI to existing clip state (e.g. reopened project)
         Clip clip = getSelectedClip();
         if (clip == null) {
-            playerView.post(() -> {
-                updatePreviewTransforms();
-                applyCanvasPreview(project.getCanvasPreset());
-            });
+            playerSurface.post(this::applyPreviewAspect);
             return;
         }
         updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
@@ -1809,15 +1754,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
         updateCropUI(clip.getCropPreset());
         updateCanvasUI(project.getCanvasPreset());
 
-        // Apply live preview transforms (delayed to ensure player view is laid out)
-        playerView.post(() -> {
-            updatePreviewTransforms();
-            applyCanvasPreview(project.getCanvasPreset());
-        });
+        // The composition already contains the clip transforms; the surface only needs
+        // the output aspect ratio.
+        playerSurface.post(this::applyPreviewAspect);
 
         // Crop is stored in the model but NOT shown as overlay on restore.
         // User must tap the Crop tool to enter crop mode.
-        // The crop will be applied on export regardless.
+        // The crop is applied by the composition for both preview and export.
     }
 
     // ── Volume ────────────────────────────────────────────────────────
@@ -1844,13 +1787,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     }
                     ac.setVolumeLevel(volume);
                     ac.setMuted(muted);
-                    // Update live audio player volume for this clip
-                    if (audioIdx < audioPlayers.size() && audioIdx < audioPlayersReady.size()
-                            && audioPlayersReady.get(audioIdx)) {
-                        float vol = muted ? 0f : volume;
-                        audioPlayers.get(audioIdx).setVolume(vol, vol);
-                    }
                     updateVolumeUI(volume, muted);
+                    scheduleCompositionRebuild();
                     scheduleAutoSave();
                 });
                 sheet.show(getSupportFragmentManager(), "volumeControl");
@@ -1859,7 +1797,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
 
         Clip clip = getSelectedClip();
-        if (clip == null) return;
+        if (clip == null || clip.isImageClip()) return;
         float oldVol = clip.getVolumeLevel();
         boolean oldMuted = clip.isAudioMuted();
 
@@ -1878,7 +1816,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             clip.setVolumeLevel(volume);
             clip.setAudioMuted(muted);
             updateVolumeUI(volume, muted);
-            playerManager.setVolume(muted ? 0f : volume);
+            scheduleCompositionRebuild();
             scheduleAutoSave();
         });
         sheet.show(getSupportFragmentManager(), "volumeControl");
@@ -1928,7 +1866,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void showSpeedSlider() {
         Clip clip = getSelectedClip();
-        if (clip == null) return;
+        if (clip == null || clip.isImageClip()) return;
         float oldSpeed = clip.getSpeedMultiplier();
         SpeedSliderBottomSheet sheet = SpeedSliderBottomSheet.newInstance(clip.getSpeedMultiplier());
         sheet.setCallback(speed -> {
@@ -1937,8 +1875,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         clip, oldSpeed, speed));
             }
             clip.setSpeedMultiplier(speed);
-            playerManager.setPlaybackSpeed(speed);
             updateSpeedUI(speed);
+            scheduleCompositionRebuild();
             scheduleAutoSave();
         });
         sheet.show(getSupportFragmentManager(), "speed_slider");
@@ -1969,7 +1907,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         undoManager.recordAction(new EditActions.RotateAction(clip, oldDeg, newDeg));
         clip.setRotationDegrees(newDeg);
         updateRotateUI(newDeg);
-        updatePreviewTransforms();
+        scheduleCompositionRebuild();
         scheduleAutoSave();
     }
 
@@ -2008,7 +1946,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             clip.setFlipHorizontal(flipH);
             clip.setFlipVertical(flipV);
             updateFlipUI(flipH, flipV);
-            updatePreviewTransforms();
+            scheduleCompositionRebuild();
             scheduleAutoSave();
         });
         sheet.show(getSupportFragmentManager(), "flipPicker");
@@ -2065,11 +2003,17 @@ public class FaditorEditorActivity extends AppCompatActivity {
         preCropBottom = clip.getCropBottom();
 
         // Pause playback while cropping
-        if (playerManager != null && playerManager.isPlaying()) {
-            playerManager.pause();
-            pauseAudioPlayer();
+        if (compositionPlayer != null && compositionPlayer.isPlayingOrBuffering()) {
+            compositionPlayer.pause();
+            playbackFinished = true;
+            stopPlayheadUpdates();
             updatePlayPauseButton(false);
         }
+
+        // Show the full uncropped frame while the crop UI is open. The rest of the
+        // composition stays intact, so entering crop never changes the edit.
+        croplessPreviewClipId = clip != null ? clip.getId() : null;
+        rebuildComposition();
 
         // Swap UI FIRST so the layout reflows before we compute the video rect.
         // The player_container grows taller when controls_section is hidden.
@@ -2154,8 +2098,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     + "," + clip.getCropRight() + "," + clip.getCropBottom() + "]");
         } else {
             // Revert to saved state
-            clip.setCropPreset(preCropPreset);
-            clip.setCustomCropBounds(preCropLeft, preCropTop, preCropRight, preCropBottom);
+            if (clip != null) {
+                clip.setCropPreset(preCropPreset);
+                clip.setCustomCropBounds(preCropLeft, preCropTop, preCropRight, preCropBottom);
+            }
             Toast.makeText(this, R.string.faditor_crop_cancelled, Toast.LENGTH_SHORT).show();
             FLog.d(TAG, "Crop cancelled, reverted to: " + preCropPreset);
         }
@@ -2169,9 +2115,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
         if (cropToolbar != null) cropToolbar.setVisibility(View.GONE);
         if (controlsSection != null) controlsSection.setVisibility(View.VISIBLE);
 
-        updateCropUI(clip.getCropPreset());
+        if (clip != null) updateCropUI(clip.getCropPreset());
 
-        // Defer preview transforms until layout has settled — the player container
+        // The crop UI is gone; the composition carries the crop again.
+        croplessPreviewClipId = null;
+        rebuildComposition();
+
+        // Defer the surface aspect until layout has settled — the player container
         // changes size when the controls section becomes visible again.
         FrameLayout container = findViewById(R.id.player_container);
         container.getViewTreeObserver().addOnGlobalLayoutListener(
@@ -2179,7 +2129,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     @Override
                     public void onGlobalLayout() {
                         container.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                        updatePreviewTransforms();
+                        applyPreviewAspect();
                     }
                 });
 
@@ -2268,15 +2218,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void activateFreeCrop() {
         if (cropOverlay == null) return;
 
-        // Compute the video content rect inside the player view
-        // PlayerView with resize_mode="fit" centres the video
-        playerView.post(() -> {
+        // The composition renders the uncropped frame while this overlay is open, and
+        // the surface is already sized to that frame's aspect ratio.
+        playerSurface.post(() -> {
             android.graphics.RectF videoRect = computeVideoContentRect();
             FLog.d(TAG, "activateFreeCrop: videoRect=" + videoRect
                     + ", cropOverlay size=" + cropOverlay.getWidth() + "x" + cropOverlay.getHeight());
             cropOverlay.setVideoContentRect(videoRect);
 
             Clip clip = getSelectedClip();
+            if (clip == null) return;
             if ("custom".equals(clip.getCropPreset())
                     && (clip.getCropLeft() > 0 || clip.getCropTop() > 0
                     || clip.getCropRight() < 1 || clip.getCropBottom() < 1)) {
@@ -2300,59 +2251,15 @@ public class FaditorEditorActivity extends AppCompatActivity {
     }
 
     /**
-     * Compute where the video content is rendered inside the PlayerView.
-     * Accounts for letterboxing (fit mode).
+     * The video content rect in container coordinates. The surface is constrained to
+     * the composition's output aspect, so its bounds are the content rect.
      */
     @NonNull
     private android.graphics.RectF computeVideoContentRect() {
-        int viewW = playerView.getWidth();
-        int viewH = playerView.getHeight();
-
-        // Offset for PlayerView position within its parent (e.g. when canvas preview
-        // constrains PlayerView to a smaller centered area inside the container).
-        // The crop overlay is match_parent on the container, so we need absolute offsets.
-        float offsetX = playerView.getLeft();
-        float offsetY = playerView.getTop();
-
-        FLog.d(TAG, "computeVideoContentRect: playerView size=" + viewW + "x" + viewH
-                + ", offset=(" + offsetX + "," + offsetY + ")");
-
-        // Try to get actual video dimensions
-        if (playerManager != null && playerManager.getPlayer() != null) {
-            androidx.media3.common.VideoSize videoSize =
-                    playerManager.getPlayer().getVideoSize();
-            int videoW = videoSize.width;
-            int videoH = videoSize.height;
-
-            FLog.d(TAG, "computeVideoContentRect: videoSize=" + videoW + "x" + videoH);
-
-            if (videoW > 0 && videoH > 0) {
-                float videoAspect = (float) videoW / videoH;
-                float viewAspect = (float) viewW / viewH;
-
-                float renderW, renderH;
-                if (videoAspect > viewAspect) {
-                    // Video is wider — letterbox top/bottom
-                    renderW = viewW;
-                    renderH = viewW / videoAspect;
-                } else {
-                    // Video is taller — pillarbox left/right
-                    renderH = viewH;
-                    renderW = viewH * videoAspect;
-                }
-
-                float left = offsetX + (viewW - renderW) / 2f;
-                float top = offsetY + (viewH - renderH) / 2f;
-                android.graphics.RectF result = new android.graphics.RectF(
-                        left, top, left + renderW, top + renderH);
-                FLog.d(TAG, "computeVideoContentRect: result=" + result);
-                return result;
-            }
-        }
-
-        // Fallback: assume full view
-        FLog.d(TAG, "computeVideoContentRect: FALLBACK to full view");
-        return new android.graphics.RectF(offsetX, offsetY, offsetX + viewW, offsetY + viewH);
+        float left = playerSurface.getLeft();
+        float top = playerSurface.getTop();
+        return new android.graphics.RectF(left, top,
+                left + playerSurface.getWidth(), top + playerSurface.getHeight());
     }
 
     private void updateCropUI(@NonNull String preset) {
@@ -2391,7 +2298,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             }
             project.setCanvasPreset(preset);
             updateCanvasUI(preset);
-            applyCanvasPreview(preset);
+            rebuildComposition();
             saveProjectNow();
 
             // Format label for toast
@@ -2420,107 +2327,49 @@ public class FaditorEditorActivity extends AppCompatActivity {
     }
 
     /**
-     * Adjust player container to preview the canvas aspect ratio.
-     * When a canvas preset is active, constrains PlayerView to the target aspect ratio
-     * so black bars are visible around the video.
+     * Sizes the surface to the composition's output aspect ratio inside its container.
+     * A raw SurfaceView stretches its frames to its bounds, so this is what letterboxes
+     * the preview instead of distorting it.
      */
-    private void applyCanvasPreview(@NonNull String preset) {
-        if ("original".equals(preset)) {
-            // Reset to fill container
-            ViewGroup.LayoutParams lp = playerView.getLayoutParams();
-            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-            playerView.setLayoutParams(lp);
+    private void applyPreviewAspect() {
+        if (playerSurface == null || project == null || project.getTimeline().isEmpty()) return;
+        FrameLayout container = findViewById(R.id.player_container);
+        if (container == null) return;
 
-            ViewGroup.LayoutParams ipLp = imagePreview.getLayoutParams();
-            ipLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            ipLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-            imagePreview.setLayoutParams(ipLp);
+        int containerW = container.getWidth();
+        int containerH = container.getHeight();
+        if (containerW <= 0 || containerH <= 0) {
+            if (!isFinishing() && !isDestroyed()) container.post(this::applyPreviewAspect);
             return;
         }
 
-        // Get first clip's dimensions to compute canvas size
-        Clip firstClip = project.getTimeline().getClip(0);
-        int srcW = getVideoWidth(firstClip);
-        int srcH = getVideoHeight(firstClip);
-        if (srcW <= 0 || srcH <= 0) return;
-
-        int[] canvas = CanvasPickerBottomSheet.resolveCanvasDimensions(preset, srcW, srcH);
-        float canvasAspect = (float) canvas[0] / canvas[1];
-
-        // Apply aspect ratio constraint on PlayerView within the container
-        FrameLayout container = findViewById(R.id.player_container);
-        int containerW = container.getWidth();
-        int containerH = container.getHeight();
-        if (containerW <= 0 || containerH <= 0) return;
-
-        float containerAspect = (float) containerW / containerH;
-        int targetW, targetH;
-        if (canvasAspect > containerAspect) {
-            // Canvas is wider: fit to width
-            targetW = containerW;
-            targetH = Math.round(containerW / canvasAspect);
-        } else {
-            // Canvas is taller: fit to height
-            targetH = containerH;
-            targetW = Math.round(containerH * canvasAspect);
+        int[] output = TimelineCompositionBuilder.previewOutputSize(this, project);
+        if (output == null) {
+            FrameLayout.LayoutParams full = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT);
+            full.gravity = android.view.Gravity.CENTER;
+            playerSurface.setLayoutParams(full);
+            return;
         }
 
-        // Constrain PlayerView
+        int outW = output[0];
+        int outH = output[1];
+        float aspect = (float) outW / outH;
+        float containerAspect = (float) containerW / containerH;
+        int targetW;
+        int targetH;
+        if (aspect > containerAspect) {
+            targetW = containerW;
+            targetH = Math.round(containerW / aspect);
+        } else {
+            targetH = containerH;
+            targetW = Math.round(containerH * aspect);
+        }
+
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(targetW, targetH);
         lp.gravity = android.view.Gravity.CENTER;
-        playerView.setLayoutParams(lp);
-
-        // Constrain ImagePreview too
-        FrameLayout.LayoutParams ipLp = new FrameLayout.LayoutParams(targetW, targetH);
-        ipLp.gravity = android.view.Gravity.CENTER;
-        imagePreview.setLayoutParams(ipLp);
-    }
-
-    /**
-     * Gets video width from clip using MediaMetadataRetriever.
-     */
-    private int getVideoWidth(@NonNull Clip clip) {
-        if (clip.isImageClip()) {
-            try (InputStream is = getContentResolver().openInputStream(clip.getSourceUri())) {
-                android.graphics.BitmapFactory.Options opts =
-                        new android.graphics.BitmapFactory.Options();
-                opts.inJustDecodeBounds = true;
-                android.graphics.BitmapFactory.decodeStream(is, null, opts);
-                return opts.outWidth;
-            } catch (Exception e) { return 0; }
-        }
-        try {
-            android.media.MediaMetadataRetriever r = new android.media.MediaMetadataRetriever();
-            r.setDataSource(this, clip.getSourceUri());
-            String w = r.extractMetadata(
-                    android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
-            r.release();
-            return w != null ? Integer.parseInt(w) : 0;
-        } catch (Exception e) { return 0; }
-    }
-
-    /**
-     * Gets video height from clip using MediaMetadataRetriever.
-     */
-    private int getVideoHeight(@NonNull Clip clip) {
-        if (clip.isImageClip()) {
-            try (InputStream is = getContentResolver().openInputStream(clip.getSourceUri())) {
-                android.graphics.BitmapFactory.Options opts =
-                        new android.graphics.BitmapFactory.Options();
-                opts.inJustDecodeBounds = true;
-                android.graphics.BitmapFactory.decodeStream(is, null, opts);
-                return opts.outHeight;
-            } catch (Exception e) { return 0; }
-        }
-        try {
-            android.media.MediaMetadataRetriever r = new android.media.MediaMetadataRetriever();
-            r.setDataSource(this, clip.getSourceUri());
-            String h = r.extractMetadata(
-                    android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
-            r.release();
-            return h != null ? Integer.parseInt(h) : 0;
-        } catch (Exception e) { return 0; }
+        playerSurface.setLayoutParams(lp);
     }
 
     // ── Audio ─────────────────────────────────────────────────────────
@@ -2569,7 +2418,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         ? audioFormat.getLong(MediaFormat.KEY_DURATION) : 0;
                 long durationMs = durationUs / 1000;
                 if (durationMs <= 0) {
-                    // Fallback: use video duration
+                    // Use the video duration when the audio track reports none
                     durationMs = clip.getSourceDurationMs();
                 }
 
@@ -2633,7 +2482,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     if (srcClip != null) {
                         srcClip.setAudioMuted(true);
                         srcClip.setVolumeLevel(0f);
-                        playerManager.setVolume(0f);
                         updateVolumeUI(0f, true);
                         FLog.i(TAG, "Auto-muted video clip after audio extraction: "
                                 + "audioMuted=" + srcClip.isAudioMuted()
@@ -2643,7 +2491,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     }
 
                     updateAudioToolUI();
-                    prepareAudioPlayer();
+                    rebuildComposition();
                     scheduleAutoSave();
                     Toast.makeText(this, R.string.faditor_audio_extracted,
                             Toast.LENGTH_SHORT).show();
@@ -2764,315 +2612,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
         int color = hasAudio ? FaditorPalette.ACCENT : 0xFF888888;
         if (toolAudioIcon != null) toolAudioIcon.setTextColor(color);
         if (toolAudioLabel != null) toolAudioLabel.setTextColor(color);
-    }
-
-    // ── Audio player (playback sync) ─────────────────────────────────
-
-    /**
-     * Prepares MediaPlayers for ALL audio clips in the timeline.
-     * One MediaPlayer per clip, each pre-prepared for instant playback.
-     */
-    private void prepareAudioPlayer() {
-        releaseAudioPlayer();
-        if (project == null || !project.getTimeline().hasAudioClips()) return;
-
-        List<AudioClip> clips = project.getTimeline().getAudioClips();
-        for (int i = 0; i < clips.size(); i++) {
-            AudioClip ac = clips.get(i);
-            if (ac == null) continue;
-            final int idx = i;
-
-            try {
-                MediaPlayer mp = new MediaPlayer();
-                mp.setDataSource(this, ac.getSourceUri());
-                mp.setLooping(false);
-                float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
-                mp.setVolume(vol, vol);
-
-                audioPlayers.add(mp);
-                audioPlayersReady.add(false);
-
-                mp.setOnPreparedListener(p -> {
-                    if (idx < audioPlayersReady.size()) {
-                        audioPlayersReady.set(idx, true);
-                    }
-                    FLog.d(TAG, "AudioPlayer[" + idx + "] prepared, duration=" + p.getDuration() + "ms");
-                });
-                mp.setOnErrorListener((p, what, extra) -> {
-                    FLog.e(TAG, "AudioPlayer[" + idx + "] error: what=" + what + " extra=" + extra);
-                    if (idx < audioPlayersReady.size()) {
-                        audioPlayersReady.set(idx, false);
-                    }
-                    return true;
-                });
-                mp.prepareAsync();
-            } catch (Exception e) {
-                FLog.e(TAG, "Failed to prepare audio player[" + i + "]", e);
-            }
-        }
-    }
-
-    /**
-     * Syncs and plays the correct audio player(s) for the current playhead position.
-     * Called once when user presses play.
-     */
-    private void syncAndPlayAudioPlayer() {
-        if (project == null || !project.getTimeline().hasAudioClips()) return;
-
-        long playheadMs = editorTimeline.getPlayheadPositionMs();
-        List<AudioClip> clips = project.getTimeline().getAudioClips();
-
-        for (int i = 0; i < clips.size() && i < audioPlayers.size(); i++) {
-            if (i >= audioPlayersReady.size() || !audioPlayersReady.get(i)) continue;
-            AudioClip ac = clips.get(i);
-            MediaPlayer mp = audioPlayers.get(i);
-            if (ac == null || mp == null) continue;
-
-            long audioStartMs = ac.getOffsetMs();
-            long audioEndMs = ac.getEndOnTimelineMs();
-
-            try {
-                if (playheadMs >= audioStartMs && playheadMs < audioEndMs) {
-                    long seekPos = ac.getInPointMs() + (playheadMs - audioStartMs);
-                    // Guard against seeking past the audio file's actual duration
-                    int mediaDuration = mp.getDuration();
-                    if (mediaDuration > 0 && seekPos >= mediaDuration) {
-                        FLog.w(TAG, "AudioPlayer[" + i + "] seekPos=" + seekPos
-                                + " exceeds mediaDuration=" + mediaDuration + ", clamping");
-                        seekPos = Math.max(0, mediaDuration - 100); // seek near end
-                    }
-                    mp.seekTo((int) seekPos);
-                    float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
-                    mp.setVolume(vol, vol);
-                    mp.start();
-                } else {
-                    if (mp.isPlaying()) mp.pause();
-                }
-            } catch (Exception e) {
-                FLog.e(TAG, "AudioPlayer[" + i + "] sync error", e);
-            }
-        }
-    }
-
-    /**
-     * Periodically called from playheadUpdater to start/stop audio players
-     * as the playhead enters/exits each audio clip range during playback.
-     */
-    private void syncAudioPlayerWithPlayhead() {
-        if (project == null || !project.getTimeline().hasAudioClips()) return;
-
-        // Only sync when something is supposed to be playing
-        boolean videoPlaying = playerManager != null && playerManager.getPlayWhenReady();
-        boolean imageActive = imagePlaybackActive;
-        if (!videoPlaying && !imageActive && !audioTailActive) return;
-
-        long playheadMs = editorTimeline.getPlayheadPositionMs();
-        List<AudioClip> clips = project.getTimeline().getAudioClips();
-
-        for (int i = 0; i < clips.size() && i < audioPlayers.size(); i++) {
-            if (i >= audioPlayersReady.size() || !audioPlayersReady.get(i)) continue;
-            AudioClip ac = clips.get(i);
-            MediaPlayer mp = audioPlayers.get(i);
-            if (ac == null || mp == null) continue;
-
-            long audioStartMs = ac.getOffsetMs();
-            long audioEndMs = ac.getEndOnTimelineMs();
-
-            try {
-                if (playheadMs >= audioStartMs && playheadMs < audioEndMs) {
-                    if (!mp.isPlaying()) {
-                        long seekPos = ac.getInPointMs() + (playheadMs - audioStartMs);
-                        int mediaDuration = mp.getDuration();
-                        if (mediaDuration > 0 && seekPos >= mediaDuration) {
-                            FLog.w(TAG, "AudioSync[" + i + "] seekPos=" + seekPos
-                                    + " exceeds mediaDuration=" + mediaDuration + ", clamping");
-                            seekPos = Math.max(0, mediaDuration - 100);
-                        }
-                        mp.seekTo((int) seekPos);
-                        float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
-                        mp.setVolume(vol, vol);
-                        mp.start();
-                    }
-                } else {
-                    if (mp.isPlaying()) {
-                        mp.pause();
-                    }
-                }
-            } catch (Exception e) {
-                FLog.e(TAG, "Audio sync[" + i + "] error", e);
-            }
-        }
-    }
-
-    /**
-     * Pauses all audio players.
-     */
-    private void pauseAudioPlayer() {
-        for (int i = 0; i < audioPlayers.size(); i++) {
-            if (i >= audioPlayersReady.size() || !audioPlayersReady.get(i)) continue;
-            try {
-                MediaPlayer mp = audioPlayers.get(i);
-                if (mp != null && mp.isPlaying()) mp.pause();
-            } catch (Exception ignored) {}
-        }
-    }
-
-    /**
-     * Releases all audio player resources.
-     */
-    private void releaseAudioPlayer() {
-        for (MediaPlayer mp : audioPlayers) {
-            if (mp != null) {
-                try { mp.stop(); } catch (Exception ignored) {}
-                try { mp.release(); } catch (Exception ignored) {}
-            }
-        }
-        audioPlayers.clear();
-        audioPlayersReady.clear();
-    }
-
-    // ── Live Preview Transforms ──────────────────────────────────────
-
-    /**
-     * Apply rotation, flip, and crop transforms to the PlayerView for live preview.
-     */
-    private void updatePreviewTransforms() {
-        updatePreviewTransforms(getSelectedClip());
-    }
-
-    /**
-     * Applies rotation/flip/crop for a specific clip. Playback passes the clip the
-     * player is showing, which is not necessarily the selected one.
-     */
-    private void updatePreviewTransforms(@Nullable Clip clip) {
-        if (project == null || project.getTimeline().isEmpty()) return;
-        if (clip == null) return;
-
-        int degrees = clip.getRotationDegrees();
-        boolean flipH = clip.isFlipHorizontal();
-        boolean flipV = clip.isFlipVertical();
-
-        // Apply rotation
-        playerView.setRotation(degrees);
-
-        // Base scale: flip + 90/270 shrink
-        float baseScaleX = flipH ? -1f : 1f;
-        float baseScaleY = flipV ? -1f : 1f;
-
-        if (degrees == 90 || degrees == 270) {
-            int w = playerView.getWidth();
-            int h = playerView.getHeight();
-            if (w > 0 && h > 0) {
-                float rotScale = Math.min((float) w / h, (float) h / w);
-                baseScaleX *= rotScale;
-                baseScaleY *= rotScale;
-            }
-        }
-
-        // ── Crop preview ─────────────────────────────────────────────
-        // When a crop is applied and we're NOT in crop-mode (overlay active),
-        // clip the PlayerView to the crop region and scale it to fill the view.
-        FrameLayout container = findViewById(R.id.player_container);
-        String cropPreset = clip.getCropPreset();
-        boolean applyCropZoom = false;
-
-        if ("custom".equals(cropPreset) && !inCropMode) {
-            float cropL = clip.getCropLeft();
-            float cropT = clip.getCropTop();
-            float cropR = clip.getCropRight();
-            float cropB = clip.getCropBottom();
-            float cropW = cropR - cropL;
-            float cropH = cropB - cropT;
-
-            if (cropW > 0.01f && cropH > 0.01f
-                    && (cropW < 0.99f || cropH < 0.99f)) {
-
-                int viewW = playerView.getWidth();
-                int viewH = playerView.getHeight();
-                if (viewW > 0 && viewH > 0) {
-                    // Compute video render rect inside PlayerView (no parent offset)
-                    float renderW = viewW, renderH = viewH;
-                    float videoLeft = 0f, videoTop = 0f;
-
-                    if (playerManager != null && playerManager.getPlayer() != null) {
-                        androidx.media3.common.VideoSize vs =
-                                playerManager.getPlayer().getVideoSize();
-                        if (vs.width > 0 && vs.height > 0) {
-                            float vidAspect = (float) vs.width / vs.height;
-                            float viewAspect = (float) viewW / viewH;
-                            if (vidAspect > viewAspect) {
-                                renderW = viewW;
-                                renderH = viewW / vidAspect;
-                            } else {
-                                renderH = viewH;
-                                renderW = viewH * vidAspect;
-                            }
-                            videoLeft = (viewW - renderW) / 2f;
-                            videoTop = (viewH - renderH) / 2f;
-                        }
-                    }
-
-                    // Crop rect in PlayerView's own coordinate space
-                    float cL = videoLeft + cropL * renderW;
-                    float cT = videoTop + cropT * renderH;
-                    float cR = videoLeft + cropR * renderW;
-                    float cB = videoTop + cropB * renderH;
-
-                    // Clip the PlayerView so only the crop region is drawn
-                    playerView.setClipBounds(new android.graphics.Rect(
-                            Math.round(cL), Math.round(cT),
-                            Math.round(cR), Math.round(cB)));
-
-                    // Scale up so the clipped crop region fills the container
-                    float cropPixW = cR - cL;
-                    float cropPixH = cB - cT;
-                    float sX = (float) viewW / cropPixW;
-                    float sY = (float) viewH / cropPixH;
-                    float cropScale = Math.min(sX, sY);
-
-                    baseScaleX *= cropScale;
-                    baseScaleY *= cropScale;
-
-                    // Crop center in PlayerView coordinates
-                    float cropCX = (cL + cR) / 2f;
-                    float cropCY = (cT + cB) / 2f;
-
-                    // Pivot stays at view center. We need translation so that
-                    // the crop center maps to the container center after scaling.
-                    // With pivot = (vW/2, vH/2):
-                    //   mapped_x = vW/2 + totalScaleX*(cx - vW/2) + tx
-                    //   Want mapped_x = vW/2 → tx = -totalScaleX*(cx - vW/2)
-                    // Use absolute cropScale for translation (flip sign handled by scaleX).
-                    float tx = cropScale * (viewW / 2f - cropCX);
-                    float ty = cropScale * (viewH / 2f - cropCY);
-
-                    playerView.setPivotX(viewW / 2f);
-                    playerView.setPivotY(viewH / 2f);
-                    playerView.setTranslationX(tx);
-                    playerView.setTranslationY(ty);
-
-                    container.setClipChildren(true);
-                    container.setClipToPadding(true);
-                    applyCropZoom = true;
-                }
-            }
-        }
-
-        if (!applyCropZoom) {
-            // Reset crop-related transforms
-            playerView.setClipBounds(null);
-            playerView.setPivotX(playerView.getWidth() / 2f);
-            playerView.setPivotY(playerView.getHeight() / 2f);
-            playerView.setTranslationX(0f);
-            playerView.setTranslationY(0f);
-            if (container != null) {
-                container.setClipChildren(false);
-                container.setClipToPadding(false);
-            }
-        }
-
-        playerView.setScaleX(baseScaleX);
-        playerView.setScaleY(baseScaleY);
     }
 
     private void initExport() {
@@ -3259,47 +2798,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     // ── Playback helpers ─────────────────────────────────────────────
 
-    /**
-     * Correct the project's source duration using ExoPlayer's actual reported duration.
-     * Both MMR and FFprobeKit can disagree with ExoPlayer for edge-case files;
-     * if ExoPlayer reports significantly different, prefer ExoPlayer's value.
-     */
-    private void correctDurationFromPlayer() {
-        long playerDurationMs = playerManager.getSourceDuration();
-        if (playerDurationMs <= 0) return;
-
-        Clip clip = getSelectedClip();
-        if (clip == null) return;
-        // Image clips have a fixed duration; no correction needed
-        if (clip.isImageClip()) return;
-
-        long storedDuration = clip.getSourceDurationMs();
-
-        // Only correct if ExoPlayer reports SHORTER duration.
-        // For fragmented MP4, ExoPlayer may report the container duration
-        // (e.g. 60 000 ms) while FFprobe reports the actual content duration
-        // (e.g. 4 096 ms). We trust FFprobe for "longer" values.
-        if (playerDurationMs < storedDuration && (storedDuration - playerDurationMs) > 500) {
-            FLog.w(TAG, "Duration correction (shorter): stored=" + storedDuration
-                    + "ms → ExoPlayer=" + playerDurationMs + "ms");
-
-            clip.setSourceDurationMs(playerDurationMs);
-            clip.setInPointMs(0);
-            clip.setOutPointMs(playerDurationMs);
-
-            // Refresh UI with corrected duration — but DO NOT reset playhead or player position.
-            // Resetting here caused 'plays from start' because this fires right when the user
-            // presses play (the first STATE_READY after load), overriding the user's seeked position.
-            refreshTotalTimeDisplay();
-            editorTimeline.setTrimFromClip(clip);
-            // Only update player's internal trim bounds (no seek, no playWhenReady change)
-            playerManager.updateTrimEndOnly(playerDurationMs);
-        } else {
-            FLog.d(TAG, "Duration OK: stored=" + storedDuration
-                    + "ms, ExoPlayer=" + playerDurationMs + "ms (keeping stored)");
-        }
-    }
-
     private void updatePlayPauseButton(boolean isPlaying) {
         btnPlayPause.setText(isPlaying ? "pause" : "play_arrow");
     }
@@ -3316,360 +2814,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
         timeTotal.setText(TimeFormatter.formatAuto(totalMs));
     }
 
-    /**
-     * Compute the absolute playhead position within the entire project timeline.
-     * This sums up durations of all preceding segments plus the position within the current one.
-     *
-     * @param positionInCurrentSegmentMs 0-based position within the current clip's trimmed region
-     * @return absolute position in the full project timeline
-     */
-    private long getAbsolutePlayheadMs(long positionInCurrentSegmentMs) {
-        Timeline tl = project.getTimeline();
-        // Sum the clips before the one the *player* is showing. Using the selection
-        // here reported the time of whichever clip was highlighted, so the read-out
-        // restarted at each clip instead of tracking the whole timeline.
-        long absoluteMs = 0;
-        for (int i = 0; i < playbackClipIndex && i < tl.getClipCount(); i++) {
-            absoluteMs += tl.getClip(i).getTrimmedDurationMs();
-        }
-        absoluteMs += positionInCurrentSegmentMs;
-        return absoluteMs;
-    }
-
-    /**
-     * Update the current time display with the absolute position in the project.
-     *
-     * @param positionInCurrentSegmentMs 0-based position within the clip the player is
-     *                                   showing; ignored when the timeline already
-     *                                   knows the absolute playhead
-     */
-    private void updateCurrentTimeDisplay(long positionInCurrentSegmentMs) {
-        long absoluteMs = getAbsolutePlayheadMs(positionInCurrentSegmentMs);
-        timeCurrent.setText(TimeFormatter.formatAuto(absoluteMs));
-    }
-
-    // ── Image preview helpers ────────────────────────────────────────
-
-    /**
-     * Show the image preview overlay and hide the video player.
-     *
-     * @param imageUri URI of the image to display
-     */
-    private void showImagePreview(@NonNull Uri imageUri) {
-        if (imagePreview == null) return;
-        playerView.setVisibility(View.INVISIBLE);
-        imagePreview.setVisibility(View.VISIBLE);
-        // Use Glide for efficient image loading
-        com.bumptech.glide.Glide.with(this)
-                .load(imageUri)
-                .into(imagePreview);
-    }
-
-    /**
-     * Hide the image preview overlay and restore the video player.
-     */
-    private void hideImagePreview() {
-        if (imagePreview == null) return;
-        imagePreview.setVisibility(View.GONE);
-        playerView.setVisibility(View.VISIBLE);
-    }
-
-    /**
-     * Start image clip playback (internal timer, no ExoPlayer).
-     *
-     * @param startOffsetMs position within the image clip to start from (0-based)
-     */
-    private void startImagePlayback(long startOffsetMs) {
-        imagePlaybackActive = true;
-        imagePlaybackStartOffsetMs = startOffsetMs;
-        imagePlaybackStartSystemMs = System.currentTimeMillis();
-        updatePlayPauseButton(true);
-    }
-
-    /**
-     * Stop image clip playback timer.
-     */
-    private void stopImagePlayback() {
-        imagePlaybackActive = false;
-        updatePlayPauseButton(false);
-    }
-
-    /**
-     * Get the current elapsed position (ms) within the image clip during playback.
-     *
-     * @return elapsed position in ms, or 0 if not playing
-     */
-    private long getImagePlaybackPositionMs() {
-        if (!imagePlaybackActive) return imagePlaybackStartOffsetMs;
-        long elapsed = System.currentTimeMillis() - imagePlaybackStartSystemMs;
-        return imagePlaybackStartOffsetMs + elapsed;
-    }
-
-    /** Applies a clip's audio and visual state while it is the one being previewed. */
-    private void applyPlayingClipState(@NonNull Clip clip) {
-        // Only touch the renderers when the value actually changes. Re-applying the
-        // same speed at every media-item transition makes ExoPlayer reconfigure the
-        // audio/video pipeline right at the cut, which is audible as a hitch.
-        if (Math.abs(clip.getSpeedMultiplier() - appliedPlaybackSpeed) > 0.001f) {
-            appliedPlaybackSpeed = clip.getSpeedMultiplier();
-            playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
-        }
-        float wantedVolume = clip.isAudioMuted() ? 0f : clip.getVolumeLevel();
-        if (Math.abs(wantedVolume - appliedPlaybackVolume) > 0.001f) {
-            appliedPlaybackVolume = wantedVolume;
-            playerManager.setVolume(wantedVolume);
-        }
-        updatePreviewTransforms(clip);
-    }
-
-    /** Last values pushed to the player, so transitions do not reconfigure needlessly. */
-    private float appliedPlaybackSpeed = 1f;
-    private float appliedPlaybackVolume = -1f;
-
-    private void updatePlayheadPosition() {
-        if (playerManager == null || project == null || project.getTimeline().isEmpty()) return;
-        // Never let a stopped player drive the playhead. Without this the poll kept
-        // reading the player's position after the user had dragged elsewhere, so the
-        // playhead snapped back to wherever the queue had advanced to.
-        if (playbackFinished) return;
-        if (!audioTailActive && !imagePlaybackActive && !playerManager.isPlayingNow()) return;
-
-        // ── Audio-tail mode: playhead continues past video end ───────
-        if (audioTailActive) {
-            long elapsed = android.os.SystemClock.elapsedRealtime() - audioTailStartWall;
-            long playheadMs = audioTailStartMs + elapsed;
-            long timelineEndMs = editorTimeline.getTimelineEndMs();
-
-            if (playheadMs >= timelineEndMs) {
-                // Audio tail finished — fully stop
-                audioTailActive = false;
-                pauseAudioPlayer();
-                playheadMs = timelineEndMs;
-                updatePlayPauseButton(false);
-                FLog.d(TAG, "Audio-tail ended at " + playheadMs + "ms");
-            }
-
-            editorTimeline.setPlayheadPositionMs(playheadMs);
-            timeCurrent.setText(TimeFormatter.formatAuto(playheadMs));
-            return;
-        }
-
-        // ── Gapless playlist playback ───────────────────────────────
-        // The queue advances by itself, so nothing here may "advance a segment".
-        // The playhead is derived from the item the player is on plus its position.
-        if (playerManager.isPlaylistMode()) {
-            if (userDragging) return;
-            int index = playerManager.getCurrentPlaylistIndex();
-            Clip playing = playerManager.getCurrentPlaylistClip();
-            if (index < 0 || playing == null) return;
-
-            if (index != playbackClipIndex) {
-                playbackClipIndex = index;
-                editorTimeline.setPlaybackIndex(index);
-                applyPlayingClipState(playing);
-                FLog.d(TAG, "playlist: now on clip " + index);
-            }
-
-            long positionSourceMs = playerManager.getCurrentPosition();
-            if (playbackSeekTargetMs >= 0) {
-                boolean landed = Math.abs(positionSourceMs - playbackSeekTargetMs) <= 250;
-                boolean expired = android.os.SystemClock.elapsedRealtime()
-                        > playbackSeekDeadlineMs;
-                if (!landed && !expired) {
-                    // The seek has not landed yet; keeping the UI still beats showing
-                    // the clip's start and then jumping.
-                    return;
-                }
-                playbackSeekTargetMs = -1;
-            }
-            long localEffectiveMs =
-                    (long) (positionSourceMs / Math.max(0.1f, playing.getSpeedMultiplier()));
-            long segmentStartMs = editorTimeline.getSegmentStartTimeMs(index);
-            long playheadMs = segmentStartMs + Math.max(0, localEffectiveMs);
-
-            editorTimeline.setPlayheadPositionMs(playheadMs);
-            timeCurrent.setText(TimeFormatter.formatAuto(playheadMs));
-            lastUserPlayheadFraction = (float) (playing.getInPointMs() + positionSourceMs)
-                    / Math.max(1, playing.getSourceDurationMs());
-            return;
-        }
-
-        // The playback loop is about the clip under the playhead, not the selection.
-        Clip clip = getPlaybackClip();
-        if (clip == null) return;
-        long sourceDuration = clip.getSourceDurationMs();
-        if (sourceDuration <= 0) return;
-
-        // Don't overwrite playhead while user is dragging
-        if (userDragging) return;
-
-        // ── Image clip playback (internal timer) ─────────────────────
-        if (clip.isImageClip() && imagePlaybackActive) {
-            long positionMs = getImagePlaybackPositionMs();
-            long clipDuration = clip.getTrimmedDurationMs();
-
-            if (positionMs >= clipDuration) {
-                // Image clip reached its end — auto-advance or pause
-                stopImagePlayback();
-                Timeline timeline = project.getTimeline();
-                int nextIndex = playbackClipIndex + 1;
-                if (nextIndex < timeline.getClipCount()) {
-                    advanceToSegment(nextIndex, true);
-                } else {
-                    long timelineEndMs = editorTimeline.getTimelineEndMs();
-                    if (timelineEndMs > totalEffectiveMs()) {
-                        // Audio extends beyond image clip — enter audio-tail
-                        stopImagePlayback();
-                        audioTailActive = true;
-                        audioTailStartMs = totalEffectiveMs();
-                        audioTailStartWall = android.os.SystemClock.elapsedRealtime();
-                        updatePlayPauseButton(true);
-                        FLog.d(TAG, "Image: entering audio-tail");
-                    } else {
-                        // Last segment — set playhead to end
-                        float endFraction = (float) clip.getOutPointMs() / sourceDuration;
-                        lastUserPlayheadFraction = endFraction;
-                        editorTimeline.setPlayheadFraction(endFraction);
-                        long totalMs = timeline.getTotalDurationMs();
-                        timeCurrent.setText(TimeFormatter.formatAuto(totalMs));
-                        FLog.d(TAG, "Image playback stopped at last segment end");
-                    }
-                }
-                return;
-            }
-
-            // Convert position to source fraction for timeline view
-            float fraction = (float) (clip.getInPointMs() + positionMs) / sourceDuration;
-            fraction = Math.max(0f, Math.min(fraction, 1f));
-            lastUserPlayheadFraction = fraction;
-            editorTimeline.setPlayheadFraction(playbackClipIndex, fraction);
-            updateCurrentTimeDisplay(positionMs);
-            return;
-        }
-
-        // ── Video clip playback (ExoPlayer) ──────────────────────────
-        // Skip ExoPlayer polling for image clips (they don't have media loaded)
-        if (clip.isImageClip()) return;
-
-        // Use getPlayWhenReady() instead of isPlaying() to handle buffering state at position 0
-        boolean isPlaying = playerManager.getPlayWhenReady();
-        
-        if (isPlaying) {
-            long currentPos = playerManager.getCurrentPosition();
-            boolean isAtEnd = playerManager.isAtTrimEnd();
-            
-            // Enforce trim end — auto-advance to next segment or pause
-            if (isAtEnd) {
-                Timeline timeline = project.getTimeline();
-                int nextIndex = playbackClipIndex + 1;
-                if (nextIndex < timeline.getClipCount()) {
-                    advanceToSegment(nextIndex, true);
-                } else {
-                    // Last video segment reached its end
-                    long timelineEndMs = editorTimeline.getTimelineEndMs();
-                    if (timelineEndMs > totalEffectiveMs()) {
-                        // Audio extends beyond video — enter audio-tail mode
-                        playerManager.pause();
-                        audioTailActive = true;
-                        audioTailStartMs = totalEffectiveMs();
-                        audioTailStartWall = android.os.SystemClock.elapsedRealtime();
-                        updatePlayPauseButton(true);
-                        FLog.d(TAG, "Entering audio-tail: videoEnd=" + audioTailStartMs
-                                + " timelineEnd=" + timelineEndMs);
-                    } else {
-                        // No audio beyond video — fully stop
-                        playerManager.pause();
-                        long trimmedDur = clip.getOutPointMs() - clip.getInPointMs();
-                        float endFraction = (float) clip.getOutPointMs() / sourceDuration;
-                        lastUserPlayheadFraction = endFraction;
-                        editorTimeline.setPlayheadFraction(endFraction);
-                        long totalMs = timeline.getTotalDurationMs();
-                        timeCurrent.setText(TimeFormatter.formatAuto(totalMs));
-                        updatePlayPauseButton(false);
-                        FLog.d(TAG, "Playback stopped at last segment end");
-                    }
-                }
-                return;
-            }
-
-            long position = playerManager.getCurrentPosition(); // 0-based within trim
-            if (playbackSeekTargetMs >= 0) {
-                boolean landed = Math.abs(position - playbackSeekTargetMs) <= 250;
-                boolean expired = android.os.SystemClock.elapsedRealtime()
-                        > playbackSeekDeadlineMs;
-                if (!landed && !expired) {
-                    return;   // seek still in flight; do not move the playhead yet
-                }
-                playbackSeekTargetMs = -1;
-            }
-            long absoluteMs = clip.getInPointMs() + position;
-            float fraction = (float) absoluteMs / sourceDuration;
-            fraction = Math.max(0f, Math.min(fraction, 1f));
-
-            lastUserPlayheadFraction = fraction;
-            editorTimeline.setPlayheadFraction(playbackClipIndex, fraction);
-            updateCurrentTimeDisplay(position);
-        }
-        // ── While PAUSED: do NOT overwrite the user's playhead position ──
-    }
-
-    /**
-     * Auto-advance to a new segment during playback, handling both image and video clips.
-     *
-     * @param nextIndex     the segment index to advance to
-     * @param autoPlay      whether to start playback immediately
-     */
-    private void advanceToSegment(int nextIndex, boolean autoPlay) {
-        FLog.d(TAG, "Auto-advancing to segment " + nextIndex);
-
-        // Deactivate crop overlay when switching segments
-        if (inCropMode) {
-            exitCropMode(false);
-        } else if (cropOverlay != null && cropOverlay.isActive()) {
-            cropOverlay.deactivate();
-        }
-
-        Timeline timeline = project.getTimeline();
-        playbackClipIndex = nextIndex;
-        editorTimeline.setPlaybackIndex(nextIndex);
-        Clip nextClip = timeline.getClip(nextIndex);
-        if (nextClip == null) return;
-
-        // Restore the trim handles for whichever clip the user has selected; playback
-        // moving on must not clear or move that selection.
-        editorTimeline.setSelectedIndex(selectedClipIndex);
-        if (selectedClipIndex >= 0 && selectedClipIndex < timeline.getClipCount()) {
-            editorTimeline.setTrimFromClip(timeline.getClip(selectedClipIndex));
-        }
-
-        if (nextClip.isImageClip()) {
-            // Image clip: show image preview and start timer
-            showImagePreview(nextClip.getSourceUri());
-            if (autoPlay) {
-                startImagePlayback(0);
-            }
-        } else {
-            // Video clip: load and play
-            hideImagePreview();
-            playerManager.loadClip(nextClip);
-            playerManager.setVolume(nextClip.isAudioMuted() ? 0f : nextClip.getVolumeLevel());
-            playerManager.setPlaybackSpeed(nextClip.getSpeedMultiplier());
-            updatePreviewTransforms();
-            if (autoPlay) {
-                playerManager.play();
-            }
-        }
-
-        float startFraction = (float) nextClip.getInPointMs() / nextClip.getSourceDurationMs();
-        editorTimeline.setPlayheadFraction(nextIndex, startFraction);
-        updateCurrentTimeDisplay(0);
-    }
-
     // ── Export helpers ────────────────────────────────────────────────
 
     /**
-     * Show an export confirmation bottom sheet with project info.
-     * On confirm, starts the export via the foreground service.
+     * Shows the export settings sheet (resolution + quality). Confirming it starts the
+     * export through the foreground service with the shared composition.
      */
     private void showExportConfirmation() {
         if (isExportRunning()) {
@@ -3677,41 +2826,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
             return;
         }
 
-        Timeline tl = project.getTimeline();
-        int clipCount = tl.getClipCount();
-        long totalDurationMs = tl.getTotalDurationMs();
-        String durationStr = TimeFormatter.formatAuto(totalDurationMs);
-        boolean hasAudio = tl.hasAudioClips();
-        String audioInfo = hasAudio
-                ? " • " + tl.getAudioClips().size() + " audio"
-                : "";
-
-        String helperText = getString(R.string.faditor_export_confirm_helper,
-                durationStr, clipCount, audioInfo);
-
-        try {
-            InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newConfirm(
-                    getString(R.string.faditor_export_confirm_title),
-                    getString(R.string.faditor_export_confirm_action),
-                    getString(R.string.faditor_export_confirm_subtitle),
-                    R.drawable.ic_save,
-                    helperText,
-                    false);   // exporting is not destructive: keep the row plain
-
-            sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
-                @Override
-                public void onImportConfirmed(org.json.JSONObject json) { }
-
-                @Override
-                public void onResetConfirmed() {
-                    startExportViaService();
-                }
-            });
-            sheet.show(getSupportFragmentManager(), "export_confirm");
-        } catch (Exception e) {
-            FLog.e(TAG, "Failed to show export confirmation, starting directly", e);
+        ExportSettings settings = project.getExportSettings();
+        ExportSettingsBottomSheet sheet = ExportSettingsBottomSheet.newInstance(
+                settings.getResolution(), settings.getQuality());
+        sheet.setCallback((resolution, quality) -> {
+            settings.setResolution(resolution);
+            settings.setQuality(quality);
+            saveProjectNow();
             startExportViaService();
-        }
+        });
+        sheet.show(getSupportFragmentManager(), "export_settings");
     }
 
     /**
@@ -3725,7 +2849,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
 
         // Pause playback during export
-        playerManager.pause();
+        if (compositionPlayer != null) {
+            compositionPlayer.pause();
+            updatePlayPauseButton(false);
+        }
 
         // Pass project to the service via static bridge
         ExportService.setPendingProject(project);
@@ -3849,13 +2976,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
             });
             sheet.show(getSupportFragmentManager(), "close_confirm");
         } catch (Exception e) {
-            FLog.e(TAG, "Failed to show close confirmation sheet, using dialog fallback", e);
+            FLog.e(TAG, "Failed to show close confirmation sheet, using the dialog form", e);
             showCloseConfirmationDialog();
         }
     }
 
     /**
-     * Fallback confirmation dialog if bottom sheet fails.
+     * Dialog form used when the confirmation sheet cannot be shown.
      */
     private void showCloseConfirmationDialog() {
         new android.app.AlertDialog.Builder(this, R.style.CustomBottomSheetDialogTheme)
@@ -3931,38 +3058,37 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
 
         Clip clip = getSelectedClip();
-        if (clip == null) return;
 
         // Rebuild timeline view completely (handles both action and snapshot changes)
         editorTimeline.setTimeline(project.getTimeline(), selectedClipIndex);
-        editorTimeline.setTrimFromClip(clip);
+        if (clip != null) {
+            editorTimeline.setTrimFromClip(clip);
+        }
         editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
 
-        // Update player state
-        if (!clip.isImageClip()) {
-            playerManager.updateTrimBounds(clip);
-            playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
-            playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
-        }
-
         // Update toolbar UI
-        updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
-        updateSpeedUI(clip.getSpeedMultiplier());
-        updateRotateUI(clip.getRotationDegrees());
-        updateFlipUI(clip.isFlipHorizontal(), clip.isFlipVertical());
-        updateCropUI(clip.getCropPreset());
+        if (clip != null) {
+            if (clip.isImageClip()) {
+                updateVolumeUI(1f, false);
+                updateSpeedUI(1f);
+            } else {
+                updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
+                updateSpeedUI(clip.getSpeedMultiplier());
+            }
+            updateRotateUI(clip.getRotationDegrees());
+            updateFlipUI(clip.isFlipHorizontal(), clip.isFlipVertical());
+            updateCropUI(clip.getCropPreset());
+        }
         updateCanvasUI(project.getCanvasPreset());
         updateAudioToolUI();
 
-        // Update preview transforms (rotation, flip, crop, canvas)
-        updatePreviewTransforms();
+        // The composition carries every transform, so the model change is the preview.
+        clampPlayheadToTimeline();
+        rebuildComposition();
 
         // Update time displays
-        updateCurrentTimeDisplay(0);
+        updateCurrentTimeDisplay();
         refreshTotalTimeDisplay();
-
-        // Re-prepare audio player for any audio clip changes
-        prepareAudioPlayer();
     }
 
     // ── Auto-save ────────────────────────────────────────────────────
@@ -3970,7 +3096,22 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void scheduleAutoSave() {
         autoSaveHandler.removeCallbacks(autoSaveRunnable);
         autoSaveHandler.postDelayed(autoSaveRunnable, AUTO_SAVE_DELAY_MS);
+        scheduleCompositionRebuild();
     }
+
+    /**
+     * Refreshes the preview composition after an edit.
+     *
+     * <p>Debounced so a burst of changes (dragging a slider, several trims) rebuilds
+     * once. The playhead and play state are restored afterwards.</p>
+     */
+    private final Runnable compositionRefreshRunnable = () -> {
+        if (compositionPlayer == null || project == null) return;
+        long positionMs = editorTimeline.getPlayheadPositionMs();
+        boolean wasPlaying = compositionPlayer.isPlayingOrBuffering();
+        rebuildComposition();
+        FLog.d(TAG, "Composition refreshed at " + positionMs + "ms playing=" + wasPlaying);
+    };
 
     /**
      * Save project immediately (blocking on current thread, fast for small JSON).
@@ -4003,7 +3144,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     /**
      * Get video duration using FFprobeKit (reliable for fragmented MP4),
-     * with MediaMetadataRetriever as fallback.
+     * with a MediaMetadataRetriever pass.
      */
     private long getVideoDuration(@NonNull Uri videoUri) {
         // ── FFprobeKit (primary — reliable for fMP4) ────────────
@@ -4025,7 +3166,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             FLog.e(TAG, "FFprobe duration failed", e);
         }
 
-        // ── MediaMetadataRetriever fallback ──────────────────────
+        // ── MediaMetadataRetriever pass ──────────────────────────
         MediaMetadataRetriever retriever = null;
         try {
             retriever = new MediaMetadataRetriever();
@@ -4050,7 +3191,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     MediaMetadataRetriever.METADATA_KEY_DURATION);
             if (durationStr != null) {
                 long ms = Long.parseLong(durationStr);
-                FLog.d(TAG, "Duration from MMR fallback: " + ms + "ms");
+                FLog.d(TAG, "Duration from MediaMetadataRetriever: " + ms + "ms");
                 return ms;
             }
         } catch (Exception e) {
@@ -4245,11 +3386,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
             Clip clip = getSelectedClip();
             if (clip == null) return;
 
-            playerManager.pause();
+            if (compositionPlayer != null && compositionPlayer.isPlayingOrBuffering()) {
+                compositionPlayer.pause();
+                updatePlayPauseButton(false);
+            }
+            playbackFinished = true;
+            stopPlayheadUpdates();
 
             // Derive the split point from the VISUAL timeline playhead (authoritative)
-            // rather than playerManager.getCurrentPosition(), which may not have settled
-            // yet if a seek was still in-flight when the user tapped the split button.
+            // rather than the player position, which may not have settled yet if a seek
+            // was still in-flight when the user tapped the split button.
             long playheadMs = editorTimeline.getPlayheadPositionMs();
             long segStartMs = editorTimeline.getSegmentStartTimeMs(selectedClipIndex);
             long localEffectiveMs = Math.max(0, playheadMs - segStartMs);
@@ -4278,16 +3424,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
             Clip clipB = timeline.getClip(newIndex + 1);
             undoManager.recordAction(new EditActions.SplitClipAction(
                     timeline, originalIndex, originalClip, clipA, clipB));
-
-            // Update the player's trim end to match clip A's new out-point.
-            // Use updateTrimEndOnly so we DON'T trigger an unwanted seekTo(0).
-            // Then park the player 1 ms before the trim end (avoids the edge case where
-            // pos == trimEndMs would let play() think we're out of bounds).
-            playerManager.updateTrimEndOnly(clipA.getOutPointMs());
-            long trimmedMs = clipA.getOutPointMs() - clipA.getInPointMs();
-            if (trimmedMs > 1) {
-                playerManager.seekTo(trimmedMs - 1);
-            }
 
             // The clip list changed: the strip must be rebuilt before the highlight is
             // moved, otherwise the two halves never appear.
@@ -4345,7 +3481,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         timeline.addAudioClip(right);
 
         editorTimeline.setAudioClips(timeline.getAudioClips());
-        prepareAudioPlayer();
+        rebuildComposition();
         scheduleAutoSave();
         Toast.makeText(this, R.string.faditor_split_success, Toast.LENGTH_SHORT).show();
     }
@@ -4388,7 +3524,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
             int newIndex = Math.min(deleteIndex, timeline.getClipCount() - 1);
             selectedClipIndex = newIndex;
-            playbackClipIndex = Math.min(playbackClipIndex, timeline.getClipCount() - 1);
             refreshTimelineAfterStructuralChange();
             selectSegment(newIndex);
             saveProjectNow();
@@ -4413,11 +3548,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         timeline.removeAudioClip(audioIndex);
         editorTimeline.setAudioClips(timeline.getAudioClips());
         // An audio clip can be the longest track, so removing it changes the total.
+        clampPlayheadToTimeline();
         refreshTotalTimeDisplay();
-        releaseAudioPlayer();
-        if (timeline.hasAudioClips()) {
-            prepareAudioPlayer();
-        }
+        rebuildComposition();
         updateAudioToolUI();
         saveProjectNow();
         Toast.makeText(this, R.string.faditor_segment_deleted, Toast.LENGTH_SHORT).show();

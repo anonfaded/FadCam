@@ -724,7 +724,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
     // ── Utility methods ──────────────────────────────────────────────
 
     /**
-     * Retrieve video duration using FFprobeKit (primary) with MediaMetadataRetriever fallback.
+     * Retrieve video duration using FFprobeKit (primary) with a MediaMetadataRetriever pass.
      * Mirrors the approach used by RecordsAdapter for reliable duration on all URI schemes.
      *
      * @return duration in milliseconds, or 0 on error
@@ -750,7 +750,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
             FLog.e(TAG, "FFprobe duration failed for: " + uri, e);
         }
 
-        // ── MediaMetadataRetriever fallback ──────────────────────
+        // ── MediaMetadataRetriever pass ──────────────────────────
         MediaMetadataRetriever retriever = null;
         try {
             retriever = new MediaMetadataRetriever();
@@ -765,11 +765,11 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
                     MediaMetadataRetriever.METADATA_KEY_DURATION);
             if (durationStr != null) {
                 long durationMs = Long.parseLong(durationStr);
-                FLog.d(TAG, "Duration from MMR fallback: " + durationMs + "ms for " + uri.getLastPathSegment());
+                FLog.d(TAG, "Duration from MediaMetadataRetriever: " + durationMs + "ms for " + uri.getLastPathSegment());
                 return durationMs;
             }
         } catch (Exception e) {
-            FLog.w(TAG, "MMR fallback failed for: " + uri, e);
+            FLog.w(TAG, "MediaMetadataRetriever duration failed for: " + uri, e);
         } finally {
             if (retriever != null) {
                 try {

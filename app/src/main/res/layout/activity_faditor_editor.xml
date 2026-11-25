@@ -107,26 +107,11 @@
         android:clipToPadding="false"
         android:background="@android:color/black">
 
-        <androidx.media3.ui.PlayerView
-            android:id="@+id/player_view"
+        <SurfaceView
+            android:id="@+id/player_surface"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_gravity="center"
-            app:show_buffering="when_playing"
-            app:surface_type="texture_view"
-            app:resize_mode="fit"
-            app:use_controller="false" />
-
-        <!-- Image preview overlay for still image clips -->
-        <ImageView
-            android:id="@+id/image_preview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:scaleType="fitCenter"
-            android:background="@android:color/black"
-            android:visibility="gone"
-            android:contentDescription="@string/faditor_add_asset_image" />
+            android:layout_gravity="center" />
 
         <!-- Crop overlay (on top of player, hidden by default) -->
         <com.fadcam.ui.faditor.crop.CropOverlayView

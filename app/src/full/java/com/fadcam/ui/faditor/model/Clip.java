@@ -296,8 +296,8 @@ public class Clip {
     }
 
     /**
-     * Correct the source duration (e.g. after ExoPlayer reports the real duration
-     * for fragmented MP4 files where MediaMetadataRetriever was inaccurate).
+     * Correct the source duration when metadata extraction reports a different
+     * length than the container actually contains (fragmented MP4 edge cases).
      *
      * @param ms corrected source duration in milliseconds
      */

@@ -16,4 +16,8 @@
     <target android:name="left_eye" android:animation="@animator/anim_eye_dim_splashred" />
     <target android:name="right_eye" android:animation="@animator/anim_eye_dim_splashred" />
 
+    <!-- The same glow fade Home uses, so the red halo closes with the eyes. -->
+    <target android:name="left_glow_group" android:animation="@animator/anim_glow_out" />
+    <target android:name="right_glow_group" android:animation="@animator/anim_glow_out" />
+
 </animated-vector>

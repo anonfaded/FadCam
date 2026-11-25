@@ -1191,6 +1191,7 @@
     <string name="faditor_remuxing_percent">Optimizing… %1$ds processed</string>
     <string name="faditor_error_no_video">No video selected</string>
     <string name="faditor_error_picker">Could not open file picker</string>
+    <string name="faditor_error_read_video">Could not read this video</string>
     <string name="faditor_tool_trim">Trim</string>
     <string name="faditor_tool_speed">1x</string>
     <string name="faditor_tool_muted">Muted</string>
@@ -1254,6 +1255,16 @@
     <string name="faditor_export_confirm_action">Export Now</string>
     <string name="faditor_export_confirm_subtitle">Export will continue in background</string>
     <string name="faditor_export_confirm_helper">%1$s • %2$d clip(s)%3$s\nExport runs as a background service — you can close the app and it will keep exporting.</string>
+    <string name="faditor_export_settings_title">Export settings</string>
+    <string name="faditor_export_resolution">Resolution</string>
+    <string name="faditor_export_quality">Quality</string>
+    <string name="faditor_export_resolution_original">Original</string>
+    <string name="faditor_export_resolution_1080p">1080p</string>
+    <string name="faditor_export_resolution_720p">720p</string>
+    <string name="faditor_export_resolution_480p">480p</string>
+    <string name="faditor_export_quality_high">High</string>
+    <string name="faditor_export_quality_medium">Medium</string>
+    <string name="faditor_export_quality_low">Low</string>
 
     <!-- Export notification -->
     <string name="faditor_export_notif_channel">Faditor Export</string>
