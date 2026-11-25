@@ -215,6 +215,120 @@ public class FastFileScannerSignatureTest {
         assertNotEquals(before, FastFileScanner.computeDirectorySignature(base));
     }
 
+    // ── Arbitrary depth: the tree may grow deeper later ─────────────────
+
+    /** Creates a/b/c/... of the requested depth under the category root. */
+    private File deepDir(String category, int depth) {
+        StringBuilder path = new StringBuilder(base.getAbsolutePath())
+                .append(File.separator).append(category);
+        for (int i = 0; i < depth; i++) {
+            path.append(File.separator).append("level").append(i);
+        }
+        File dir = new File(path.toString());
+        assertTrue("mkdirs failed: " + dir, dir.mkdirs());
+        return dir;
+    }
+
+    @Test
+    public void filesAtAnyDepthChangeSignature() throws IOException {
+        // 1..6 levels below the category root — the walk must not assume a fixed depth.
+        for (int depth = 1; depth <= 6; depth++) {
+            makeTree();
+            String category = Constants.RECORDING_SUBDIR_FADITOR;
+            long before = FastFileScanner.computeDirectorySignature(base);
+
+            File leaf = deepDir(category, depth);
+            writeFile(leaf, "deep_" + depth + ".mp4", 64);
+
+            assertNotEquals("depth " + depth + " is not covered by the signature",
+                    before, FastFileScanner.computeDirectorySignature(base));
+            tmp.delete();
+        }
+    }
+
+    @Test
+    public void newEmptyFolderAtAnyDepthChangesSignature() throws IOException {
+        for (int depth = 2; depth <= 5; depth++) {
+            makeTree();
+            long before = FastFileScanner.computeDirectorySignature(base);
+            deepDir(Constants.RECORDING_SUBDIR_CAMERA, depth);
+            assertNotEquals("folder at depth " + depth + " not detected",
+                    before, FastFileScanner.computeDirectorySignature(base));
+            tmp.delete();
+        }
+    }
+
+    @Test
+    public void realFaditorMergeLayoutIsCovered() throws IOException {
+        // Faditor/Merge/ — the layout the user called out.
+        makeTree();
+        File merge = new File(base, Constants.RECORDING_SUBDIR_FADITOR
+                + File.separator + Constants.RECORDING_SUBDIR_FADITOR_MERGE);
+        assertTrue(merge.mkdirs());
+        long before = FastFileScanner.computeDirectorySignature(base);
+
+        writeFile(merge, "merged.mp4", 512);
+
+        assertNotEquals("Faditor/Merge file not detected",
+                before, FastFileScanner.computeDirectorySignature(base));
+    }
+
+    @Test
+    public void realMiniAppsLayoutIsCovered() throws IOException {
+        // MiniApps/QRScanner/ and MiniApps/QRGenerator/
+        makeTree();
+        File qr = new File(base, Constants.RECORDING_SUBDIR_MINIAPPS
+                + File.separator + Constants.RECORDING_SUBDIR_MINIAPPS_QR);
+        assertTrue(qr.mkdirs());
+        long before = FastFileScanner.computeDirectorySignature(base);
+
+        writeFile(qr, "scan.png", 128);
+
+        assertNotEquals("MiniApps/QRScanner file not detected",
+                before, FastFileScanner.computeDirectorySignature(base));
+    }
+
+    @Test
+    public void deepDeletionChangesSignature() throws IOException {
+        makeTree();
+        File leaf = deepDir(Constants.RECORDING_SUBDIR_FADITOR, 4);
+        File f = writeFile(leaf, "gone.mp4", 256);
+        long before = FastFileScanner.computeDirectorySignature(base);
+
+        assertTrue(f.delete());
+
+        assertNotEquals("deep deletion not detected",
+                before, FastFileScanner.computeDirectorySignature(base));
+    }
+
+    @Test
+    public void deepResizeChangesSignature() throws IOException {
+        makeTree();
+        File leaf = deepDir(Constants.RECORDING_SUBDIR_CAMERA, 3);
+        File f = writeFile(leaf, "grow.mp4", 16);
+        long before = FastFileScanner.computeDirectorySignature(base);
+
+        try (FileOutputStream out = new FileOutputStream(f, true)) {
+            out.write(new byte[2048]);
+        }
+
+        assertNotEquals("deep rewrite not detected",
+                before, FastFileScanner.computeDirectorySignature(base));
+    }
+
+    @Test
+    public void listingOrderDoesNotAffectSignature() throws IOException {
+        // Two sibling files created in opposite orders must still hash the same way,
+        // because the walk sorts by name. Otherwise a fresh scan could flip the
+        // fingerprint and re-trigger a full walk on every visit.
+        makeTree();
+        writeFile(new File(base, Constants.RECORDING_SUBDIR_CAMERA), "a.mp4", 100);
+        writeFile(new File(base, Constants.RECORDING_SUBDIR_CAMERA), "b.mp4", 200);
+        long first = FastFileScanner.computeDirectorySignature(base);
+        long second = FastFileScanner.computeDirectorySignature(base);
+        assertEquals("signature must be deterministic across calls", first, second);
+    }
+
     @Test
     public void twoDifferentFilesDoNotCollide() throws IOException {
         // Two separate trees, since makeTree() creates FadCam/ inside the same temp root.

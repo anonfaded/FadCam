@@ -20,6 +20,7 @@ import com.fadcam.ui.VideoItem;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -263,48 +264,52 @@ public class FastFileScanner {
         for (String category : categories) {
             File dir = new File(baseDir, category);
             boolean exists = dir.exists();
+            // Fold the directory's own mtime in first so a rename/recreate is caught even
+            // when the child set happens to hash the same.
             signature = signature * 31 + (exists ? dir.lastModified() : 0L);
             if (!exists) {
                 continue;
             }
-            File[] children = dir.listFiles();
-            if (children == null) {
-                continue;
-            }
-            int childCount = 0;
-            long childSum = 0L;
-            for (File child : children) {
-                if (child == null) {
-                    continue;
-                }
-                if (child.isDirectory()) {
-                    childCount++;
-                    childSum += child.lastModified() * 31L + child.getName().hashCode();
-                    // Files one level deeper (Camera/Back, FadShot/Selfie, …) must count too.
-                    File[] nested = child.listFiles();
-                    if (nested == null) continue;
-                    for (File f : nested) {
-                        if (f == null) continue;
-                        childCount++;
-                        childSum += f.lastModified() * 31L
-                                + f.length()
-                                + f.getName().hashCode();
-                    }
-                } else {
-                    // Files matter too. Hashing only subdirectories meant a new recording or
-                    // FadShot dropped straight into Camera/ or FadShot/ (no new folder) left
-                    // the signature unchanged, so isIndexFresh() reported "unchanged" and the
-                    // new file was never indexed until a cold start.
-                    childCount++;
-                    childSum += child.lastModified() * 31L
-                            + child.length()
-                            + child.getName().hashCode();
-                }
-            }
-            signature = signature * 31 + childCount;
-            signature = signature * 31 + childSum;
+            // Walk the whole subtree. The tree is genuinely deeper than one level
+            // (Camera/Back, Camera/Dual, FadShot/Selfie, Faditor/Merge,
+            // MiniApps/QRScanner, …) and may grow further, so depth is not assumed.
+            signature = foldTree(dir, signature);
         }
         return signature == 0 ? 1 : signature;
+    }
+
+    /**
+     * Recursively folds every entry of {@code dir} into {@code signature}. Deterministic:
+     * entries are sorted by name, so identical trees always hash identically regardless of
+     * filesystem listing order, and any added / removed / resized / renamed file changes the
+     * result.
+     *
+     * <p>Depth is unbounded. An earlier version only looked one level deep, which meant a
+     * file written into an existing leaf folder (a FadShot into {@code FadShot/}, a recording
+     * into {@code Camera/}) left the fingerprint untouched, so the delta scan was skipped and
+     * the file stayed invisible until a cold start.</p>
+     */
+    private static long foldTree(@NonNull File dir, long signature) {
+        File[] children = dir.listFiles();
+        if (children == null || children.length == 0) {
+            return signature;
+        }
+        Arrays.sort(children, (a, b) -> a.getName().compareTo(b.getName()));
+        for (File child : children) {
+            if (child == null) {
+                continue;
+            }
+            signature = signature * 31 + child.getName().hashCode();
+            signature = signature * 31 + child.lastModified();
+            if (child.isDirectory()) {
+                signature = foldTree(child, signature);
+            } else {
+                // File size catches in-place rewrites (a finalized Hybrid MP4 changes size
+                // without necessarily bumping the mtime on every filesystem).
+                signature = signature * 31 + child.length();
+            }
+        }
+        return signature;
     }
 
     /**
