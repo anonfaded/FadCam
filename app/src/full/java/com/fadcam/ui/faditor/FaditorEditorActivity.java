@@ -2528,7 +2528,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 @Override
                 public void onExportStarted(@NonNull String outputPath) {
                     exportStartTimeMs = System.currentTimeMillis();
-                    runOnUiThread(() -> showExportProgress());
+                    // Normally unreachable: startExportViaService() already closed the
+                    // editor. Kept so a late callback can never leave the user staring at
+                    // a full-screen overlay while the export runs elsewhere.
+                    runOnUiThread(() -> {
+                        if (!isFinishing()) returnToFaditorOnExportStart();
+                    });
                 }
 
                 @Override
@@ -2605,6 +2610,17 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     });
                 }
             };
+
+    /**
+     * Closes the editor as soon as the export service has taken over, returning to the
+     * Faditor tab. The project is saved first so the entry in Recent Projects is current,
+     * and the caller's result refreshes that list.
+     */
+    private void returnToFaditorOnExportStart() {
+        saveProjectNow();
+        setResult(RESULT_OK);
+        finish();
+    }
 
     /**
      * Format remaining time estimate into human-readable string.
@@ -3048,8 +3064,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         bindService(new android.content.Intent(this, ExportService.class),
                 exportServiceConnection, BIND_AUTO_CREATE);
 
-        // Show export info on the overlay
-        showExportInfoOnScreen();
+        // Hand the user back to the Faditor tab right away: the service owns the
+        // export now, and the tab's header dock is where progress belongs.
+        returnToFaditorOnExportStart();
     }
 
     /**

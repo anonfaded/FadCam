@@ -1778,11 +1778,8 @@ public class RecordingService extends Service {
             // (NOT during preview-only mode — prevents mic/sensor memory leaks)
             // setup log removed
 
-            // Shared watermark manager (DRY — used by both single and dual camera)
-            if (watermarkManager == null) {
-                watermarkManager = new com.fadcam.watermark.WatermarkManager(this, sharedPreferencesManager);
-            }
-            watermarkManager.initialize(locationHelper);
+            // Shared watermark manager (DRY — used by camera, dual camera and screen recording)
+            ensureWatermarkManager();
 
             // Only start sensor/noise/weather providers if the master watermark
             // is enabled AND individual features are turned on.
@@ -2051,7 +2048,14 @@ public class RecordingService extends Service {
                             .setContentTitle(getString(R.string.app_name))
                             .setContentText("Torch toggled")
                             .setSmallIcon(R.drawable.ic_notification_icon);
-                    startForeground(NOTIFICATION_ID, minimalBuilder.build());
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        // Explicit subset: never claim the optional location type for a torch
+                        // notification, so it works without location permission.
+                        startForeground(NOTIFICATION_ID, minimalBuilder.build(),
+                                ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA);
+                    } else {
+                        startForeground(NOTIFICATION_ID, minimalBuilder.build());
+                    }
                     // Stop the service immediately after torch toggle since we're not recording
                     new Handler(Looper.getMainLooper()).postDelayed(this::stopSelf, 100);
                 } catch (Exception e) {
@@ -4195,7 +4199,7 @@ public class RecordingService extends Service {
     }
 
     @Nullable
-    private String buildForensicsOverlayPayload() {
+    private String buildForensicsOverlayPayload(@NonNull String watermarkText) {
         if (sharedPreferencesManager == null || !sharedPreferencesManager.isDfOverlayEnabled()) {
             return null;
         }
@@ -4207,12 +4211,8 @@ public class RecordingService extends Service {
             return null;
         }
 
-        String watermarkText = buildBaseWatermarkText();
-        if (watermarkText == null) {
-            watermarkText = "";
-        }
         // Only sanitize the separator token; preserve newlines for proper watermark layout
-        watermarkText = watermarkText.replace("||wm||", " ");
+        watermarkText = watermarkText == null ? "" : watermarkText.replace("||wm||", " ");
 
         long nowLog = SystemClock.elapsedRealtime();
         if (nowLog - lastOverlayPayloadLogMs >= 5000L) {
@@ -4252,77 +4252,29 @@ public class RecordingService extends Service {
         return out.length() == 0 ? null : out.toString();
     }
 
-    private String buildBaseWatermarkText() {
-        if (sharedPreferencesManager == null) {
-            return "";
-        }
-        String watermarkOption = sharedPreferencesManager.getWatermarkOption();
-        String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
-        String customText = sharedPreferencesManager.getWatermarkCustomText();
-        String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
-        String finalText;
-        switch (watermarkOption) {
-            case "timestamp_fadcam":
-                finalText = "Captured by <FADCAM_ICON> - " + getCurrentTimestamp() + getTimezoneSuffix() + locationText + customTextLine;
-                break;
-            case "badge_fadcam":
-                finalText = "Captured by <FADCAM_ICON>" + customTextLine;
-                break;
-            case "timestamp":
-                finalText = getCurrentTimestamp() + getTimezoneSuffix() + locationText + customTextLine;
-                break;
-            case "no_watermark":
-                finalText = "";
-                break;
-            default:
-                finalText = "Captured by FadCam - " + getCurrentTimestamp() + getTimezoneSuffix() + locationText + customTextLine;
-        }
-        if (!finalText.isEmpty()) {
-            finalText += getExtendedSensorData();
-            FLog.d(TAG, "🎬 Watermark text generated: [" + finalText.replace("\n", " | ") + "]");
-        } else {
-            finalText += getExtendedSensorData();
-        }
-        return finalText;
-    }
-
+    /**
+     * Single-camera provider: the shared {@link com.fadcam.watermark.WatermarkManager} owns the
+     * text (identical to dual camera and FadRec), and the digital-forensics overlay is wrapped
+     * around it when active.
+     */
     private void ensureWatermarkInfoProvider() {
         if (watermarkInfoProvider != null) return;
-        watermarkInfoProvider = new WatermarkInfoProvider() {
-            @Override
-            public String getWatermarkText() {
-                String dfOverlayPayload = buildForensicsOverlayPayload();
-                if (dfOverlayPayload != null) {
-                    return dfOverlayPayload;
-                }
-                String watermarkOption = sharedPreferencesManager.getWatermarkOption();
-                String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
-                String customText = sharedPreferencesManager.getWatermarkCustomText();
-                String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
-                String finalText;
-                switch (watermarkOption) {
-                    case "timestamp_fadcam":
-                        finalText = "Captured by <FADCAM_ICON> - " + getCurrentTimestamp() + getTimezoneSuffix() + locationText + customTextLine;
-                        break;
-                    case "badge_fadcam":
-                        finalText = "Captured by <FADCAM_ICON>" + customTextLine;
-                        break;
-                    case "timestamp":
-                        finalText = getCurrentTimestamp() + getTimezoneSuffix() + locationText + customTextLine;
-                        break;
-                    case "no_watermark":
-                        finalText = "";
-                        break;
-                    default:
-                        finalText = "Captured by FadCam - " + getCurrentTimestamp() + getTimezoneSuffix() + locationText + customTextLine;
-                }
-                if (!finalText.isEmpty()) {
-                    // Watermark text built; logging omitted (fires every second during recording)
-                }
-                finalText += getExtendedSensorData();
-                return finalText;
-            }
+        ensureWatermarkManager();
+        watermarkInfoProvider = () -> {
+            com.fadcam.watermark.WatermarkManager manager = watermarkManager;
+            if (manager == null) return "";
+            String watermarkText = manager.getWatermarkText();
+            String dfOverlayPayload = buildForensicsOverlayPayload(watermarkText);
+            return dfOverlayPayload != null ? dfOverlayPayload : watermarkText;
         };
+    }
+
+    /** Creates the shared manager once; later calls only adopt a refreshed LocationHelper. */
+    private void ensureWatermarkManager() {
+        if (watermarkManager == null) {
+            watermarkManager = new com.fadcam.watermark.WatermarkManager(this, sharedPreferencesManager);
+        }
+        watermarkManager.initialize(locationHelper);
     }
 
     /**
@@ -6413,6 +6365,9 @@ public class RecordingService extends Service {
                     } else {
                         FLog.w(TAG, "RECORD_AUDIO permission not granted, starting foreground without MICROPHONE type");
                     }
+                    // Optional location FGS type: only declare it when GPS data is actually
+                    // needed and granted, so recording never fails on Android 14+ without it.
+                    foregroundServiceType |= locationForegroundServiceType();
 
                     if (foregroundServiceType == 0) {
                         FLog.e(TAG, "Neither CAMERA nor RECORD_AUDIO permission granted, cannot start foreground service");
@@ -6455,6 +6410,7 @@ public class RecordingService extends Service {
             } else {
                 FLog.w(TAG, "RECORD_AUDIO permission not granted, starting foreground without MICROPHONE type");
             }
+            foregroundServiceType |= locationForegroundServiceType();
 
             if (foregroundServiceType == 0) {
                 FLog.e(TAG, "Neither CAMERA nor RECORD_AUDIO permission granted, cannot start foreground service");
@@ -7169,6 +7125,12 @@ public class RecordingService extends Service {
             }
         }
 
+        // Keep the shared watermark manager on the same helper (or release it when all
+        // location features were switched off mid-session).
+        if (watermarkManager != null) {
+            watermarkManager.updateLocationHelper(locationHelper);
+        }
+
         FLog.d(TAG, "==== Location Helpers Reinitialization Complete ====");
     }
 
@@ -7178,6 +7140,20 @@ public class RecordingService extends Service {
      */
     private boolean needsLocationData() {
         return LocationFeedGate.needsLocationData(sharedPreferencesManager);
+    }
+
+    /**
+     * Adds the location foreground-service type only when GPS is actually needed and the
+     * runtime permission exists. Declaring it unconditionally would fail the foreground
+     * start on Android 14+ for users who keep location features disabled.
+     */
+    private int locationForegroundServiceType() {
+        if (sharedPreferencesManager == null || !needsLocationData()) return 0;
+        boolean fine = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        boolean coarse = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        return (fine || coarse) ? ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION : 0;
     }
 
     /**

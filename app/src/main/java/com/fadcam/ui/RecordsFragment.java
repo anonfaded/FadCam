@@ -2044,6 +2044,11 @@ public class RecordsFragment extends BaseFragment implements
         }
         // RecordsFragment -----
         registerRecordingCompleteReceiver();
+
+        // Pending repairs are persisted, so a banner must never depend on a scan
+        // finishing after this view exists: a rotation destroys and rebuilds the view
+        // while the scan is still running, and its callback then hits a null view.
+        showRepairBannerIfNeeded();
     } // End onViewCreated
 
     /**

@@ -282,8 +282,14 @@ public class AnimatedTextView extends AppCompatTextView {
 
         // Window = the line the text actually occupies at rest (same origin TextView uses).
         Layout resting = getLayout();
-        boolean singleLine = resting != null
-                && resting.getLineCount() == 1
+        if (resting == null || resting.getLineCount() == 0) {
+            // The view can be attached with a size but no TextLayout yet (e.g. the home stats
+            // row is updated by a posted runnable right as the fragment returns from recording).
+            // There is no baseline to animate against — settle on the new value.
+            setText(newText);
+            return;
+        }
+        boolean singleLine = resting.getLineCount() == 1
                 && slotOldLayout.getLineCount() == 1
                 && slotNewLayout.getLineCount() == 1;
         // Resting baseline of the text, exactly as TextView.onDraw() would place it.

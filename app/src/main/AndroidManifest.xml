@@ -73,6 +73,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
@@ -386,7 +387,7 @@
             android:exported="false" />
 
         <!-- Services and receivers remain unchanged -->
-        <service android:name=".services.RecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="camera|microphone" />
+        <service android:name=".services.RecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="camera|microphone|location" />
 
         <!-- Quick Settings tile for start/stop recording with camera switch -->
         <service
@@ -401,13 +402,13 @@
         </service>
 
         <!-- Dual Camera Recording Service for PiP dual camera recording -->
-        <service android:name=".dualcam.service.DualCameraRecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="camera|microphone" />
+        <service android:name=".dualcam.service.DualCameraRecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="camera|microphone|location" />
 
         <!-- Remote Streaming Service for HTTP LAN streaming -->
         <service android:name=".streaming.RemoteStreamService" android:enabled="true" android:exported="false" android:foregroundServiceType="dataSync" />
 
         <!-- Screen Recording Service for FadRec feature -->
-        <service android:name=".fadrec.services.ScreenRecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="mediaProjection|microphone" />
+        <service android:name=".fadrec.services.ScreenRecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="mediaProjection|microphone|location" />
 
         <!-- Quick Settings tile for FadRec screen recording start/stop -->
         <service

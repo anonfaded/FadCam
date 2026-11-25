@@ -418,13 +418,17 @@ public class VideoSettingsFragment extends Fragment {
 
     private Runnable pendingLocationGrantedAction;
 
-    private final androidx.activity.result.ActivityResultLauncher<String> locationPermissionLauncher =
+    private final androidx.activity.result.ActivityResultLauncher<String[]> locationPermissionLauncher =
             registerForActivityResult(
-                    new androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
-                    granted -> {
+                    new androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions(),
+                    result -> {
+                        boolean fine = Boolean.TRUE.equals(result.get(
+                                android.Manifest.permission.ACCESS_FINE_LOCATION));
+                        boolean coarse = Boolean.TRUE.equals(result.get(
+                                android.Manifest.permission.ACCESS_COARSE_LOCATION));
                         Runnable action = pendingLocationGrantedAction;
                         pendingLocationGrantedAction = null;
-                        if (granted && action != null) action.run();
+                        if ((fine || coarse) && action != null) action.run();
                     });
 
     private void showLocationEmbedSheet() {
@@ -459,7 +463,9 @@ public class VideoSettingsFragment extends Fragment {
             onGranted.run();
         } else {
             pendingLocationGrantedAction = onGranted;
-            locationPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION);
+            locationPermissionLauncher.launch(new String[]{
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION});
         }
     }
     // -------------- Additional methods for location embedding end -----------

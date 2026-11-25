@@ -2,6 +2,7 @@ package com.fadcam.fadrec.services;
 
 import com.fadcam.Log;
 import com.fadcam.FLog;
+import android.Manifest;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -41,8 +42,8 @@ import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.fadrec.ScreenRecordingState;
 import com.fadcam.fadrec.encoding.ScreenRecordingPipeline;
-import com.fadcam.opengl.WatermarkInfoProvider;
 import com.fadcam.utils.RecordingStoragePaths;
+import com.fadcam.watermark.WatermarkManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,6 +69,8 @@ public class ScreenRecordingService extends Service {
     
     // Recording pipeline (MediaCodec + FragmentedMp4)
     private ScreenRecordingPipeline recordingPipeline;
+    /** Shared watermark engine — same settings and lines as camera recording. */
+    private WatermarkManager watermarkManager;
     private File outputFile;
     // SAF storage support (for custom storage location)
     private android.os.ParcelFileDescriptor safRecordingPfd;
@@ -310,7 +313,9 @@ public class ScreenRecordingService extends Service {
         Notification notification = createNotification();
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+            startForeground(NOTIFICATION_ID, notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+                            | locationFgTypeIfNeeded());
         } else {
             startForeground(NOTIFICATION_ID, notification);
         }
@@ -540,6 +545,11 @@ public class ScreenRecordingService extends Service {
 
         // Build recording pipeline
         try {
+            if (watermarkManager == null) {
+                watermarkManager = new WatermarkManager(
+                        this, sharedPreferencesManager, WatermarkManager.Mode.SCREEN_RECORDING);
+                watermarkManager.initialize(null);
+            }
             ScreenRecordingPipeline.Builder pipelineBuilder = new ScreenRecordingPipeline.Builder(this)
                 .setScreenDimensions(videoWidth, videoHeight, screenDensity)
                 .setVideoConfig(fps, finalBitrate)
@@ -547,7 +557,7 @@ public class ScreenRecordingService extends Service {
                 .setAudioSource(audioSource)
                 .setMediaProjection(mediaProjection)
                 .setVideoCodec(sharedPreferencesManager.getScreenRecordingCodec())
-                .setWatermarkInfoProvider(createWatermarkInfoProvider());
+                .setWatermarkInfoProvider(watermarkManager);
 
             // Use FileDescriptor for SAF mode, file path for internal storage
             if (safRecordingPfd != null) {
@@ -719,7 +729,8 @@ public class ScreenRecordingService extends Service {
                 acquireWakeLock();
                 
                 // Start foreground service with notification
-                int fgTypes = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION;
+                int fgTypes = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+                        | locationFgTypeIfNeeded();
                 if (enableAudioForSession) {
                     fgTypes |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
                 }
@@ -788,41 +799,21 @@ public class ScreenRecordingService extends Service {
     }
     
     /**
-     * Creates watermark info provider for screen recordings.
-     * Respects the same watermark settings as FadCam mode.
+     * Adds the location foreground-service type only when GPS is needed and permitted, so a
+     * screen recording with location features off never trips the Android 14+ type check.
      */
-    private WatermarkInfoProvider createWatermarkInfoProvider() {
-        return () -> {
-            String watermarkOption = sharedPreferencesManager.getWatermarkOption();
-            if ("no_watermark".equals(watermarkOption)) {
-                return "";
-            }
-            String timestamp = getRecordingTimestamp();
-            String customText = sharedPreferencesManager.getWatermarkCustomText();
-            String customLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
-            switch (watermarkOption) {
-                case "timestamp":
-                    return timestamp + customLine;
-                case "badge_fadcam":
-                    return "Recorded by <ICON>" + customLine;
-                case "timestamp_fadcam":
-                default:
-                    return "Recorded by <ICON> - " + timestamp + customLine;
-            }
-        };
+    private int locationFgTypeIfNeeded() {
+        if (sharedPreferencesManager == null) return 0;
+        if (!com.fadcam.services.LocationFeedGate.needsLocationData(sharedPreferencesManager)) {
+            return 0;
+        }
+        boolean fine = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        boolean coarse = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        return (fine || coarse) ? ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION : 0;
     }
 
-    /**
-     * Returns the current date/time as a formatted timestamp string for the watermark.
-     */
-    private String getRecordingTimestamp() {
-        // Abbreviated day (e.g. "Wed, ") included when the Day toggle is on.
-        String pattern = (sharedPreferencesManager.isWatermarkDayEnabled() ? "EEE, " : "")
-                + "dd/MMM/yyyy hh:mm:ss a";
-        SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.ENGLISH);
-        return sdf.format(new Date());
-    }
-    
     /**
      * Clean up recording pipeline
      */
@@ -865,6 +856,15 @@ public class ScreenRecordingService extends Service {
             try { currentSegmentPfd.close(); } catch (Exception ignore) {}
             currentSegmentPfd = null;
         }
+
+        // The watermark manager owns GPS/sensor/mic providers; release them with the session.
+        if (watermarkManager != null) {
+            watermarkManager.destroy();
+            watermarkManager = null;
+        }
+        // Reset singletons so the next session cannot inherit a stale fix/noise reading.
+        com.fadcam.sensors.SensorDataProvider.resetInstance();
+        com.fadcam.audio.NoiseMonitor.resetInstance();
     }
 
     /**
@@ -1037,6 +1037,7 @@ public class ScreenRecordingService extends Service {
                 if (recordingPipeline != null) {
                     recordingPipeline.pauseRecording();
                 }
+                if (watermarkManager != null) watermarkManager.pauseSensors();
                 recordingState = ScreenRecordingState.PAUSED;
                 sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.PAUSED.name());
                 
@@ -1078,6 +1079,7 @@ public class ScreenRecordingService extends Service {
                 if (recordingPipeline != null) {
                     recordingPipeline.resumeRecording();
                 }
+                if (watermarkManager != null) watermarkManager.resumeSensors(null);
                 recordingState = ScreenRecordingState.IN_PROGRESS;
                 sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.IN_PROGRESS.name());
                 

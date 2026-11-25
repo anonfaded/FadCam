@@ -155,6 +155,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
             android:background="@drawable/bg_records_delete_dock"
             android:orientation="vertical"
             android:visibility="gone"
@@ -272,6 +273,7 @@
             android:paddingTop="10dp"
             android:paddingBottom="10dp"
             android:layout_marginTop="10dp"
+            android:layout_marginBottom="12dp"
             android:visibility="gone"
             android:clipChildren="false"
             android:clipToPadding="false">

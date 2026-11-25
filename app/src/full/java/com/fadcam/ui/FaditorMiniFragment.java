@@ -256,8 +256,10 @@ public class FaditorMiniFragment extends BaseFragment {
                     requireContext().startService(cancelIntent);
                     FLog.d(TAG, "Sent cancel intent to ExportService");
                 } else {
-                    // After completion/error/cancel, dismiss the dock
+                    // After completion/error/cancel, dismiss the dock and forget the
+                    // finished export so a later view rebuild does not resurrect it.
                     hideDockWithAnimation();
+                    com.fadcam.ui.faditor.export.ExportService.clearSnapshot();
                 }
             });
         }
@@ -338,6 +340,67 @@ public class FaditorMiniFragment extends BaseFragment {
         super.onResume();
         FLog.d("FaditorMiniFragment", "onResume called");
         refreshRecentProjects();
+        restoreExportDockState();
+    }
+
+    /**
+     * Puts the export dock back on screen after its view was recreated by a rotation,
+     * a tab switch or an editor round-trip, in whatever state the service is in.
+     * Broadcasts alone are not enough: a detached fragment drops them, so the service
+     * keeps a snapshot that the newly inflated view re-reads here.
+     */
+    private void restoreExportDockState() {
+        if (exportDock == null || !isAdded()) return;
+        if (exportDock.getVisibility() == View.VISIBLE) return;
+
+        com.fadcam.ui.faditor.export.ExportService.State state =
+                com.fadcam.ui.faditor.export.ExportService.getStateSnapshot();
+        if (state == com.fadcam.ui.faditor.export.ExportService.State.IDLE) return;
+
+        String outputPath =
+                com.fadcam.ui.faditor.export.ExportService.getOutputPathSnapshot();
+        float progress =
+                com.fadcam.ui.faditor.export.ExportService.getProgressSnapshot();
+
+        switch (state) {
+            case RUNNING:
+                exportStartTimeMs = System.currentTimeMillis();
+                isExportActive = true;
+                if (exportDockTitle != null) {
+                    exportDockTitle.setText(getString(R.string.faditor_export_progress));
+                }
+                if (exportDockIcon != null) {
+                    exportDockIcon.setImageResource(android.R.drawable.ic_menu_save);
+                }
+                if (exportDockProgress != null) {
+                    exportDockProgress.setProgress(Math.round(progress * 100f));
+                }
+                if (exportDockCurrent != null && outputPath != null) {
+                    exportDockCurrent.setText(new java.io.File(outputPath).getName());
+                }
+                if (exportDockOk != null) {
+                    exportDockOk.setVisibility(View.VISIBLE);
+                    exportDockOk.setText(R.string.records_delete_header_action_cancel);
+                }
+                break;
+            case COMPLETED:
+                showCompletedDock(outputPath);
+                break;
+            case ERROR:
+                showErrorDock(com.fadcam.ui.faditor.export.ExportService
+                        .getErrorMessageSnapshot());
+                break;
+            case CANCELLED:
+                showCancelledDock();
+                break;
+            default:
+                return;
+        }
+
+        exportDock.setVisibility(View.VISIBLE);
+        exportDock.setAlpha(1f);
+        exportDock.setTranslationY(0f);
+        FLog.d(TAG, "Export dock restored from service snapshot: " + state);
     }
 
     @Override
@@ -1061,54 +1124,42 @@ public class FaditorMiniFragment extends BaseFragment {
      */
     private void handleExportCompleted(String outputPath) {
         if (exportDock == null) return;
-
         FLog.d(TAG, "Export completed: " + outputPath);
+        showCompletedDock(outputPath);
+    }
+
+    /**
+     * Renders the finished-export dock. Shared by the live broadcast and by
+     * {@link #restoreExportDockState()} so a completed export looks identical whether
+     * it finished while the user was watching or while the view was being rebuilt.
+     */
+    private void showCompletedDock(@Nullable String outputPath) {
         isExportActive = false;
 
-        // Update icon to checkmark
         if (exportDockIcon != null) {
-            exportDockIcon.setImageResource(android.R.drawable.ic_input_add);  // Use system icon as fallback
-            // Try to set to check_circle if available
-            try {
-                exportDockIcon.setImageResource(R.drawable.ic_check_circle);
-            } catch (Exception ignore) {}
+            exportDockIcon.setImageResource(R.drawable.ic_check_circle);
         }
-
-        // Update title
         if (exportDockTitle != null) {
             exportDockTitle.animateSlot(getString(R.string.faditor_export_completed), 300);
         }
-
-        // Ensure progress is at 100%
         if (exportDockProgress != null) {
             exportDockProgress.setProgress(100);
         }
-
-        // Show dismiss hint (matching Records tab style)
         if (exportDockEta != null) {
             exportDockEta.setText(getString(R.string.records_delete_header_dismiss_hint));
         }
-
-        // Show file size summary
         if (exportDockSummary != null && outputPath != null) {
             long fileSizeBytes = new java.io.File(outputPath).length();
-            String sizeStr = android.text.format.Formatter.formatFileSize(requireContext(), fileSizeBytes);
+            String sizeStr = android.text.format.Formatter.formatFileSize(
+                    requireContext(), fileSizeBytes);
             exportDockSummary.setText(getString(R.string.export_file_size, sizeStr));
         }
-
-        // Show OK button after a brief delay
+        if (exportDockCurrent != null && outputPath != null) {
+            exportDockCurrent.setText(new java.io.File(outputPath).getName());
+        }
         if (exportDockOk != null) {
-            exportDockOk.postDelayed(() -> {
-                if (exportDockOk != null) {
-                    exportDockOk.setVisibility(View.VISIBLE);
-                    exportDockOk.animateSlot(getString(R.string.records_delete_header_action_ok), 300);
-                    exportDockOk.setAlpha(0f);
-                    exportDockOk.animate()
-                            .alpha(1f)
-                            .setDuration(200)
-                            .start();
-                }
-            }, 600);
+            exportDockOk.setVisibility(View.VISIBLE);
+            exportDockOk.setText(R.string.records_delete_header_action_ok);
         }
     }
 
@@ -1117,53 +1168,29 @@ public class FaditorMiniFragment extends BaseFragment {
      */
     private void handleExportError(String errorMessage) {
         if (exportDock == null) return;
-
         FLog.d(TAG, "Export error: " + errorMessage);
+        showErrorDock(errorMessage);
+    }
+
+    /** Renders the failed-export dock (see {@link #showCompletedDock}). */
+    private void showErrorDock(@Nullable String errorMessage) {
         isExportActive = false;
 
-        // Update icon to error
         if (exportDockIcon != null) {
             exportDockIcon.setImageResource(R.drawable.ic_error);
         }
-
-        // Update title
         if (exportDockTitle != null) {
             exportDockTitle.animateSlot(getString(R.string.faditor_export_failed), 300);
         }
-
-        // Show error message
-        if (exportDockCurrent != null) {
+        if (exportDockCurrent != null && errorMessage != null) {
             exportDockCurrent.setText(errorMessage);
         }
-
-        // Show ETA as error hint
         if (exportDockEta != null) {
             exportDockEta.setText(R.string.export_error_hint);
         }
-
-        // Show OK button to dismiss
         if (exportDockOk != null) {
             exportDockOk.setVisibility(View.VISIBLE);
-            exportDockOk.animateSlot(getString(R.string.records_delete_header_action_ok), 300);
-        }
-    }
-
-    /**
-     * Check if there's an active export and bind to ExportService to receive updates.
-     * Called from onResume() to restore dock state after configuration change.
-     */
-    private void checkAndBindExportService() {
-        try {
-            // Create a temporary intent to check if service is running
-            // For now, just schedule a check after a delay
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                if (!isAdded()) return;
-                
-                // This would be called from ExportService callbacks in a real implementation
-                // For now, the Faditor editor will notify us when it launches the service
-            }, 100);
-        } catch (Exception e) {
-            FLog.e(TAG, "Error checking export service", e);
+            exportDockOk.setText(R.string.records_delete_header_action_ok);
         }
     }
 
@@ -1234,34 +1261,26 @@ public class FaditorMiniFragment extends BaseFragment {
      */
     public void onExportCancelled() {
         if (!isAdded() || exportDock == null) return;
-        
         FLog.d(TAG, "Export cancelled");
+        showCancelledDock();
+    }
+
+    /** Renders the cancelled-export dock (see {@link #showCompletedDock}). */
+    private void showCancelledDock() {
         isExportActive = false;
 
-        // Update icon to info/cancelled state
         if (exportDockIcon != null) {
             exportDockIcon.setImageResource(android.R.drawable.ic_dialog_info);
         }
-
-        // Update title
         if (exportDockTitle != null) {
             exportDockTitle.animateSlot(getString(R.string.faditor_export_cancelled), 300);
         }
-
-        // Show progress at current state (don't reset)
-        if (exportDockProgress != null) {
-            // Keep current progress value
-        }
-
-        // Clear ETA
         if (exportDockEta != null) {
             exportDockEta.setText(getString(R.string.records_delete_header_dismiss_hint));
         }
-
-        // Show OK button to dismiss
         if (exportDockOk != null) {
             exportDockOk.setVisibility(View.VISIBLE);
-            exportDockOk.animateSlot(getString(R.string.records_delete_header_action_ok), 300);
+            exportDockOk.setText(R.string.records_delete_header_action_ok);
         }
     }
 }

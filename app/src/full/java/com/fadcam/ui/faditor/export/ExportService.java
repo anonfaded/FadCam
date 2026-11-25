@@ -55,11 +55,64 @@ public class ExportService extends Service {
     @Nullable
     private static FaditorProject pendingProject;
 
-    /**
-     * Set the project to export. Must be called before starting the service.
-     */
+    /** Set the project to export. Must be called before starting the service. */
     public static void setPendingProject(@Nullable FaditorProject project) {
         pendingProject = project;
+    }
+
+    // ── Static export snapshot ───────────────────────────────────────
+    // The editor and the Faditor tab are both re-created whenever the view is rebuilt
+    // (rotation, tab switch, editor round-trip) while the export keeps running in this
+    // service. A broadcast is not enough: a detached fragment drops it, and a freshly
+    // inflated view has no idea a progress bar was on screen a moment ago. This
+    // snapshot is the single source of truth the UI re-attaches to.
+    public enum State { IDLE, RUNNING, COMPLETED, ERROR, CANCELLED }
+
+    private static volatile State snapshotState = State.IDLE;
+    private static volatile float snapshotProgress;
+    @Nullable private static volatile String snapshotOutputPath;
+    @Nullable private static volatile String snapshotErrorMessage;
+
+    @NonNull
+    public static State getStateSnapshot() {
+        return snapshotState;
+    }
+
+    public static float getProgressSnapshot() {
+        return snapshotProgress;
+    }
+
+    @Nullable
+    public static String getOutputPathSnapshot() {
+        return snapshotOutputPath;
+    }
+
+    @Nullable
+    public static String getErrorMessageSnapshot() {
+        return snapshotErrorMessage;
+    }
+
+    /** Clears a finished export's snapshot once its dock has been dismissed. */
+    public static void clearSnapshot() {
+        snapshotState = State.IDLE;
+        snapshotProgress = 0f;
+        snapshotOutputPath = null;
+        snapshotErrorMessage = null;
+    }
+
+    private static void snapshotRunning(float progress, @Nullable String outputPath) {
+        snapshotState = State.RUNNING;
+        snapshotProgress = progress;
+        if (outputPath != null) snapshotOutputPath = outputPath;
+    }
+
+    private static void snapshotFinished(@NonNull State state, float progress,
+                                        @Nullable String outputPath,
+                                        @Nullable String errorMessage) {
+        snapshotState = state;
+        snapshotProgress = progress;
+        if (outputPath != null) snapshotOutputPath = outputPath;
+        snapshotErrorMessage = errorMessage;
     }
 
     // ── Listener for Activity binding ────────────────────────────────
@@ -179,6 +232,7 @@ public class ExportService extends Service {
             @Override
             public void onExportStarted(@NonNull String outputPath) {
                 FLog.d(TAG, "Export started → " + outputPath);
+                snapshotRunning(0f, outputPath);
                 if (serviceListener != null) {
                     serviceListener.onExportStarted(outputPath);
                 }
@@ -193,6 +247,7 @@ public class ExportService extends Service {
             @Override
             public void onExportProgress(float progress) {
                 int percent = (int) (progress * 100);
+                snapshotRunning(progress, null);
                 updateNotification(percent);
                 if (serviceListener != null) {
                     serviceListener.onExportProgress(progress);
@@ -209,6 +264,7 @@ public class ExportService extends Service {
                                           @NonNull androidx.media3.transformer.ExportResult result) {
                 FLog.d(TAG, "Export completed: " + outputPath);
                 isExporting = false;
+                snapshotFinished(State.COMPLETED, 1f, outputPath, null);
                 showCompletionNotification();
                 if (serviceListener != null) {
                     serviceListener.onExportCompleted(outputPath, result);
@@ -228,6 +284,7 @@ public class ExportService extends Service {
             public void onExportError(@NonNull Exception error) {
                 FLog.e(TAG, "Export failed", error);
                 isExporting = false;
+                snapshotFinished(State.ERROR, snapshotProgress, null, error.getMessage());
                 showErrorNotification(error.getMessage());
                 if (serviceListener != null) {
                     serviceListener.onExportError(error);
@@ -254,6 +311,7 @@ public class ExportService extends Service {
         if (exportManager != null && exportManager.isExporting()) {
             exportManager.cancel();
             isExporting = false;
+            snapshotFinished(State.CANCELLED, snapshotProgress, null, null);
             FLog.d(TAG, "Export cancelled via service");
             
             // Broadcast cancellation to UI
