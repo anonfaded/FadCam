@@ -5073,13 +5073,8 @@ public class RecordsFragment extends BaseFragment implements
             }
         };
         IntentFilter filter = new IntentFilter(Constants.ACTION_RECORDING_SEGMENT_COMPLETE);
-        // Use correct flag for the receiver based on Android API level
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requireContext().registerReceiver(segmentCompleteReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            ContextCompat.registerReceiver(requireContext(), segmentCompleteReceiver, filter,
-                    ContextCompat.RECEIVER_NOT_EXPORTED);
-        }
+        ContextCompat.registerReceiver(requireContext(), segmentCompleteReceiver, filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED);
         isSegmentReceiverRegistered = true;
         FLog.d(TAG, "SegmentCompleteReceiver registered.");
     }

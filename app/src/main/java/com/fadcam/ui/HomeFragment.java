@@ -12744,19 +12744,12 @@ public class HomeFragment extends BaseFragment {
                 IntentFilter filter = new IntentFilter(
                     Constants.ACTION_RECORDING_SEGMENT_COMPLETE
                 );
-                // Add receiver export flag for Android 13+
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    context.registerReceiver(
+                androidx.core.content.ContextCompat.registerReceiver(
+                        context,
                         segmentCompleteStatsReceiver,
                         filter,
-                        Context.RECEIVER_NOT_EXPORTED
-                    );
-                } else {
-                    context.registerReceiver(
-                        segmentCompleteStatsReceiver,
-                        filter
-                    );
-                }
+                        androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+                );
                 isSegmentCompleteStatsReceiverRegistered = true;
                 // OPTIMIZATION: Removed generic receiver registration log
             } else {

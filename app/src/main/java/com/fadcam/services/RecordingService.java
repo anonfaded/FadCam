@@ -6320,6 +6320,30 @@ public class RecordingService extends Service {
         FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_STATE_CALLBACK with state: " + recordingState +
                 ", startTime=" + (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED ? recordingStartTime : -1));
     }
+    /**
+     * Announce that a split segment finished so Records and Home can pick it up while the
+     * recording is still running. Segments land outside any directory the app can watch
+     * (SAF / Downloads), and a FileObserver cannot see those, so this is the only signal.
+     */
+    private void broadcastSegmentComplete(int completedSegmentNumber) {
+        try {
+            Intent intent = new Intent(Constants.ACTION_RECORDING_SEGMENT_COMPLETE);
+            if (currentSegmentUriString != null) {
+                intent.putExtra(Constants.INTENT_EXTRA_FILE_URI, currentSegmentUriString);
+            }
+            if (currentSegmentPath != null) {
+                intent.putExtra(Constants.INTENT_EXTRA_FILE_PATH, currentSegmentPath);
+            }
+            intent.putExtra(Constants.INTENT_EXTRA_SEGMENT_NUMBER, completedSegmentNumber);
+            intent.setPackage(getPackageName());
+            sendBroadcast(intent);
+            FLog.i(TAG, "Broadcasted: ACTION_RECORDING_SEGMENT_COMPLETE for segment "
+                    + completedSegmentNumber);
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to broadcast segment complete", e);
+        }
+    }
+
     // --- End Broadcasts ---
 
     // --- Notifications ---
@@ -7906,7 +7930,14 @@ public class RecordingService extends Service {
     private class GLSegmentCallback implements com.fadcam.opengl.GLRecordingPipeline.SegmentCallback {
         @Override
         public void onSegmentRollover(int nextSegmentNumber) {
-            FLog.d(TAG, "GLSegmentCallback.onSegmentRollover called for segment " + nextSegmentNumber);
+            FLog.d(TAG, "GLSegmentCallback onSegmentRollover called for segment "
+                    + nextSegmentNumber);
+            // The completed segment is still what currentSegment* points at: the pipeline
+            // closes the old muxer before invoking this callback and only assigns the next
+            // segment further down. Announce it now, because the file observers cannot:
+            // RealtimeMediaInvalidationCoordinator only walks getExternalFilesDir(), so a
+            // custom SAF or Downloads folder comes into play without any observer at all.
+            broadcastSegmentComplete(nextSegmentNumber - 1);
             String storageMode = sharedPreferencesManager.getStorageMode();
             VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
