@@ -3938,6 +3938,9 @@ public class HomeFragment extends BaseFragment {
             getView().post(() -> {
                     if (isAdded()) {
                         restoreCurrentState();
+                        // The dashboard split is width-derived, so it has to be
+                        // recomputed once the new configuration has settled.
+                        applyDashboardSplitWidth();
                         FLog.d(TAG, "State restored after orientation change");
                     }
                 });
@@ -10863,6 +10866,7 @@ public class HomeFragment extends BaseFragment {
         applyStorageTotalVisibilityPreference();
         applyTimeLeftAccentPreference();
         updateElapsedHeroAppearance();
+        applyDashboardSplitWidth();
         applyCardRailFoldedState(false);
         setupCardRailToggle();
 
@@ -13452,6 +13456,39 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    /**
+     * Landscape only: sizes the dashboard column from the real screen width instead of a
+     * fixed percentage, so a small phone still fits two widget columns and a large phone
+     * gives the extra room to the preview.
+     */
+    private void applyDashboardSplitWidth() {
+        if (!isLandscapeMode() || homeRootLayout == null) {
+            return;
+        }
+        android.view.View guide = homeRootLayout.findViewById(R.id.dashboardGuideline);
+        if (guide == null) {
+            return;
+        }
+        androidx.constraintlayout.widget.ConstraintLayout root =
+                (androidx.constraintlayout.widget.ConstraintLayout) homeRootLayout;
+        if (root.getWidth() <= 0) {
+            root.post(this::applyDashboardSplitWidth);
+            return;
+        }
+        int dashMin = getResources().getDimensionPixelSize(R.dimen.home_land_dashboard_min_width);
+        int dashMax = getResources().getDimensionPixelSize(R.dimen.home_land_dashboard_max_width);
+        int previewMin = getResources().getDimensionPixelSize(R.dimen.home_land_preview_min_width);
+        int dashWidth = Math.min(dashMax, Math.max(dashMin, dashMin));
+        // Clamp so the preview always keeps its minimum on very small screens.
+        dashWidth = Math.min(dashWidth, Math.max(0, root.getWidth() - previewMin));
+        float percent = 1f - (dashWidth / (float) root.getWidth());
+        androidx.constraintlayout.widget.ConstraintSet set =
+                new androidx.constraintlayout.widget.ConstraintSet();
+        set.clone(root);
+        set.setGuidelinePercent(R.id.dashboardGuideline, percent);
+        set.applyTo(root);
+    }
+
     private void setupCardRailToggle() {
         View.OnClickListener listener = v -> {
             performHapticFeedback();
@@ -13541,13 +13578,19 @@ public class HomeFragment extends BaseFragment {
             applyLandscapeFoldConstraints(folded);
             if (ivCardRailToggleLandscape != null) {
                 ivCardRailToggleLandscape.animate().cancel();
+                // The dashboard sits on the RIGHT, so the chevron points right while it
+                // is open (collapse towards that edge) and left once folded, to bring it
+                // back. This is the mirror of the old left-rail handle, which pointed
+                // left when open because the rail was on the left.
+                float openDeg = 0f;
+                float foldedDeg = 180f;
                 if (animate) {
                     ivCardRailToggleLandscape.animate()
-                            .rotation(folded ? 0f : 180f)
+                            .rotation(folded ? foldedDeg : openDeg)
                             .setDuration(220)
                             .start();
                 } else {
-                    ivCardRailToggleLandscape.setRotation(folded ? 0f : 180f);
+                    ivCardRailToggleLandscape.setRotation(folded ? foldedDeg : openDeg);
                 }
             }
             if (cardRailToggleLandscape != null) {
@@ -13593,45 +13636,55 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    /**
+     * Landscape fold: the dashboard and its fold arrow are swapped for the full width
+     * when folded, so the preview can take the whole screen. The guideline that splits
+     * the two columns carries a per-side margin, so folding only moves the guide and
+     * toggles visibility; nothing else in the tree is re-constrained.
+     */
     private void applyLandscapeFoldConstraints(boolean folded) {
-        if (homeRootLayout == null || leftPanel == null || rightPanel == null || cardRailToggleLandscape == null) {
+        if (homeRootLayout == null || rightPanel == null) {
             return;
         }
         ConstraintSet set = new ConstraintSet();
         set.clone(homeRootLayout);
-        set.clear(R.id.leftPanel, ConstraintSet.END);
-        set.clear(R.id.cardRailToggleLandscape, ConstraintSet.START);
-        set.clear(R.id.cardRailToggleLandscape, ConstraintSet.END);
-        set.clear(R.id.rightPanel, ConstraintSet.START);
 
-        final int panelMargin = getResources().getDimensionPixelSize(
-                R.dimen.home_land_panel_margin);
-        final int panelMarginTop = getResources().getDimensionPixelSize(
-                R.dimen.home_land_panel_margin_top);
-        final int toggleGap = getResources().getDimensionPixelSize(
-                R.dimen.home_land_gap_s);
+        // Visibility has to go through the ConstraintSet: applyTo() restores every
+        // captured property, so a plain setVisibility() would be undone immediately.
+        set.setVisibility(R.id.widgetDashboard,
+                folded ? android.view.View.GONE : android.view.View.VISIBLE);
+        set.setVisibility(R.id.dashboardGuideline,
+                folded ? android.view.View.GONE : android.view.View.VISIBLE);
 
-        set.connect(R.id.leftPanel, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, panelMargin);
-        set.connect(R.id.leftPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, panelMarginTop);
-        set.connect(R.id.leftPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
-
-        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, panelMarginTop);
-        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
-        set.connect(R.id.rightPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, panelMarginTop);
-        set.connect(R.id.rightPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
-        set.connect(R.id.rightPanel, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, panelMargin);
-
+        // Preview keeps its leading edge and simply stops at the parent edge (folded)
+        // or at the dashboard seam (unfolded).
+        set.clear(R.id.rightPanel, ConstraintSet.END);
         if (folded) {
-            set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, panelMargin);
+            set.connect(R.id.rightPanel, ConstraintSet.END,
+                    ConstraintSet.PARENT_ID, ConstraintSet.END,
+                    getResources().getDimensionPixelSize(R.dimen.home_land_panel_margin));
         } else {
-            set.connect(R.id.leftPanel, ConstraintSet.END, R.id.cardRailToggleLandscape, ConstraintSet.START, 0);
-            set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, R.id.leftPanel, ConstraintSet.END, 0);
+            set.connect(R.id.rightPanel, ConstraintSet.END,
+                    R.id.dashboardGuideline, ConstraintSet.START, 0);
         }
-        // The handle is the fixed link in the weighted chain, flush with the rail
-        // card and the preview. The old 3dp margins on both sides made it float.
-        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, R.id.leftPanel, ConstraintSet.END, 0);
-        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.END, R.id.rightPanel, ConstraintSet.START, 0);
-        set.connect(R.id.rightPanel, ConstraintSet.START, R.id.cardRailToggleLandscape, ConstraintSet.END, 0);
+        // The bottom bar spans the full width, so it only needs its right inset removed
+        // while the dashboard is folded.
+        set.clear(R.id.landBottomBar, ConstraintSet.END);
+        set.connect(R.id.landBottomBar, ConstraintSet.END,
+                ConstraintSet.PARENT_ID, ConstraintSet.END, 0);
+        // The arrow rides the seam: it hugs the dashboard when open, and moves to the
+        // screen edge when folded so the preview is genuinely full width.
+        if (cardRailToggleLandscape != null) {
+            set.clear(R.id.cardRailToggleLandscape, ConstraintSet.START);
+            set.clear(R.id.cardRailToggleLandscape, ConstraintSet.END);
+            if (folded) {
+                set.connect(R.id.cardRailToggleLandscape, ConstraintSet.END,
+                        ConstraintSet.PARENT_ID, ConstraintSet.END, 0);
+            } else {
+                set.connect(R.id.cardRailToggleLandscape, ConstraintSet.END,
+                        R.id.widgetDashboard, ConstraintSet.START, 0);
+            }
+        }
         set.applyTo(homeRootLayout);
     }
 

@@ -5934,49 +5934,6 @@ public class RecordingService extends Service {
         return fontSize;
     }
 
-    private String getCurrentTimestamp() {
-        // Abbreviated day (e.g. "Wed, ") included when the Day toggle is on.
-        String pattern = (sharedPreferencesManager.isWatermarkDayEnabled() ? "EEE, " : "")
-                + "dd/MMM/yyyy hh:mm:ss a";
-        SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.ENGLISH); // 12-hour format with AM/PM
-        return convertArabicNumeralsToEnglish(sdf.format(new Date()));
-    }
-
-    private String getTimezoneSuffix() {
-        if (!sharedPreferencesManager.isTimezoneEnabled()) return "";
-        java.util.TimeZone tz = java.util.TimeZone.getDefault();
-        int offsetMs = tz.getOffset(System.currentTimeMillis());
-        int totalMinutes = offsetMs / 60000;
-        int hours = totalMinutes / 60;
-        int minutes = Math.abs(totalMinutes % 60);
-        String sign = offsetMs >= 0 ? "+" : "";
-        String gmt;
-        if (minutes == 0) {
-            gmt = "GMT" + sign + hours;
-        } else {
-            gmt = "GMT" + sign + hours + ":" + String.format(Locale.US, "%02d", minutes);
-        }
-        if ("gmt_name".equals(sharedPreferencesManager.getTimezoneFormat())) {
-            gmt += " (" + tz.getID() + ")";
-        }
-        return " " + gmt;
-    }
-
-    private String convertArabicNumeralsToEnglish(String text) {
-        if (text == null)
-            return null;
-        return text.replaceAll("٠", "0")
-                .replaceAll("١", "1")
-                .replaceAll("٢", "2")
-                .replaceAll("٣", "3")
-                .replaceAll("٤", "4")
-                .replaceAll("٥", "5")
-                .replaceAll("٦", "6")
-                .replaceAll("٧", "7")
-                .replaceAll("٨", "8")
-                .replaceAll("٩", "9");
-    }
-
     private String getLocationData() {
         if (locationHelper == null) {
             FLog.w(TAG, "❌ LocationHelper not initialized - location watermark DISABLED");

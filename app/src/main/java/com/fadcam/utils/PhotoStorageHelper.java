@@ -260,7 +260,8 @@ public final class PhotoStorageHelper {
         if ("no_watermark".equals(option)) {
             return "";
         }
-        String timestamp = new SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", Locale.ENGLISH).format(new Date());
+        String timestamp = com.fadcam.watermark.WatermarkTimestamp.now(
+                prefs.isWatermarkDayEnabled());
 
         // Timezone suffix (matching video watermark)
         String timezoneSuffix = "";

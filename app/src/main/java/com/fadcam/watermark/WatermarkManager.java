@@ -15,8 +15,6 @@ import com.fadcam.ui.LocationHelper;
 
 import org.osmdroid.util.GeoPoint;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
 
 /**
@@ -268,11 +266,7 @@ public class WatermarkManager implements WatermarkInfoProvider {
     // ── Timestamp helpers ─────────────────────────────────────────────
 
     private String getCurrentTimestamp() {
-        // Day name (e.g. "Wednesday, ") is included when the Day toggle is on.
-        String pattern = (prefs.isWatermarkDayEnabled() ? "EEE, " : "")
-                + "dd/MMM/yyyy hh:mm:ss a";
-        SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.ENGLISH);
-        return convertArabicNumeralsToEnglish(sdf.format(new Date()));
+        return WatermarkTimestamp.now(prefs.isWatermarkDayEnabled());
     }
 
     private String getTimezoneSuffix() {
@@ -293,15 +287,6 @@ public class WatermarkManager implements WatermarkInfoProvider {
             gmt += " (" + tz.getID() + ")";
         }
         return " " + gmt;
-    }
-
-    private static String convertArabicNumeralsToEnglish(String text) {
-        if (text == null) return null;
-        return text.replaceAll("٠", "0").replaceAll("١", "1")
-                .replaceAll("٢", "2").replaceAll("٣", "3")
-                .replaceAll("٤", "4").replaceAll("٥", "5")
-                .replaceAll("٦", "6").replaceAll("٧", "7")
-                .replaceAll("٨", "8").replaceAll("٩", "9");
     }
 
     // ── Location data ─────────────────────────────────────────────────

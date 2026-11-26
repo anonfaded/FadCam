@@ -118,7 +118,7 @@ public class WatermarkSettingsFragment extends Fragment {
             if (switchTimezone != null) switchTimezone.performClick();
         });
 
-        // Day name toggle (default ON) — shows e.g. "Wednesday, " before the timestamp.
+        // Day name toggle (default ON) — shows e.g. "Wed, " before the timestamp.
         com.fadcam.ui.AvatarToggleView switchDay = view.findViewById(R.id.switch_day);
         final android.widget.TextView valueDay = view.findViewById(R.id.value_day);
         final java.text.SimpleDateFormat dayFmt =
@@ -512,8 +512,13 @@ public class WatermarkSettingsFragment extends Fragment {
     private void updatePreview(){
         String v = prefs.getWatermarkOption();
         // Static sample (10 Jul 2024 is a Wednesday) — day shown when the toggle is on.
-        String formatted = (prefs.isWatermarkDayEnabled() ? "Wed, " : "")
-                + "10/Jul/2024 04:47:00 PM";
+        // Fixed sample instant (10 Jul 2024 is a Wednesday) with the real formatter, so the
+        // preview can never show a format the recorder does not produce.
+        java.util.Calendar sample = java.util.Calendar.getInstance(java.util.Locale.ENGLISH);
+        sample.clear();
+        sample.set(2024, java.util.Calendar.JULY, 10, 16, 47, 3);
+        String formatted = com.fadcam.watermark.WatermarkTimestamp.format(
+                sample.getTime(), prefs.isWatermarkDayEnabled());
 
         // Build FadCam preview text — [FADCAM_ICON] triggers ImageSpan in adapter
         String fadcamBase = null;
@@ -669,11 +674,6 @@ public class WatermarkSettingsFragment extends Fragment {
         });
         
         sheet.show(getParentFragmentManager(), "custom_text_sheet");
-    }
-
-    private String formatNow(){
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", java.util.Locale.getDefault());
-        return sdf.format(new java.util.Date());
     }
 
     private void refreshLocationFormatValue(){

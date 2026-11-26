@@ -755,7 +755,9 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
 
     @NonNull
     private String formatWatermark(long captureEpochMs, long timelineMs) {
-        String date = new SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", Locale.ENGLISH).format(new Date(Math.max(0L, captureEpochMs)));
+        java.util.Date captured = new java.util.Date(Math.max(0L, captureEpochMs));
+        String date = com.fadcam.watermark.WatermarkTimestamp.format(
+                captured, prefs.isWatermarkDayEnabled());
         return "Captured by FadCam - " + date;
     }
 

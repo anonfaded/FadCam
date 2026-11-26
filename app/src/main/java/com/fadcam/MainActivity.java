@@ -564,99 +564,8 @@ public class MainActivity extends AppCompatActivity {
             // The internal position engine (0-5) is untouched; the menu is just a selector.
             applyLiteMenu(bottomNavigationView);
             applyLiteMenu(railNavigationView);
-            if (!isLandscapeLayout()) {
-                // Compact dock: real nav stays as the invisible engine; a styled duplicate
-                // renders the 3 buttons with stable colors/shadows/animations. In landscape
-                // the rail is the only dock, so there is nothing to hide behind.
-                android.widget.FrameLayout.LayoutParams navLp =
-                        (android.widget.FrameLayout.LayoutParams) bottomNavigationView.getLayoutParams();
-                navLp.height = 0;
-                bottomNavigationView.setLayoutParams(navLp);
-                bottomNavigationView.setVisibility(android.view.View.INVISIBLE);
-            } else {
-                // Landscape: the same pill, stood up on the leading edge. The rail stays
-                // hidden (the compact dock replaces it) and the bottom pill is not used.
-                final android.view.View dockLand = findViewById(R.id.lite_dock_land);
-                if (dockLand != null) {
-                    android.widget.FrameLayout.LayoutParams navLp =
-                            (android.widget.FrameLayout.LayoutParams) bottomNavigationView.getLayoutParams();
-                    navLp.height = 0;
-                    bottomNavigationView.setLayoutParams(navLp);
-                    bottomNavigationView.setVisibility(android.view.View.INVISIBLE);
-                    railNavigationView.setVisibility(android.view.View.GONE);
-                    styleLiteLandscapeDock(dockLand);
-                    bindLiteDockItem(dockLand, R.id.lite_dock_land_item_records, R.id.navigation_records);
-                    bindLiteDockItem(dockLand, R.id.lite_dock_land_item_home, R.id.navigation_home);
-                    bindLiteDockItem(dockLand, R.id.lite_dock_land_item_settings, R.id.navigation_settings);
-                    android.view.View dockHome = dockLand.findViewById(R.id.lite_dock_land_item_home);
-                    if (dockHome != null) {
-                        dockHome.setOnLongClickListener(v -> {
-                            showHomeIconPicker();
-                            return true;
-                        });
-                    }
-                    dockLand.post(() -> updateLiteDockSelection());
-                }
-            }
+            applyLiteDockMode();
 
-            final android.view.View dock = isLandscapeLayout()
-                    ? null : findViewById(R.id.lite_dock);
-            if (dock != null) {
-                // Blob dock: side "tentacles" gradient from the bar color to black
-                // (black tucks into the circle) while the Home button keeps the bar color.
-                android.util.TypedValue tv = new android.util.TypedValue();
-                int color = 0xFF1E1E1E;
-                if (getTheme().resolveAttribute(com.fadcam.R.attr.colorBottomNav, tv, true)) {
-                    color = tv.data;
-                }
-                float d = getResources().getDisplayMetrics().density;
-                float homeH = getResources().getDimension(com.fadcam.R.dimen.home_dock_height);
-                // Premium palette: side buttons are one tone of the bar color (softly
-                // darkened) with FULL rounded ends (pill) — no sharp inner edges and no
-                // harsh black gradient; the Home circle is the bar color with a soft
-                // top-light and a hairline ring.
-                int sideColor = mix(color, 0xFF000000, 0.30f);
-                int light = mix(color, 0xFFFFFFFF, 0.08f);
-                float sideRadius = homeH * 0.45f;
-                android.graphics.drawable.GradientDrawable left = new android.graphics.drawable.GradientDrawable();
-                left.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-                left.setColor(sideColor);
-                left.setCornerRadii(new float[]{sideRadius, sideRadius, 0f, 0f,
-                        0f, 0f, sideRadius, sideRadius});
-                android.graphics.drawable.GradientDrawable right = new android.graphics.drawable.GradientDrawable();
-                right.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-                right.setColor(sideColor);
-                right.setCornerRadii(new float[]{0f, 0f, sideRadius, sideRadius,
-                        sideRadius, sideRadius, 0f, 0f});
-                android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
-                circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-                circle.setGradientType(android.graphics.drawable.GradientDrawable.LINEAR_GRADIENT);
-                circle.setOrientation(android.graphics.drawable.GradientDrawable.Orientation.TL_BR);
-                circle.setColors(new int[]{light, mix(color, 0xFF000000, 0.10f)});
-                circle.setStroke((int) Math.max(1f, 1.2f * d), 0x22FFFFFF);
-                android.view.View records = dock.findViewById(R.id.lite_dock_item_records);
-                android.view.View settings = dock.findViewById(R.id.lite_dock_item_settings);
-                android.view.View home = dock.findViewById(R.id.lite_dock_item_home);
-                if (records != null) records.setBackground(left);
-                if (settings != null) settings.setBackground(right);
-                if (home != null) {
-                    home.setBackground(circle);
-                    home.setElevation(3f * d); // slight lift: circle floats above the tentacles
-                }
-                dock.setBackground(null);
-                dock.setVisibility(android.view.View.VISIBLE);
-                bindLiteDockItem(dock, R.id.lite_dock_item_records, R.id.navigation_records);
-                bindLiteDockItem(dock, R.id.lite_dock_item_home, R.id.navigation_home);
-                bindLiteDockItem(dock, R.id.lite_dock_item_settings, R.id.navigation_settings);
-                android.view.View dockHome = dock.findViewById(R.id.lite_dock_item_home);
-                if (dockHome != null) {
-                    dockHome.setOnLongClickListener(v -> {
-                        showHomeIconPicker();
-                        return true;
-                    });
-                }
-                dock.post(() -> updateLiteDockSelection());
-            }
         }
         // Chooses the bottom pill or the landscape rail, styles it, and lays the
         // fragment container out around it.
@@ -2338,6 +2247,12 @@ public class MainActivity extends AppCompatActivity {
 
         // Notify all fragments about the orientation change
         notifyFragmentsOfOrientationChange(newConfig.orientation);
+        // The docks live in the activity layout and are separate views, so the right one
+        // has to be selected explicitly on every rotation. Without this the vertical
+        // dock stayed on screen after returning to portrait.
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            applyLiteDockMode();
+        }
         // The dock lives in the activity layout: portrait keeps the bottom pill,
         // landscape turns it into the left rail.
         applyResponsiveNavLayout();
@@ -2457,6 +2372,120 @@ public class MainActivity extends AppCompatActivity {
                 R.string.nav_home).setIcon(R.drawable.pilot_steering_white);
         menu.add(android.view.Menu.NONE, R.id.navigation_settings, 2,
                 R.string.nav_settings).setIcon(R.drawable.ic_nav_settings);
+    }
+
+    /**
+     * Selects and styles the Lite dock for the current orientation. Called on create
+     * and again on every configuration change, because the two docks live in the same
+     * activity layout and must swap explicitly: leaving the previous one visible is
+     * what made the vertical dock linger after returning to portrait.
+     */
+    private void applyLiteDockMode() {
+        if (bottomNavigationView == null) {
+            return;
+        }
+        final boolean landscape = isLandscapeLayout();
+
+        android.view.View dockPortrait = findViewById(R.id.lite_dock);
+        android.view.View dockLand = findViewById(R.id.lite_dock_land);
+
+        // The real nav stays in the tree as the invisible engine that owns selection.
+        android.view.ViewGroup.LayoutParams navLp =
+                bottomNavigationView.getLayoutParams();
+        if (navLp != null && navLp.height != 0) {
+            navLp.height = 0;
+            bottomNavigationView.setLayoutParams(navLp);
+        }
+        bottomNavigationView.setVisibility(android.view.View.INVISIBLE);
+
+        if (dockLand != null) {
+            dockLand.setVisibility(landscape
+                    ? android.view.View.VISIBLE : android.view.View.GONE);
+        }
+        if (dockPortrait != null) {
+            dockPortrait.setVisibility(landscape
+                    ? android.view.View.GONE : android.view.View.VISIBLE);
+        }
+
+        if (landscape) {
+            if (railNavigationView != null) {
+                railNavigationView.setVisibility(android.view.View.GONE);
+            }
+            if (dockLand != null) {
+                styleLiteLandscapeDock(dockLand);
+                bindLiteDockItem(dockLand, R.id.lite_dock_land_item_records, R.id.navigation_records);
+                bindLiteDockItem(dockLand, R.id.lite_dock_land_item_home, R.id.navigation_home);
+                bindLiteDockItem(dockLand, R.id.lite_dock_land_item_settings, R.id.navigation_settings);
+                android.view.View home = dockLand.findViewById(R.id.lite_dock_land_item_home);
+                if (home != null) {
+                    home.setOnLongClickListener(v -> {
+                        showHomeIconPicker();
+                        return true;
+                    });
+                }
+                dockLand.post(this::updateLiteDockSelection);
+            }
+        } else if (dockPortrait != null) {
+            styleLitePortraitDock(dockPortrait);
+            bindLiteDockItem(dockPortrait, R.id.lite_dock_item_records, R.id.navigation_records);
+            bindLiteDockItem(dockPortrait, R.id.lite_dock_item_home, R.id.navigation_home);
+            bindLiteDockItem(dockPortrait, R.id.lite_dock_item_settings, R.id.navigation_settings);
+            android.view.View home = dockPortrait.findViewById(R.id.lite_dock_item_home);
+            if (home != null) {
+                home.setOnLongClickListener(v -> {
+                    showHomeIconPicker();
+                    return true;
+                });
+            }
+            dockPortrait.post(this::updateLiteDockSelection);
+        }
+    }
+
+    /**
+     * Portrait blob dock: side buttons in the darkened bar tone with round outer ends,
+     * Home a raised circle in the bar colour.
+     */
+    private void styleLitePortraitDock(@NonNull android.view.View dock) {
+        android.util.TypedValue tv = new android.util.TypedValue();
+        int color = 0xFF1E1E1E;
+        if (getTheme().resolveAttribute(com.fadcam.R.attr.colorBottomNav, tv, true)) {
+            color = tv.data;
+        }
+        float d = getResources().getDisplayMetrics().density;
+        float homeH = getResources().getDimension(com.fadcam.R.dimen.home_dock_height);
+        int sideColor = mix(color, 0xFF000000, 0.30f);
+        int light = mix(color, 0xFFFFFFFF, 0.08f);
+        float sideRadius = homeH * 0.45f;
+
+        android.graphics.drawable.GradientDrawable left = new android.graphics.drawable.GradientDrawable();
+        left.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        left.setColor(sideColor);
+        left.setCornerRadii(new float[]{sideRadius, sideRadius, 0f, 0f,
+                0f, 0f, sideRadius, sideRadius});
+
+        android.graphics.drawable.GradientDrawable right = new android.graphics.drawable.GradientDrawable();
+        right.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        right.setColor(sideColor);
+        right.setCornerRadii(new float[]{0f, 0f, sideRadius, sideRadius,
+                sideRadius, sideRadius, 0f, 0f});
+
+        android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
+        circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        circle.setGradientType(android.graphics.drawable.GradientDrawable.LINEAR_GRADIENT);
+        circle.setOrientation(android.graphics.drawable.GradientDrawable.Orientation.TL_BR);
+        circle.setColors(new int[]{light, mix(color, 0xFF000000, 0.10f)});
+        circle.setStroke((int) Math.max(1f, 1.2f * d), 0x22FFFFFF);
+
+        android.view.View records = dock.findViewById(R.id.lite_dock_item_records);
+        android.view.View settings = dock.findViewById(R.id.lite_dock_item_settings);
+        android.view.View home = dock.findViewById(R.id.lite_dock_item_home);
+        if (records != null) records.setBackground(left);
+        if (settings != null) settings.setBackground(right);
+        if (home != null) {
+            home.setBackground(circle);
+            home.setElevation(3f * d);
+        }
+        dock.setBackground(null);
     }
 
     /**
