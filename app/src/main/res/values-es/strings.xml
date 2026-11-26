@@ -3262,4 +3262,12 @@ Tuyas para siempre.</string>
     <string name="applock__fingerprint_error_hardware">La huella no está disponible ahora. Configura una huella en los ajustes de Android e inténtalo de nuevo.</string>
     <string name="applock__action_settings">Abrir ajustes de Android</string>
     <string name="watermark_preview_funny">¿En serio? :( \n    ＞﹏＜</string>
+    <string name="review_dialog_title">Escribir una reseña</string>
+    <string name="report_dialog_title">Reportar un error / Pedir una función</string>
+    <string name="button_setting_report">Reportar un error / Pedir una función</string>
+    <string name="report_subtitle">Abre el rastreador de problemas</string>
+    <string name="review_dialog_body">Esto abre un formulario de Google en el navegador, donde puedes compartir tu opinión sobre FadCam.</string>
+    <string name="report_dialog_body">Esto abre el rastreador de problemas de GitHub en el navegador. Necesitas una cuenta de GitHub para publicar allí.</string>
+    <string name="dialog_continue">Continuar</string>
+    <string name="dialog_cancel">Cancelar</string>
 </resources>

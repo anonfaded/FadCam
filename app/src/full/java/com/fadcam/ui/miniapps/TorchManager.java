@@ -223,6 +223,7 @@ public class TorchManager {
     private void broadcastTorchState(boolean enabled) {
         Intent broadcast = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED)
             .putExtra(Constants.INTENT_EXTRA_TORCH_STATE, enabled);
+        broadcast.setPackage(context.getPackageName());
         context.sendBroadcast(broadcast);
     }
 

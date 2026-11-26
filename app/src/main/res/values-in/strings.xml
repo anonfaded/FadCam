@@ -3416,4 +3416,12 @@ Milikmu selamanya.</string>
     <string name="applock__fingerprint_error_hardware">Sidik jari tidak tersedia saat ini. Atur sidik jari di pengaturan Android lalu coba lagi.</string>
     <string name="applock__action_settings">Buka pengaturan Android</string>
     <string name="watermark_preview_funny">Masa iya? :( \n ＞﹏＜</string>
+    <string name="review_dialog_title">Tulis Ulasan</string>
+    <string name="report_dialog_title">Laporkan Bug / Minta Fitur</string>
+    <string name="button_setting_report">Laporkan Bug / Minta Fitur</string>
+    <string name="report_subtitle">Membuka pelacak masalah</string>
+    <string name="review_dialog_body">Ini membuka formulir Google di browser, tempat kamu bisa berbagi masukan tentang FadCam.</string>
+    <string name="report_dialog_body">Ini membuka pelacak masalah GitHub di browser. Kamu perlu akun GitHub untuk memposting di sana.</string>
+    <string name="dialog_continue">Lanjutkan</string>
+    <string name="dialog_cancel">Batal</string>
 </resources>

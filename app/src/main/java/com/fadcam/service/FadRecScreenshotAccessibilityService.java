@@ -161,6 +161,7 @@ public class FadRecScreenshotAccessibilityService extends AccessibilityService {
                 Intent updateIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
                 updateIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, true);
                 updateIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, savedUri.toString());
+                updateIntent.setPackage(getPackageName());
                 sendBroadcast(updateIntent);
                 showToast(R.string.screenshot_capture_saved);
             } else {

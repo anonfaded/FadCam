@@ -549,6 +549,7 @@ public class SettingsHomeFragment extends Fragment {
         bindRow(root, R.id.group_watermark_quick, () -> openSubFragment(new WatermarkSettingsFragment()));
         bindRow(root, R.id.group_about, () -> openSubFragment(new AboutFragment()));
         bindRow(root, R.id.group_review, () -> launchReview());
+        bindRow(root, R.id.group_report_issue, () -> openIssueTracker());
         bindRow(root, R.id.group_follow_x, () -> openUrl("https://x.com/anon_faded"));
         bindRow(root, R.id.group_discord, () -> openUrl("https://discord.gg/kvAZvdkuuN"));
         bindRow(root, R.id.group_readme, () -> openReadmeDialog());
@@ -765,23 +766,39 @@ public class SettingsHomeFragment extends Fragment {
         OverlayNavUtil.show(requireActivity(), fragment, fragment.getClass().getSimpleName());
     }
 
-    /** Launch Play Store review intent. */
+    /**
+     * FadCam is not distributed on Google Play, so there is no store listing to rate. The
+     * review row opens the project's Google Form instead, behind a confirmation so the
+     * browser jump is expected.
+     */
     private void launchReview() {
-        try {
-            android.net.Uri uri = android.net.Uri.parse("market://details?id=" + requireContext().getPackageName());
-            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, uri);
-            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NO_HISTORY |
-                    android.content.Intent.FLAG_ACTIVITY_NEW_DOCUMENT |
-                    android.content.Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
-            startActivity(intent);
-        } catch (Exception e) {
-            // Fallback to web
-            try {
-                android.net.Uri uri = android.net.Uri.parse("https://play.google.com/store/apps/details?id=" + requireContext().getPackageName());
-                android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, uri);
-                startActivity(intent);
-            } catch (Exception ignore) {}
-        }
+        confirmExternalLink(R.string.review_dialog_title, R.string.review_dialog_body,
+                "https://forms.gle/DvUoc1v9kB2bkFiS6");
+    }
+
+    /**
+     * Issues live in the repo that matches this build: Lite reports to the Lite repo so its
+     * board stays about Lite, everything else reports to the main FadCam repo.
+     */
+    private void openIssueTracker() {
+        String url = com.fadcam.BuildConfig.LITE_EDITION
+                ? "https://github.com/anonfaded/FadCam-Lite/issues"
+                : "https://github.com/anonfaded/FadCam/issues";
+        confirmExternalLink(R.string.report_dialog_title, R.string.report_dialog_body, url);
+    }
+
+    /**
+     * Explains where a link goes before leaving the app. Both destinations are outside the
+     * app (a Google Form, and GitHub), so a one-tap jump into the browser is jarring.
+     */
+    private void confirmExternalLink(int titleRes, int bodyRes, String url) {
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle(getString(titleRes))
+                .setMessage(getString(bodyRes))
+                .setPositiveButton(getString(R.string.dialog_continue),
+                        (dialog, which) -> openUrl(url))
+                .setNegativeButton(getString(R.string.dialog_cancel), null)
+                .show();
     }
 
     /** Open the README dialog. */

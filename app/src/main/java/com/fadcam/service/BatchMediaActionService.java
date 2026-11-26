@@ -203,6 +203,7 @@ public class BatchMediaActionService extends Service {
 
         Intent completedIntent = new Intent(Constants.ACTION_BATCH_MEDIA_COMPLETED);
         completedIntent.putExtra(Constants.EXTRA_BATCH_COMPLETED_MESSAGE, summary);
+        completedIntent.setPackage(getPackageName());
         sendBroadcast(completedIntent);
 
         com.fadcam.Utils.stopForegroundCompat(BatchMediaActionService.this, true);
@@ -451,6 +452,7 @@ public class BatchMediaActionService extends Service {
         Intent intent = new Intent(BatchOperationConstants.ACTION_BATCH_OPERATION_UPDATED);
         intent.putExtra(BatchOperationConstants.EXTRA_SESSION_SNAPSHOT_JSON,
                 BatchOperationSessionSnapshot.toJson(session));
+        intent.setPackage(getPackageName());
         sendBroadcast(intent);
     }
 
@@ -460,6 +462,7 @@ public class BatchMediaActionService extends Service {
                 BatchOperationSessionSnapshot.toJson(session));
         intent.putExtra(BatchOperationConstants.EXTRA_SESSION_ID, session.getSessionId());
         intent.putExtra(BatchOperationConstants.EXTRA_SESSION_STATE, session.getState().name());
+        intent.setPackage(getPackageName());
         sendBroadcast(intent);
     }
 

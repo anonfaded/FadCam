@@ -2020,8 +2020,14 @@ public class HomeFragment extends BaseFragment {
         lastAppliedServiceState = null;
         lastAppliedPreviewOnlyActive = false;
 
-        // Call the centralized unregister method
-        unregisterBroadcastReceivers();
+        // Do NOT tear the receivers down while our own camera capture screen is on top.
+        // PhotoCaptureActivity starts over this fragment and reports back with
+        // ACTION_RECORDING_COMPLETE; unregistering here meant the result broadcast had no
+        // listener, so the home card's file count and used size stayed stale until the
+        // user changed tabs or restarted the app.
+        if (!com.fadcam.ui.CaptureFlow.inProgress) {
+            unregisterBroadcastReceivers();
+        }
 
         // Unregister SharedPreferences listener if present
         if (sharedPreferencesManager != null && prefsListener != null) {
@@ -2417,9 +2423,11 @@ public class HomeFragment extends BaseFragment {
         isStateReceiversRegistered = registerRecordingStateReceivers(context);
         // method(registerBroadcastReceivers_update_isStateReceiversRegistered_flag_logic)-----
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerRecordingCompleteReceiver(context);
-        }
+        // Always register. This used to be API 33+ only, which meant Android 7 to 12
+        // (including the Android 11 test device) never received ACTION_RECORDING_COMPLETE.
+        // The home card's file count and used-space values then stayed stale until the
+        // tab was re-entered or the app restarted.
+        registerRecordingCompleteReceiver(context);
         registerTorchReceiver(context);
         registerSegmentCompleteStatsReceiver(context); // Register the new one
         // Register recording failed receiver
@@ -2871,11 +2879,12 @@ public class HomeFragment extends BaseFragment {
 
         for (int idx = 0; idx < actions.length; idx++) {
             IntentFilter filter = new IntentFilter(actions[idx]);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                ctx.registerReceiver(receivers[idx], filter, Context.RECEIVER_EXPORTED);
-            } else {
-                ctx.registerReceiver(receivers[idx], filter);
-            }
+            androidx.core.content.ContextCompat.registerReceiver(
+                    ctx,
+                    receivers[idx],
+                    filter,
+                    androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            );
         }
         isDualBroadcastsRegistered = true;
         FLog.d(TAG, "Dual camera broadcast receivers registered");
@@ -3132,10 +3141,20 @@ public class HomeFragment extends BaseFragment {
                             return;
                         }
 
-                        // Invalidate caches when new video is recorded
+                        // Invalidate caches when new video is recorded.
+                        // The index must be invalidated too: updateStats() reads the Room
+                        // index first, and without this the count and size still reflect the
+                        // pre-capture snapshot, so the widget only caught up after a tab
+                        // change or restart.
                         VideoStatsCache.invalidateStats(
                             sharedPreferencesManager
                         );
+                        try {
+                            com.fadcam.data.VideoIndexRepository
+                                    .getInstance(requireContext()).invalidateIndex();
+                        } catch (Exception e) {
+                            FLog.w(TAG, "Completion: invalidateIndex failed", e);
+                        }
                         com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess();
                         FLog.d(
                             TAG,
@@ -3221,18 +3240,12 @@ public class HomeFragment extends BaseFragment {
             Constants.BROADCAST_ON_RECORDING_STARTED
         );
         if (broadcastOnRecordingStarted != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(
-                    broadcastOnRecordingStarted,
-                    intentFilterStarted,
-                    Context.RECEIVER_EXPORTED
-                );
-            } else {
-                context.registerReceiver(
-                    broadcastOnRecordingStarted,
-                    intentFilterStarted
-                );
-            }
+            androidx.core.content.ContextCompat.registerReceiver(
+                context,
+                broadcastOnRecordingStarted,
+                intentFilterStarted,
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            );
             // OPTIMIZATION: Removed generic receiver registration log
         } else {
             allRegisteredSuccessfully = false;
@@ -3243,18 +3256,12 @@ public class HomeFragment extends BaseFragment {
             Constants.BROADCAST_ON_RECORDING_RESUMED
         );
         if (broadcastOnRecordingResumed != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(
-                    broadcastOnRecordingResumed,
-                    intentFilterResumed,
-                    Context.RECEIVER_EXPORTED
-                );
-            } else {
-                context.registerReceiver(
-                    broadcastOnRecordingResumed,
-                    intentFilterResumed
-                );
-            }
+            androidx.core.content.ContextCompat.registerReceiver(
+                context,
+                broadcastOnRecordingResumed,
+                intentFilterResumed,
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            );
             // OPTIMIZATION: Removed generic receiver registration log
         } else {
             allRegisteredSuccessfully = false;
@@ -3265,18 +3272,12 @@ public class HomeFragment extends BaseFragment {
             Constants.BROADCAST_ON_RECORDING_PAUSED
         );
         if (broadcastOnRecordingPaused != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(
-                    broadcastOnRecordingPaused,
-                    intentFilterPaused,
-                    Context.RECEIVER_EXPORTED
-                );
-            } else {
-                context.registerReceiver(
-                    broadcastOnRecordingPaused,
-                    intentFilterPaused
-                );
-            }
+            androidx.core.content.ContextCompat.registerReceiver(
+                context,
+                broadcastOnRecordingPaused,
+                intentFilterPaused,
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            );
             // OPTIMIZATION: Removed generic receiver registration log
         } else {
             allRegisteredSuccessfully = false;
@@ -3287,18 +3288,12 @@ public class HomeFragment extends BaseFragment {
             Constants.BROADCAST_ON_RECORDING_STOPPED
         );
         if (broadcastOnRecordingStopped != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(
-                    broadcastOnRecordingStopped,
-                    intentFilterStopped,
-                    Context.RECEIVER_EXPORTED
-                );
-            } else {
-                context.registerReceiver(
-                    broadcastOnRecordingStopped,
-                    intentFilterStopped
-                );
-            }
+            androidx.core.content.ContextCompat.registerReceiver(
+                context,
+                broadcastOnRecordingStopped,
+                intentFilterStopped,
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            );
             // OPTIMIZATION: Removed generic receiver registration log
         } else {
             allRegisteredSuccessfully = false;
@@ -3309,18 +3304,12 @@ public class HomeFragment extends BaseFragment {
             Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK
         );
         if (broadcastOnRecordingStateCallback != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(
-                    broadcastOnRecordingStateCallback,
-                    intentFilterStateCallback,
-                    Context.RECEIVER_EXPORTED
-                );
-            } else {
-                context.registerReceiver(
-                    broadcastOnRecordingStateCallback,
-                    intentFilterStateCallback
-                );
-            }
+            androidx.core.content.ContextCompat.registerReceiver(
+                context,
+                broadcastOnRecordingStateCallback,
+                intentFilterStateCallback,
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            );
             // OPTIMIZATION: Removed generic receiver registration log
         } else {
             allRegisteredSuccessfully = false;
@@ -3334,18 +3323,12 @@ public class HomeFragment extends BaseFragment {
             Constants.BROADCAST_ON_PREVIEW_ONLY_STARTED
         );
         if (broadcastOnPreviewOnlyStarted != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(
-                    broadcastOnPreviewOnlyStarted,
-                    intentFilterPreviewOnlyStarted,
-                    Context.RECEIVER_EXPORTED
-                );
-            } else {
-                context.registerReceiver(
-                    broadcastOnPreviewOnlyStarted,
-                    intentFilterPreviewOnlyStarted
-                );
-            }
+            androidx.core.content.ContextCompat.registerReceiver(
+                context,
+                broadcastOnPreviewOnlyStarted,
+                intentFilterPreviewOnlyStarted,
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            );
         } else {
             allRegisteredSuccessfully = false;
             FLog.e(TAG, "broadcastOnPreviewOnlyStarted is null, not registering");
@@ -3355,18 +3338,12 @@ public class HomeFragment extends BaseFragment {
             Constants.BROADCAST_ON_PREVIEW_ONLY_STOPPED
         );
         if (broadcastOnPreviewOnlyStopped != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(
-                    broadcastOnPreviewOnlyStopped,
-                    intentFilterPreviewOnlyStopped,
-                    Context.RECEIVER_EXPORTED
-                );
-            } else {
-                context.registerReceiver(
-                    broadcastOnPreviewOnlyStopped,
-                    intentFilterPreviewOnlyStopped
-                );
-            }
+            androidx.core.content.ContextCompat.registerReceiver(
+                context,
+                broadcastOnPreviewOnlyStopped,
+                intentFilterPreviewOnlyStopped,
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            );
         } else {
             allRegisteredSuccessfully = false;
             FLog.e(TAG, "broadcastOnPreviewOnlyStopped is null, not registering");
@@ -3388,9 +3365,7 @@ public class HomeFragment extends BaseFragment {
         // method(registerRecordingStateReceivers_return_boolean_and_check_receivers)-----
     }
 
-    /** Helper to register the ACTION_RECORDING_COMPLETE receiver */
-    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    /** Helper to register the ACTION_RECORDING_COMPLETE receiver on every API level. */
     private void registerRecordingCompleteReceiver(Context context) {
         // Guard: Don't register twice
         if (isCompletionReceiverRegistered) {
@@ -3403,12 +3378,15 @@ public class HomeFragment extends BaseFragment {
             recordingCompleteReceiver != null
         ) {
             try {
-                context.registerReceiver(
+                // Same-app broadcast: ContextCompat maps the flag to the right overload on
+                // older APIs and uses RECEIVER_NOT_EXPORTED on 33+.
+                androidx.core.content.ContextCompat.registerReceiver(
+                    context,
                     recordingCompleteReceiver,
                     new IntentFilter(Constants.ACTION_RECORDING_COMPLETE),
-                    Context.RECEIVER_EXPORTED
+                    androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
                 );
-                isCompletionReceiverRegistered = true; // isCompletionReceiverRegistered is the correct flag here
+                isCompletionReceiverRegistered = true;
                 FLog.d(TAG, "ACTION_RECORDING_COMPLETE receiver registered.");
             } catch (IllegalArgumentException e) {
                 FLog.w(TAG, "Error registering ACTION_RECORDING_COMPLETE receiver: " + e.getMessage());
@@ -3433,18 +3411,12 @@ public class HomeFragment extends BaseFragment {
         );
         try {
             // method(registerTorchReceiver_add_export_flag_for_Tiramisu)-----
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(
+            androidx.core.content.ContextCompat.registerReceiver(
+                    context,
                     torchReceiver,
                     filter,
-                    Context.RECEIVER_EXPORTED
-                ); // Or RECEIVER_NOT_EXPORTED
-                // if purely internal
-            } else {
-                context.registerReceiver(torchReceiver, filter);
-            }
-            // ContextCompat.registerReceiver(context, torchReceiver, filter,
-            // ContextCompat.RECEIVER_NOT_EXPORTED);
+                    androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            );
             // method(registerTorchReceiver_add_export_flag_for_Tiramisu)-----
             isTorchReceiverRegistered = true; // Use specific flag
             FLog.d(TAG, "Torch receiver registered.");
@@ -7843,15 +7815,26 @@ public class HomeFragment extends BaseFragment {
         // updates
         boolean isRecording = sharedPreferencesManager.isRecordingInProgress();
 
-        // Step 1: Try to display cached stats instantly (only if not recording)
-        if (!isRecording) {
+        // A pending index invalidation means the cache is known to be out of date: a file was
+        // just written. Reading the cache first would repaint the stale count and return, which
+        // is why a new FadShot only showed up after the tab was re-entered.
+        boolean indexStale = false;
+        try {
+            indexStale = com.fadcam.data.VideoIndexRepository
+                    .getInstance(requireContext()).isIndexInvalidated();
+        } catch (Exception e) {
+            FLog.w(TAG, "updateStats: isIndexInvalidated failed", e);
+        }
+
+        // Step 1: Try to display cached stats instantly (only if not recording and fresh)
+        if (!isRecording && !indexStale) {
             VideoStatsCache.VideoStats cachedStats =
                 VideoStatsCache.getCachedStats(sharedPreferencesManager);
             if (cachedStats != null && cachedStats.isValid()) {
                 updateStatsUI(cachedStats.videoCount, cachedStats.totalSizeMB);
                 return; // Show cached data instantly, no need to recalculate unless invalidated
             }
-        } else {
+        } else if (isRecording) {
             // recording in progress, skip cache
         }
 
@@ -7866,38 +7849,36 @@ public class HomeFragment extends BaseFragment {
             try {
                 com.fadcam.data.VideoIndexRepository repo =
                     com.fadcam.data.VideoIndexRepository.getInstance(requireContext());
+
+                // Sync the index BEFORE reading stats. This used to run after the values were
+                // already written to the cache and pushed to the UI, which produced two bugs:
+                //   1. the widget showed the pre-capture count until something else
+                //      invalidated the cache, and
+                //   2. the stale figure was what got cached, so the next updateStats() call
+                //      returned early from cache and never corrected itself.
+                if (!isRecording && repo.isIndexInvalidated()) {
+                    repo.getVideos(sharedPreferencesManager); // consumes the flag + delta scans
+                }
+
                 long[] quickStats = repo.getQuickStats();
-                int dbCount = (int) quickStats[0];
-                long dbTotalBytes = quickStats[1];
-                long dbTotalMB = dbTotalBytes / (1024 * 1024);
+                int count = (int) quickStats[0];
+                long totalBytes = quickStats[1];
 
                 if (isRecording) {
-                    // Add the live size of the in-progress segment so "Used" updates in real time.
+                    // Add the live size of the in-progress segment so "Used" grows in real time.
                     // ActiveRecordingStats.getActiveFileSizeBytes() is cheap (File.length() or a
                     // SAF ContentResolver query — both well under 1 ms on the background thread).
                     long activeBytes = com.fadcam.ActiveRecordingStats.getActiveFileSizeBytes(requireContext());
-                    long activeMB = activeBytes / (1024 * 1024);
-                    long totalMBWithActive = dbTotalMB + activeMB;
-                    VideoStatsCache.updateStats(sharedPreferencesManager, dbCount, totalMBWithActive);
-                    updateStatsUI(dbCount, totalMBWithActive);
+                    long totalWithActiveBytes = totalBytes + activeBytes;
+                    VideoStatsCache.updateStats(sharedPreferencesManager, count,
+                            bytesToDisplayMB(totalWithActiveBytes));
+                    updateStatsBytes(count, totalWithActiveBytes);
                     return;
                 }
 
-                VideoStatsCache.updateStats(sharedPreferencesManager, dbCount, dbTotalMB);
-                updateStatsUI(dbCount, dbTotalMB);
-
-                // Not recording: also run delta scan if index was invalidated
-                // (e.g. immediately after recording stopped, to pick up the new file).
-                if (repo.isIndexInvalidated()) {
-                    repo.getVideos(sharedPreferencesManager); // Consumes invalidation flag + delta scans
-                    long[] freshStats = repo.getQuickStats();
-                    int freshCount = (int) freshStats[0];
-                    long freshMB = freshStats[1] / (1024 * 1024);
-                    if (freshCount != dbCount || freshMB != dbTotalMB) {
-                        VideoStatsCache.updateStats(sharedPreferencesManager, freshCount, freshMB);
-                        updateStatsUI(freshCount, freshMB);
-                    }
-                }
+                VideoStatsCache.updateStats(sharedPreferencesManager, count,
+                        bytesToDisplayMB(totalBytes));
+                updateStatsBytes(count, totalBytes);
                 return; // DB is the source of truth — done
             } catch (Exception e) {
             }
@@ -8048,6 +8029,52 @@ public class HomeFragment extends BaseFragment {
      * @param numVideos   Total number of videos
      * @param totalSizeMB Total size in MB
      */
+    /**
+     * Number of whole MB to cache alongside a byte count. Kept separate from display because
+     * the cache is an int/long pair in SharedPreferences; the UI itself formats from bytes.
+     */
+    private static long bytesToDisplayMB(long bytes) {
+        return bytes <= 0 ? 0 : bytes / (1024L * 1024L);
+    }
+
+    /**
+     * Byte-accurate variant. The previous path divided by 1 MB before formatting, so any
+     * recording smaller than a megabyte rendered as "0 B" even though the file existed.
+     */
+    private void updateStatsBytes(int numVideos, long totalSizeBytes) {
+        if (getActivity() == null) return;
+        final int count = numVideos;
+        final long bytes = totalSizeBytes;
+        getActivity().runOnUiThread(() -> {
+            if (!isAdded() || getContext() == null) return;
+            String countText = DisplayLocale.digits(String.valueOf(count));
+            String sizeText = DisplayLocale.digits(
+                    Formatter.formatFileSize(requireContext(), Math.max(bytes, 0L)));
+
+            if (count > 0) {
+                lastKnownVideoCount = count;
+                if (BuildConfig.ENABLE_PRO_REMINDER) {
+                    ProReminderManager.markSuccessfulRecording(requireContext());
+                }
+            }
+            if (bytes > 0) lastKnownSizeMB = bytes / (1024L * 1024L);
+
+            lastAnimatedVideoCount = count;
+            lastAnimatedSizeMB = bytes / (1024L * 1024L);
+
+            if (tvVideoCount instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                ((com.fadcam.ui.utils.AnimatedTextView) tvVideoCount).animateSlot(countText, 400);
+            } else if (tvVideoCount != null) {
+                tvVideoCount.setText(countText);
+            }
+            if (tvVideoSize instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                ((com.fadcam.ui.utils.AnimatedTextView) tvVideoSize).animateSlot(sizeText, 400);
+            } else if (tvVideoSize != null) {
+                tvVideoSize.setText(sizeText);
+            }
+        });
+    }
+
     private void updateStatsUI(int numVideos, long totalSizeMB) {
         if (getActivity() != null) {
             final int[] videoCount = {numVideos};
@@ -9869,20 +9896,12 @@ public class HomeFragment extends BaseFragment {
             IntentFilter filter = new IntentFilter(
                 Constants.BROADCAST_ON_TORCH_STATE_CHANGED
             );
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                requireContext().registerReceiver(
+            androidx.core.content.ContextCompat.registerReceiver(
+                    requireContext(),
                     torchReceiver,
                     filter,
-                    Context.RECEIVER_EXPORTED
-                ); // Or
-                // RECEIVER_NOT_EXPORTED
-                // if strictly
-                // internal
-            } else {
-                requireContext().registerReceiver(torchReceiver, filter);
-            }
-            // ContextCompat.registerReceiver(context, torchReceiver, filter,
-            // ContextCompat.RECEIVER_NOT_EXPORTED);
+                    androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            );
             // method(setupTorchButton_correct_torch_receiver_registration)-----
             isTorchReceiverRegistered = true;
             FLog.d(

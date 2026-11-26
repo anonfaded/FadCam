@@ -12,7 +12,6 @@ import android.os.CountDownTimer;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebSettings;
@@ -38,12 +37,13 @@ import com.google.android.material.button.MaterialButton;
  */
 public class WhatsNewActivity extends AppCompatActivity {
     private static final String TAG = "WhatsNewActivity";
-    private static final long COUNTDOWN_DURATION = 5000; // 5 seconds in milliseconds
+    private static final long COUNTDOWN_DURATION = 3000; // 3 seconds in milliseconds
     
     private WebView changelogWebView;
-    private TextView countdownText;
     private MaterialButton btnGotIt;
     private ImageButton btnClose;
+    /** False until the countdown finishes; gates the X, Back and "Got It!". */
+    private boolean dismissEnabled = false;
     private CountDownTimer countdownTimer;
     private View shimmerContainer;
     private ProgressBar scrollProgressBar;
@@ -78,7 +78,6 @@ public class WhatsNewActivity extends AppCompatActivity {
         // Initialize views
         changelogWebView = findViewById(R.id.changelogWebView);
         btnClose = findViewById(R.id.btnCloseWhatsNew);
-        countdownText = findViewById(R.id.countdownText);
         btnGotIt = findViewById(R.id.btnGotIt);
         shimmerContainer = findViewById(R.id.shimmerContainer);
         scrollProgressBar = findViewById(R.id.scrollProgressBar);
@@ -163,14 +162,12 @@ public class WhatsNewActivity extends AppCompatActivity {
         // Load and display offline changelog
         loadOfflineChangelog();
 
-        // Close button listener
-        if (btnClose != null) {
-            btnClose.setOnClickListener(v -> {
-                navigateToHome();
-            });
-        }
+        // Close button starts disabled: the header X and the system back gesture are gated
+        // by the same 3s countdown as "Got It!", so the changelog cannot be dismissed
+        // before it has been shown.
+        setDismissEnabled(false);
 
-        // Start countdown timer for "Got It" button
+        // Start countdown timer for the dismiss controls
         startCountdownTimer();
         
         // Start shimmer pulse animation
@@ -179,6 +176,12 @@ public class WhatsNewActivity extends AppCompatActivity {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+                // Swallow Back until the countdown finishes, matching the greyed-out
+                // header button. The callback stays enabled so the gesture is consumed
+                // rather than falling through and closing the activity.
+                if (!dismissEnabled) {
+                    return;
+                }
                 navigateToHome();
                 setEnabled(false);
                 getOnBackPressedDispatcher().onBackPressed();
@@ -301,34 +304,58 @@ public class WhatsNewActivity extends AppCompatActivity {
     }
 
     /**
-     * Start countdown timer for button enabling
+     * Countdown lives inside the button itself ("Continue in 3s" -> "Continue"), the same
+     * way the Pro reminder dialog does it. There is no separate status line.
      */
     private void startCountdownTimer() {
-        countdownTimer = new CountDownTimer(COUNTDOWN_DURATION, 1000) {
+        // Paint the first second immediately so the screen never shows a bare "Continue"
+        // that looks tappable before the timer has started.
+        updateCountdownText(COUNTDOWN_DURATION);
+
+        countdownTimer = new CountDownTimer(COUNTDOWN_DURATION, 200L) {
             @Override
             public void onTick(long millisUntilFinished) {
-                long secondsLeft = (millisUntilFinished + 999) / 1000;
-                if (countdownText != null) {
-                    countdownText.setText("Ready in " + secondsLeft + " second" + (secondsLeft == 1 ? "" : "s") + "...");
-                }
+                updateCountdownText(millisUntilFinished);
             }
 
             @Override
             public void onFinish() {
-                // Enable button and update UI when countdown finishes
-                if (btnGotIt != null) {
-                    btnGotIt.setEnabled(true);
-                    btnGotIt.setAlpha(1.0f);
-                    btnGotIt.setOnClickListener(v -> {
-                        navigateToHome();
-                    });
-                }
-                
-                if (countdownText != null) {
-                    countdownText.setText("You can now close this");
-                }
+                setDismissEnabled(true);
             }
         }.start();
+    }
+
+    private void updateCountdownText(long millisUntilFinished) {
+        if (btnGotIt == null) return;
+        int secondsLeft = Math.max(1, (int) ((millisUntilFinished + 999L) / 1000L));
+        btnGotIt.setText(getString(R.string.pro_reminder_button_countdown, secondsLeft));
+    }
+
+    /**
+     * Single gate for every way out of this screen: the header X, the system back
+     * gesture and "Got It!" all become usable together once the countdown finishes.
+     * While disabled they are visually greyed out so the state is obvious, and the
+     * taps are dropped rather than ignored silently.
+     */
+    private void setDismissEnabled(boolean enabled) {
+        dismissEnabled = enabled;
+
+        if (btnClose != null) {
+            btnClose.setEnabled(enabled);
+            btnClose.setAlpha(enabled ? 1.0f : 0.35f);
+            btnClose.setClickable(enabled);
+            btnClose.setOnClickListener(enabled ? v -> navigateToHome() : null);
+        }
+
+        if (btnGotIt != null) {
+            btnGotIt.setEnabled(enabled);
+            btnGotIt.setAlpha(enabled ? 1.0f : 0.72f);
+            btnGotIt.setOnClickListener(enabled ? v -> navigateToHome() : null);
+            btnGotIt.setText(enabled
+                    ? getString(R.string.pro_reminder_button_continue)
+                    : getString(R.string.pro_reminder_button_countdown,
+                            Math.max(1, (int) ((COUNTDOWN_DURATION + 999L) / 1000L))));
+        }
     }
 
     /**

@@ -651,6 +651,7 @@ public class DualCameraRecordingService extends Service {
                 .putBoolean(Constants.PREF_TORCH_STATE, isTorchOn).apply();
         Intent broadcast = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
         broadcast.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isTorchOn);
+        broadcast.setPackage(getPackageName());
         sendBroadcast(broadcast);
     }
 
@@ -763,6 +764,7 @@ public class DualCameraRecordingService extends Service {
                     Intent recordingCompleteIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
                     recordingCompleteIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, true);
                     recordingCompleteIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, savedUri.toString());
+                    recordingCompleteIntent.setPackage(getPackageName());
                     sendBroadcast(recordingCompleteIntent);
                     mainHandler.post(() -> Toast.makeText(getApplicationContext(),
                             R.string.photo_capture_saved, Toast.LENGTH_SHORT).show());
@@ -1885,6 +1887,7 @@ public class DualCameraRecordingService extends Service {
     private void broadcastError(@NonNull String reason) {
         Intent intent = new Intent(Constants.BROADCAST_ON_DUAL_CAMERA_ERROR);
         intent.putExtra("error_reason", reason);
+        intent.setPackage(getPackageName());
         sendBroadcast(intent);
     }
 
@@ -1895,6 +1898,7 @@ public class DualCameraRecordingService extends Service {
             if (lastRecordingUriString != null && !lastRecordingUriString.isEmpty()) {
                 recordingCompleteIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, lastRecordingUriString);
             }
+            recordingCompleteIntent.setPackage(getPackageName());
             sendBroadcast(recordingCompleteIntent);
             FLog.d(TAG, "Broadcasted ACTION_RECORDING_COMPLETE for dual recording. success=" + success);
         } catch (Exception e) {

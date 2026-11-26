@@ -2264,6 +2264,7 @@ public class RecordingService extends Service {
                     Intent updateIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
                     updateIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, true);
                     updateIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, savedUri.toString());
+                    updateIntent.setPackage(getPackageName());
                     sendBroadcast(updateIntent);
                     mainHandler.post(() -> Toast.makeText(getApplicationContext(),
                             R.string.photo_capture_saved, Toast.LENGTH_SHORT).show());
@@ -2849,6 +2850,7 @@ public class RecordingService extends Service {
                         recordingCompleteIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, true);
                         // Note: We don't have the specific URI here, but RecordsFragment will do a full
                         // refresh
+                        recordingCompleteIntent.setPackage(getPackageName());
                         sendBroadcast(recordingCompleteIntent);
                     } catch (Exception e) {
                         FLog.e(TAG, "Error broadcasting recording complete", e);
@@ -2869,6 +2871,7 @@ public class RecordingService extends Service {
                     try {
                         Intent recordingCompleteIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
                         recordingCompleteIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, false);
+                        recordingCompleteIntent.setPackage(getPackageName());
                         sendBroadcast(recordingCompleteIntent);
                         FLog.d(TAG, "Broadcasted ACTION_RECORDING_COMPLETE (error case) for list refresh");
                     } catch (Exception broadcastError) {
@@ -6247,6 +6250,7 @@ public class RecordingService extends Service {
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_STATE, recordingState);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
+        broadcastIntent.setPackage(getPackageName());
         sendBroadcast(broadcastIntent);
         // Ask SystemUI to put the QS tile into listening state so its icon
         // flips to ACTIVE instantly (Android 13+; may be throttled by the
@@ -6279,6 +6283,7 @@ public class RecordingService extends Service {
         // it works for widgets, tiles, shortcuts and background stops too.
         com.fadcam.Utils.vibrateRecordingStop(this);
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STOPPED);
+        broadcastIntent.setPackage(getPackageName());
         sendBroadcast(broadcastIntent);
         // QS tile: flip back to INACTIVE instantly (see broadcastOnRecordingStarted).
         com.fadcam.services.RecordingTileService.requestTileRefresh(this);
@@ -6287,6 +6292,7 @@ public class RecordingService extends Service {
     private void broadcastOnPreviewOnlyStarted() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_PREVIEW_ONLY_STARTED);
         broadcastIntent.putExtra(Constants.EXTRA_PREVIEW_ONLY_ACTIVE, true);
+        broadcastIntent.setPackage(getPackageName());
         sendBroadcast(broadcastIntent);
         FLog.d(TAG, "Broadcasted: BROADCAST_ON_PREVIEW_ONLY_STARTED");
     }
@@ -6294,6 +6300,7 @@ public class RecordingService extends Service {
     private void broadcastOnPreviewOnlyStopped() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_PREVIEW_ONLY_STOPPED);
         broadcastIntent.putExtra(Constants.EXTRA_PREVIEW_ONLY_ACTIVE, false);
+        broadcastIntent.setPackage(getPackageName());
         sendBroadcast(broadcastIntent);
         FLog.d(TAG, "Broadcasted: BROADCAST_ON_PREVIEW_ONLY_STOPPED");
     }
@@ -6308,6 +6315,7 @@ public class RecordingService extends Service {
         }
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
+        broadcastIntent.setPackage(getPackageName());
         sendBroadcast(broadcastIntent);
         FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_STATE_CALLBACK with state: " + recordingState +
                 ", startTime=" + (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED ? recordingStartTime : -1));
@@ -6716,6 +6724,7 @@ public class RecordingService extends Service {
                     // Broadcast state change TO THE UI so it can update its torch button
                     Intent intent = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
                     intent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isRecordingTorchEnabled);
+                    intent.setPackage(getPackageName());
                     sendBroadcast(intent);
                     
                     // Update SharedPreferences so RemoteStreamManager can read current torch state
@@ -6969,6 +6978,7 @@ public class RecordingService extends Service {
     private void broadcastCameraResourceAvailability(boolean available) {
         Intent availabilityIntent = new Intent(Constants.ACTION_CAMERA_RESOURCE_AVAILABILITY);
         availabilityIntent.putExtra(Constants.EXTRA_CAMERA_RESOURCES_AVAILABLE, available);
+        availabilityIntent.setPackage(getPackageName());
         sendBroadcast(availabilityIntent);
     }
 
@@ -8363,6 +8373,7 @@ public class RecordingService extends Service {
                 failureIntent.putExtra(Constants.EXTRA_ENCODER_DIAGNOSTICS, encoderDiagnostics);
             }
             try {
+                failureIntent.setPackage(getPackageName());
                 sendBroadcast(failureIntent);
             } catch (Throwable t) {
                 FLog.e(TAG, "Failed to broadcast recording failure", t);

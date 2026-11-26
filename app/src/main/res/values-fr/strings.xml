@@ -4815,4 +4815,12 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="applock__fingerprint_error_hardware">L’empreinte n’est pas disponible pour le moment. Configurez une empreinte dans les paramètres Android, puis réessayez.</string>
     <string name="applock__action_settings">Ouvrir les paramètres Android</string>
 <string name="watermark_preview_funny">For Real? :( \n    ＞﹏＜</string>
+    <string name="review_dialog_title">Écrire un avis</string>
+    <string name="report_dialog_title">Signaler un bug / Demander une fonction</string>
+    <string name="button_setting_report">Signaler un bug / Demander une fonction</string>
+    <string name="report_subtitle">Ouvre le suivi des problèmes</string>
+    <string name="review_dialog_body">Cela ouvre un formulaire Google dans le navigateur, où tu peux partager ton avis sur FadCam.</string>
+    <string name="report_dialog_body">Cela ouvre le suivi des problèmes GitHub dans le navigateur. Il faut un compte GitHub pour y publier.</string>
+    <string name="dialog_continue">Continuer</string>
+    <string name="dialog_cancel">Annuler</string>
 </resources>

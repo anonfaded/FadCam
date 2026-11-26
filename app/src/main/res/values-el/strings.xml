@@ -3259,4 +3259,12 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="applock__action_settings">Άνοιγμα ρυθμίσεων Android</string>
     <string name="watermark_preview_funny">Αλήθεια; :( 
     ＞﹏＜</string>
+    <string name="review_dialog_title">Γράψε κριτική</string>
+    <string name="report_dialog_title">Αναφορά σφάλματος / Αίτημα λειτουργίας</string>
+    <string name="button_setting_report">Αναφορά σφάλματος / Αίτημα λειτουργίας</string>
+    <string name="report_subtitle">Ανοίγει τον ιχνηλάτη ζητημάτων</string>
+    <string name="review_dialog_body">Αυτό ανοίγει μια φόρμα Google στον περιηγητή, όπου μπορείς να μοιραστείς τα σχόλιά σου για το FadCam.</string>
+    <string name="report_dialog_body">Αυτό ανοίγει τον ιχνηλάτη ζητημάτων του GitHub στον περιηγητή. Χρειάζεσαι λογαριασμό GitHub για να γράψεις εκεί.</string>
+    <string name="dialog_continue">Συνέχεια</string>
+    <string name="dialog_cancel">Άκυρο</string>
 </resources>

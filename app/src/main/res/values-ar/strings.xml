@@ -4891,4 +4891,12 @@
     <string name="applock__fingerprint_error_hardware">البصمة غير متاحة حاليًا. أعد إعداد بصمة من إعدادات Android ثم حاول مرة أخرى.</string>
     <string name="applock__action_settings">فتح إعدادات Android</string>
     <string name="watermark_preview_funny">حقًا؟ :( \n    ＞﹏＜</string>
+    <string name="review_dialog_title">Write a Review</string>
+    <string name="report_dialog_title">الإبلاغ عن خطأ / طلب ميزة</string>
+    <string name="button_setting_report">الإبلاغ عن خطأ / طلب ميزة</string>
+    <string name="report_subtitle">فتح متعقّب المشكلات</string>
+    <string name="review_dialog_body">سيُفتح نموذج Google في المتصفح لتشاركنا رأيك في FadCam.</string>
+    <string name="report_dialog_body">سيُفتح متعقّب مشكلات GitHub في المتصفح. تحتاج إلى حساب GitHub للنشر هناك.</string>
+    <string name="dialog_continue">متابعة</string>
+    <string name="dialog_cancel">إلغاء</string>
 </resources>

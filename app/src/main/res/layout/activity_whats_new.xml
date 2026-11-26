@@ -205,23 +205,12 @@
             android:paddingTop="6dp"
             android:gravity="center">
 
-            <!-- Countdown Text -->
-            <TextView
-                android:id="@+id/countdownText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Ready in 3 seconds..."
-                android:textColor="#888888"
-                android:textSize="10sp"
-                android:fontFamily="@font/ubuntu_regular"
-                android:layout_marginBottom="4dp" />
-
             <!-- Got It Button: squircle corners, taller -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnGotIt"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
-                android:text="Got It!"
+                android:text="@string/pro_reminder_button_continue"
                 android:textSize="15sp"
                 android:textColor="@color/pro_background"
                 android:backgroundTint="@color/pro_gold"

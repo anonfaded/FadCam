@@ -3104,4 +3104,12 @@ Für immer dein.</string>
     <string name="applock__fingerprint_error_hardware">Der Fingerabdruck ist gerade nicht verfügbar. Richte einen Fingerabdruck in den Android-Einstellungen ein und versuche es erneut.</string>
     <string name="applock__action_settings">Android-Einstellungen öffnen</string>
     <string name="watermark_preview_funny">Im Ernst? :( \n    ＞﹏＜</string>
+    <string name="review_dialog_title">Bewertung schreiben</string>
+    <string name="report_dialog_title">Fehler melden / Funktion wünschen</string>
+    <string name="button_setting_report">Fehler melden / Funktion wünschen</string>
+    <string name="report_subtitle">Öffnet den Issue-Tracker</string>
+    <string name="review_dialog_body">Dies öffnet ein Google-Formular im Browser, in dem du dein Feedback zu FadCam teilen kannst.</string>
+    <string name="report_dialog_body">Dies öffnet den GitHub-Issue-Tracker im Browser. Zum Posten brauchst du ein GitHub-Konto.</string>
+    <string name="dialog_continue">Weiter</string>
+    <string name="dialog_cancel">Abbrechen</string>
 </resources>

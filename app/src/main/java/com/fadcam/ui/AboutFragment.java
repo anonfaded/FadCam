@@ -345,7 +345,9 @@ public class AboutFragment extends BaseFragment {
                     .append("<font color='" + answerColorHex + "'>").append(answers[i]).append("</font><br><br>");
         }
         privacyInfoContent.setText(Html.fromHtml(qnaContent.toString(), Html.FROM_HTML_MODE_LEGACY));
-        sourceCodeButton.setOnClickListener(v -> openUrl("https://github.com/fadsec-lab/"));
+        // The source code lives in the main FadCam repository for every flavor (Lite is a
+        // build flavor of it), so this must point at the repo, not the org landing page.
+        sourceCodeButton.setOnClickListener(v -> openUrl("https://github.com/anonfaded/FadCam"));
         donateButton.setOnClickListener(v -> {
             KoFiSupportBottomSheet bottomSheet = new KoFiSupportBottomSheet();
             bottomSheet.show(getParentFragmentManager(), "KoFiSupportBottomSheet");

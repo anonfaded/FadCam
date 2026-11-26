@@ -3059,4 +3059,12 @@ Sonsuza dek senin.</string>
     <string name="applock__fingerprint_error_hardware">Parmak izi şu anda kullanılamıyor. Android ayarlarında bir parmak izi ayarlayıp tekrar deneyin.</string>
     <string name="applock__action_settings">Android ayarlarını aç</string>
     <string name="watermark_preview_funny">Gerçekten mi? :( \n    ＞｜＜</string>
+    <string name="review_dialog_title">İnceleme yaz</string>
+    <string name="report_dialog_title">Hata bildir / Özellik iste</string>
+    <string name="button_setting_report">Hata bildir / Özellik iste</string>
+    <string name="report_subtitle">Sorun izleyiciyi açar</string>
+    <string name="review_dialog_body">Tarayıcıda bir Google Formu açılır ve FadCam hakkındaki görüşlerini paylaşabilirsin.</string>
+    <string name="report_dialog_body">Tarayıcıda GitHub sorun izleyici açılır. Orada paylaşmak için GitHub hesabın olmalı.</string>
+    <string name="dialog_continue">Devam</string>
+    <string name="dialog_cancel">İptal</string>
 </resources>

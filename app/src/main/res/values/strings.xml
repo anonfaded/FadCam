@@ -1856,6 +1856,14 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="open_source_licenses_no_text">These terms are not redistributable and no online copy is recorded.</string>
     <string name="open_source_licenses_footer">FadCam itself is licensed under GPL-3.0. The notices above cover the third-party code it is built on.</string>
     <string name="share_feedback">Share feedback</string>
+    <string name="button_setting_report">Report a Bug / Request a Feature</string>
+    <string name="report_subtitle">Opens the issue tracker</string>
+    <string name="review_dialog_title">Write a Review</string>
+    <string name="review_dialog_body">This opens a Google Form in your browser, where you can share your feedback about FadCam.</string>
+    <string name="report_dialog_title">Report a Bug / Request a Feature</string>
+    <string name="report_dialog_body">This opens the GitHub issue tracker in your browser. You will need a GitHub account to post there.</string>
+    <string name="dialog_continue">Continue</string>
+    <string name="dialog_cancel">Cancel</string>
     <string name="shortcuts_pin_to_home">Pin Start/Stop/Torch to Home</string>
     <string name="storage_location_internal">Internal App Storage (Default, Private)</string>
     <string name="storage_location_custom">Custom Location (SD Card/Other, Gallery Visible)</string>

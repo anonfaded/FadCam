@@ -74,9 +74,12 @@ public class ReadmeBottomSheetFragment extends BottomSheetDialogFragment {
                 divider1.setBackgroundColor(0x33FFFFFF);
                 linksCard.addView(divider1);
 
-                // GitHub row (second)
+                // GitHub row (second). Lite ships its own repo: releases and the download
+                // page live there, and its README points at the shared source tree.
                 LinearLayout githubRow = buildActionRow(R.drawable.ic_github, getString(R.string.button_readme_github), getString(R.string.readme_github_subtitle));
-                githubRow.setOnClickListener(v -> openUrl("https://github.com/anonfaded/FadCam"));
+                githubRow.setOnClickListener(v -> openUrl(com.fadcam.BuildConfig.LITE_EDITION
+                        ? "https://github.com/anonfaded/FadCam-Lite"
+                        : "https://github.com/anonfaded/FadCam"));
                 linksCard.addView(githubRow);
 
                 // Divider 2

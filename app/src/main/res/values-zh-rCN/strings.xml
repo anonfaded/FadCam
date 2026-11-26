@@ -5077,4 +5077,12 @@
     <string name="applock__fingerprint_error_hardware">指纹当前不可用。请在 Android 设置中设置指纹后重试。</string>
     <string name="applock__action_settings">打开 Android 设置</string>
     <string name="watermark_preview_funny">真的吗？ :( \n ＞﹏＜</string>
+    <string name="review_dialog_title">写评价</string>
+    <string name="report_dialog_title">报告问题 / 请求功能</string>
+    <string name="button_setting_report">报告问题 / 请求功能</string>
+    <string name="report_subtitle">打开问题追踪器</string>
+    <string name="review_dialog_body">这会在浏览器中打开 Google 表单,你可以在这里分享对 FadCam 的反馈。</string>
+    <string name="report_dialog_body">这会在浏览器中打开 GitHub 问题追踪器。需要 GitHub 账号才能发布。</string>
+    <string name="dialog_continue">继续</string>
+    <string name="dialog_cancel">取消</string>
 </resources>

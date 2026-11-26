@@ -968,6 +968,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                     .apply();
             Intent stateIntent = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
             stateIntent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isTorchOn);
+            stateIntent.setPackage(getPackageName());
             sendBroadcast(stateIntent);
             updateTorchIcon();
         } catch (Exception e) {
@@ -991,11 +992,12 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         if (torchReceiverRegistered) return;
         IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                registerReceiver(torchReceiver, filter, Context.RECEIVER_EXPORTED);
-            } else {
-                registerReceiver(torchReceiver, filter);
-            }
+            androidx.core.content.ContextCompat.registerReceiver(
+                    this,
+                    torchReceiver,
+                    filter,
+                    androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            );
             torchReceiverRegistered = true;
         } catch (Exception e) {
             FLog.e(TAG, "Error registering torch receiver", e);
@@ -1024,11 +1026,12 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_PAUSED);
         filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_STOPPED);
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                registerReceiver(recordingStateReceiver, filter, Context.RECEIVER_EXPORTED);
-            } else {
-                registerReceiver(recordingStateReceiver, filter);
-            }
+            androidx.core.content.ContextCompat.registerReceiver(
+                    this,
+                    recordingStateReceiver,
+                    filter,
+                    androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            );
             recordingStateReceiverRegistered = true;
         } catch (Exception e) {
             FLog.e(TAG, "Error registering recording-state receiver", e);

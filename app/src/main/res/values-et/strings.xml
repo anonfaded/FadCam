@@ -3163,4 +3163,12 @@ Igavesti sinu.</string>
     <string name="applock__fingerprint_error_hardware">Sõrmejälg ei ole praegu saadaval. Seadista sõrmejälg Androidi seadetes ja proovi uuesti.</string>
     <string name="applock__action_settings">Ava Androidi seaded</string>
     <string name="watermark_preview_funny">Tõsiselt? :( \n    ＞﹏＜</string>
+    <string name="review_dialog_title">Kirjuta arvustus</string>
+    <string name="report_dialog_title">Teata veast / Palu funktsiooni</string>
+    <string name="button_setting_report">Teata veast / Palu funktsiooni</string>
+    <string name="report_subtitle">Avab vigade jälgija</string>
+    <string name="review_dialog_body">See avab brauseris Google\'i vormi, kus saad FadCami kohta tagasisidet jagada.</string>
+    <string name="report_dialog_body">See avab brauseris GitHubi vigade jälgija. Postitamiseks on vaja GitHubi kontot.</string>
+    <string name="dialog_continue">Jätka</string>
+    <string name="dialog_cancel">Tühista</string>
 </resources>

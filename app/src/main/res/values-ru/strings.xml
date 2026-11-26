@@ -3828,4 +3828,12 @@
     <string name="applock__fingerprint_error_hardware">Отпечаток сейчас недоступен. Настройте отпечаток в настройках Android и повторите попытку.</string>
     <string name="applock__action_settings">Открыть настройки Android</string>
     <string name="watermark_preview_funny">По-настоящему? :( \n    ＞﹏＜</string>
+    <string name="review_dialog_title">Написать отзыв</string>
+    <string name="report_dialog_title">Сообщить об ошибке / Предложить функцию</string>
+    <string name="button_setting_report">Сообщить об ошибке / Предложить функцию</string>
+    <string name="report_subtitle">Открывает трекер задач</string>
+    <string name="review_dialog_body">Откроется форма Google в браузере, где можно поделиться мнением о FadCam.</string>
+    <string name="report_dialog_body">Откроется трекер задач GitHub в браузере. Для публикации нужен аккаунт GitHub.</string>
+    <string name="dialog_continue">Продолжить</string>
+    <string name="dialog_cancel">Отмена</string>
 </resources>

@@ -352,6 +352,7 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
                     Intent persisted = new Intent(Constants.ACTION_FORENSICS_SNAPSHOT_PERSISTED);
                     persisted.putExtra("snapshot_uid", snapshotUid);
                     persisted.putExtra("media_uid", mediaUid);
+                    persisted.setPackage(appContext.getPackageName());
                     appContext.sendBroadcast(persisted);
                 }
                 event.lastSnapshotMs = timelineMs;

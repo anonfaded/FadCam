@@ -3154,4 +3154,12 @@ Tue per sempre.</string>
     <string name="applock__fingerprint_error_hardware">L’impronta non è disponibile ora. Configura un’impronta nelle impostazioni Android e riprova.</string>
     <string name="applock__action_settings">Apri impostazioni Android</string>
     <string name="watermark_preview_funny">Davvero? :( \n    ＞﹏＜</string>
+    <string name="review_dialog_title">Scrivi una recensione</string>
+    <string name="report_dialog_title">Segnala un bug / Richiedi una funzione</string>
+    <string name="button_setting_report">Segnala un bug / Richiedi una funzione</string>
+    <string name="report_subtitle">Apre il tracker dei problemi</string>
+    <string name="review_dialog_body">Si apre un modulo Google nel browser, dove puoi condividere il tuo parere su FadCam.</string>
+    <string name="report_dialog_body">Si apre il tracker dei problemi di GitHub nel browser. Per pubblicare serve un account GitHub.</string>
+    <string name="dialog_continue">Continua</string>
+    <string name="dialog_cancel">Annulla</string>
 </resources>

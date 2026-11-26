@@ -226,6 +226,7 @@ public class StorageSettingsFragment extends Fragment {
             return;
         try {
             Intent intent = new Intent(Constants.ACTION_STORAGE_LOCATION_CHANGED);
+            intent.setPackage(requireContext().getPackageName());
             requireContext().sendBroadcast(intent);
             FLog.i(TAG, "Successfully sent ACTION_STORAGE_LOCATION_CHANGED broadcast.");
 

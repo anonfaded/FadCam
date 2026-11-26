@@ -58,6 +58,9 @@ public class PhotoCaptureActivity extends ComponentActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Keep the home screen's receivers alive: this activity covers MainActivity, and
+        // Home must still be listening when we broadcast the result below.
+        com.fadcam.ui.CaptureFlow.begin();
         launchedFromShortcut = Intent.ACTION_VIEW.equals(getIntent() != null ? getIntent().getAction() : null);
         try {
             com.fadcam.Utils.overridePendingTransitionCompat(this, 0, 0);
@@ -185,6 +188,11 @@ public class PhotoCaptureActivity extends ComponentActivity {
                                 Intent updateIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
                                 updateIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, true);
                                 updateIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, finalSaved.toString());
+                                // Scope the broadcast to this package. Home and Records register
+                                // with RECEIVER_NOT_EXPORTED, and an unscoped sendBroadcast only
+                                // reaches exported receivers, so the completion was silently
+                                // dropped and neither screen refreshed.
+                                updateIntent.setPackage(getPackageName());
                                 sendBroadcast(updateIntent);
                             } else {
                                 Toast.makeText(PhotoCaptureActivity.this, R.string.photo_capture_failed, Toast.LENGTH_SHORT).show();
@@ -374,6 +382,7 @@ public class PhotoCaptureActivity extends ComponentActivity {
 
     @Override
     protected void onDestroy() {
+        com.fadcam.ui.CaptureFlow.end();
         super.onDestroy();
         cameraExecutor.shutdownNow();
     }

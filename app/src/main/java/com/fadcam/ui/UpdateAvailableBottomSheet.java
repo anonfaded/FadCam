@@ -35,6 +35,17 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
     // Store the original variation HTML
     private String originalVariationHtml = "";
 
+    /**
+     * Releases page for THIS build's update feed. Every line has its own repo:
+     * Full -> FadCam, Lite free -> FadCam-Lite, and all Pro editions (Full disguises and
+     * Lite Pro disguises) -> FadCamPro / FadCam-LitePro. Resolved from BuildConfig so a
+     * fallback can never send a Lite user to the Full release page.
+     */
+    private static String defaultReleasesUrl() {
+        return "https://github.com/" + com.fadcam.BuildConfig.UPDATE_ORG
+                + "/" + com.fadcam.BuildConfig.UPDATE_REPO + "/releases";
+    }
+
     public static UpdateAvailableBottomSheet newInstance(String version, String changelog, String tagUrl) {
         UpdateAvailableBottomSheet fragment = new UpdateAvailableBottomSheet();
         Bundle args = new Bundle();
@@ -87,7 +98,9 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
         Bundle args = getArguments();
         String version = args != null ? args.getString(ARG_VERSION, "-") : "-";
         String changelog = args != null ? args.getString(ARG_CHANGELOG, "") : "";
-        String tagUrl = args != null ? args.getString(ARG_TAG_URL, "https://github.com/anonfaded/FadCam/releases/latest") : "https://github.com/anonfaded/FadCam/releases/latest";
+        String tagUrl = args != null
+                ? args.getString(ARG_TAG_URL, defaultReleasesUrl())
+                : defaultReleasesUrl();
 
         // Sarcastic message
         TextView tvSarcastic = view.findViewById(R.id.tvSarcasticMessage);

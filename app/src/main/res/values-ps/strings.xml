@@ -3204,4 +3204,12 @@ Da tase da hamisha paara.</string>
     <string name="applock__fingerprint_error_hardware">Fingerprint agha wakht da stargi nishta. Pa Android settings ke fingerprint tanzim ka, bia koshish ka.</string>
     <string name="applock__action_settings">Android settings khola</string>
     <string name="watermark_preview_funny">For Real? :( \n    ＞﹏＜</string>
+    <string name="review_dialog_title">Review lika</string>
+    <string name="report_dialog_title">Bug report / Feature request</string>
+    <string name="button_setting_report">Bug report / Feature request</string>
+    <string name="report_subtitle">Issue tracker pranzi</string>
+    <string name="review_dialog_body">Da pa browser ke da Google form pranzi, chera ta da FadCam pa haka khpal feedback share kawalai she.</string>
+    <string name="report_dialog_body">Da pa browser ke da GitHub issue tracker pranzi. Da laga post kawlo lapara GitHub account ta zarurat da.</string>
+    <string name="dialog_continue">Dwam</string>
+    <string name="dialog_cancel">Nishta</string>
 </resources>
