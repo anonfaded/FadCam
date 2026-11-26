@@ -1,12 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Landscape dashboard.
-       left column  = camera preview
-       right column = scrollable widget dashboard (two columns)
-       bottom row   = one shared control deck: camera tools on the left,
-                      recording controls on the right, all the same size.
-     The deck is a reserved band outside both columns, so folding the dashboard
-     can never push the tools into the recording controls.
-     Every widget and button below is the existing one, only re-parented. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="?android:attr/colorBackground">
 
@@ -107,18 +99,378 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- Hidden layoutCards for compatibility -->
     <LinearLayout android:id="@+id/layoutCards" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar" app:layout_constraintBottom_toBottomOf="parent" />
 
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/dashboardGuideline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.55" />
+    <!-- Left Panel: Stats and Info (Half Screen) -->
+    <LinearLayout android:id="@+id/leftPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="@dimen/home_land_panel_margin" android:layout_marginTop="@dimen/home_land_panel_margin_top" android:layout_marginEnd="0dp" android:layout_marginBottom="0dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@+id/cardRailToggleLandscape" app:layout_constraintHorizontal_weight="1.35" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar">
 
-    <!-- ============ LEFT: CAMERA PREVIEW ============ -->
-    <LinearLayout android:id="@+id/rightPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginTop="@dimen/home_land_panel_margin_top" android:layout_marginEnd="@dimen/home_land_gap_s" android:layout_marginBottom="@dimen/home_land_gap_s" android:orientation="vertical" app:layout_constraintBottom_toTopOf="@+id/layoutQuickActions" app:layout_constraintEnd_toStartOf="@+id/dashboardGuideline" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar">
+        <!-- Scrollable content area (landscape-only). fillViewport is false so the
+             dossier card WRAPS its rows: a short screen scrolls, a tall one leaves
+             the card sized to the cards instead of stretching to the bottom. -->
+        <androidx.core.widget.NestedScrollView android:id="@+id/leftScroll" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="false" android:overScrollMode="ifContentScrolls" android:clipToPadding="false" android:paddingBottom="@dimen/home_land_scroll_padding_bottom" android:focusable="false" android:descendantFocusability="afterDescendants">
 
+            <!-- Mode switcher and the two columns share one wrapping card.
+                 An id is required so the fold arrow can centre itself on this
+                 card's height (see centreLandscapeFoldArrow in HomeFragment). -->
+            <LinearLayout android:id="@+id/leftRailCard" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="@drawable/bg_home_card_rail_section"
+                android:orientation="vertical"
+                android:padding="@dimen/home_land_card_padding">
+
+                <!-- Mode Switcher (FadCam, FadRec, FadMic) - Compact for landscape -->
+                <include android:id="@+id/mode_switcher" layout="@layout/mode_switcher_segmented" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="0dp" android:layout_marginBottom="0dp" />
+
+                <!-- 2-Column Layout within Left Panel -->
+                <com.fadcam.ui.widgets.EqualHeightRowLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+
+                <!-- Left Column: Original Storage Widget -->
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="@dimen/home_land_gap_s" android:orientation="vertical">
+
+                <com.google.android.material.card.MaterialCardView android:id="@+id/cardStorage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="@dimen/home_land_card_radius_l" app:cardElevation="@dimen/home_land_card_elevation_l" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="@dimen/home_land_card_stroke">
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="@dimen/home_land_gap_l">
+
+                        <!-- Camera Row -->
+                        <com.google.android.material.card.MaterialCardView 
+                            android:id="@+id/rowCamera" 
+                            android:layout_width="match_parent" 
+                            android:layout_height="wrap_content" 
+                            android:layout_marginBottom="@dimen/home_land_gap_s" 
+                            android:clickable="true" 
+                            android:focusable="true"
+                            android:nextFocusDown="@+id/rowEstimateTime"
+                            android:nextFocusUp="@+id/btnGetPro"
+                            app:cardBackgroundColor="@android:color/transparent" 
+                            app:cardCornerRadius="@dimen/home_land_card_radius_m" 
+                            app:cardElevation="0dp" 
+                            app:rippleColor="#22FFFFFF" 
+                            app:strokeWidth="0dp">
+
+                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="@dimen/home_land_gap_xs" android:paddingTop="@dimen/home_land_stroke" android:paddingEnd="@dimen/home_land_gap_xs" android:paddingBottom="@dimen/home_land_stroke">
+
+                                <FrameLayout android:layout_width="@dimen/home_land_touch_l" android:layout_height="@dimen/home_land_touch_m" android:layout_marginEnd="@dimen/home_land_gap_l">
+                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/ivCameraIcon" android:layout_width="@dimen/home_land_touch_m" android:layout_height="@dimen/home_land_touch_m" android:layout_gravity="center" android:fontFamily="@font/materialicons" android:text="camera_alt" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_land_text_icon" android:gravity="center" />
+                                </FrameLayout>
+
+                                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+
+                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Rear Camera" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_land_text_body" android:textStyle="bold" />
+
+                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4K • 60fps" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_land_text_caption" />
+                                </LinearLayout>
+
+                                <ImageView android:layout_width="@dimen/home_land_gap_3xl" android:layout_height="@dimen/home_land_gap_3xl" android:layout_marginStart="@dimen/home_land_gap_xs" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Estimated Time Row -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/home_land_stroke"
+                            android:layout_marginStart="@dimen/home_land_divider_indent"
+                            android:layout_marginEnd="@dimen/home_land_gap_xs"
+                            android:layout_marginBottom="@dimen/home_land_gap_s"
+                            android:alpha="0.5"
+                            android:background="#22FFFFFF" />
+
+                        <com.google.android.material.card.MaterialCardView 
+                            android:id="@+id/rowEstimateTime" 
+                            android:layout_width="match_parent" 
+                            android:layout_height="wrap_content" 
+                            android:layout_marginBottom="@dimen/home_land_gap_s" 
+                            android:clickable="true" 
+                            android:focusable="true"
+                            android:nextFocusUp="@+id/rowCamera"
+                            android:nextFocusDown="@+id/rowStorageAvailable"
+                            app:cardBackgroundColor="@android:color/transparent" 
+                            app:cardCornerRadius="@dimen/home_land_card_radius_m" 
+                            app:cardElevation="0dp" 
+                            app:rippleColor="#22FFFFFF" 
+                            app:strokeWidth="0dp">
+
+                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="@dimen/home_land_gap_xs" android:paddingTop="@dimen/home_land_stroke" android:paddingEnd="@dimen/home_land_gap_xs" android:paddingBottom="@dimen/home_land_stroke">
+
+                                <FrameLayout android:layout_width="@dimen/home_land_touch_l" android:layout_height="@dimen/home_land_touch_m" android:layout_marginEnd="@dimen/home_land_gap_l">
+                                    <ImageView android:id="@+id/ivEstimateIcon" android:layout_width="@dimen/home_land_touch_m" android:layout_height="@dimen/home_land_touch_m" android:layout_gravity="center" android:padding="@dimen/home_land_gap" android:src="@drawable/hourglass_top_24px" android:tint="#F44336" android:contentDescription="Time left icon" android:scaleType="centerInside" />
+                                </FrameLayout>
+
+                                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+
+                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvEstimateTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textDirection="ltr" android:text="1h 30m" android:textColor="#F44336" android:textSize="@dimen/home_land_text_body" android:textStyle="bold" />
+
+                                    <TextView android:id="@+id/tvEstimateSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/recording_time_left" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_land_text_caption" />
+                                </LinearLayout>
+
+                                <ImageView android:layout_width="@dimen/home_land_gap_3xl" android:layout_height="@dimen/home_land_gap_3xl" android:layout_marginStart="@dimen/home_land_gap_xs" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/home_land_stroke"
+                            android:layout_marginStart="@dimen/home_land_divider_indent"
+                            android:layout_marginEnd="@dimen/home_land_gap_xs"
+                            android:layout_marginBottom="@dimen/home_land_gap_s"
+                            android:alpha="0.5"
+                            android:background="#22FFFFFF" />
+
+                        <!-- Available Space Row -->
+                        <com.google.android.material.card.MaterialCardView 
+                            android:id="@+id/rowStorageAvailable" 
+                            android:layout_width="match_parent" 
+                            android:layout_height="wrap_content" 
+                            android:clickable="true" 
+                            android:focusable="true"
+                            android:nextFocusUp="@+id/rowEstimateTime"
+                            android:nextFocusDown="@+id/cardRailToggleLandscape"
+                            app:cardBackgroundColor="@android:color/transparent" 
+                            app:cardCornerRadius="@dimen/home_land_card_radius_m" 
+                            app:cardElevation="0dp" 
+                            app:rippleColor="#22FFFFFF" 
+                            app:strokeWidth="0dp">
+
+                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="@dimen/home_land_gap_xs" android:paddingTop="@dimen/home_land_stroke" android:paddingEnd="@dimen/home_land_gap_xs" android:paddingBottom="@dimen/home_land_stroke">
+
+                                <FrameLayout android:layout_width="@dimen/home_land_touch_l" android:layout_height="@dimen/home_land_touch_m" android:layout_marginEnd="@dimen/home_land_gap_l">
+                                    <com.fadcam.ui.utils.StorageProgressRingView android:id="@+id/storageProgressRing" android:layout_width="@dimen/home_land_touch_xs" android:layout_height="@dimen/home_land_touch_xs" android:layout_gravity="center" android:contentDescription="Available space progress" />
+                                </FrameLayout>
+
+                                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+
+                                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvSpaceTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1.13 GB" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_land_text_body" android:textStyle="bold" />
+                                        <TextView android:id="@+id/tvSpaceTotal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1" android:layout_marginStart="@dimen/home_land_gap_xs" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_land_text_caption" />
+                                    </LinearLayout>
+
+                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvSpaceSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/storage_available_space" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_land_text_caption" />
+                                </LinearLayout>
+
+                                <ImageView android:layout_width="@dimen/home_land_gap_3xl" android:layout_height="@dimen/home_land_gap_3xl" android:layout_marginStart="@dimen/home_land_gap_xs" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardElapsedHero"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:layout_marginTop="@dimen/home_land_gap_xs"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardCornerRadius="@dimen/home_land_card_radius_l"
+                    app:cardElevation="0dp"
+                    app:rippleColor="#22FFFFFF"
+                    app:strokeWidth="0dp">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:minHeight="@dimen/home_land_elapsed_min_h"
+                        android:clipChildren="true"
+                        android:clipToPadding="true"
+                        android:paddingStart="@dimen/home_land_gap_s"
+                        android:paddingTop="0dp"
+                        android:paddingEnd="@dimen/home_land_gap_s"
+                        android:paddingBottom="0dp">
+
+                        <ImageView
+                            android:id="@+id/ivElapsedAccent"
+                            android:layout_width="@dimen/home_land_row_l"
+                            android:layout_height="@dimen/home_land_touch_2xl"
+                            android:layout_gravity="bottom|end"
+                            android:alpha="0.72"
+                            android:scaleType="fitCenter"
+                            android:contentDescription="@null"
+                            android:src="@drawable/fadseclab_flag"
+                            android:translationX="0dp"
+                            android:translationY="@dimen/home_land_gap_l" />
+
+                        <LinearLayout
+                            android:id="@+id/layoutElapsedContent"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:paddingTop="@dimen/home_hero_padding_v"
+                            android:paddingBottom="@dimen/home_hero_padding_v">
+
+                            <LinearLayout
+                                android:id="@+id/layoutElapsedMetaRow"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:orientation="horizontal">
+
+                            <ImageView
+                                android:id="@+id/tvElapsedStateIcon"
+                                android:layout_width="@dimen/home_land_gap_2xl"
+                                android:layout_height="@dimen/home_land_gap_2xl"
+                                android:layout_marginEnd="@dimen/home_land_gap_s"
+                                android:contentDescription="@null"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/play_button_rounded"
+                                android:tint="#90A4AE" />
+
+                            <TextView
+                                android:id="@+id/tvElapsedSubtitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/recording_elapsed_time"
+                                android:textAllCaps="true"
+                                android:textColor="#90A4AE"
+                                android:textSize="@dimen/home_land_text_tiny"
+                                android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <com.fadcam.ui.utils.AnimatedTextView
+                                android:id="@+id/tvElapsedTitle"
+                                android:textDirection="ltr"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="0dp"
+                                android:fontFamily="@font/ubuntu_regular"
+                                android:includeFontPadding="false"
+                                android:gravity="center"
+                                android:letterSpacing="0.005"
+                                android:fontFeatureSettings="tnum"
+                                android:maxLines="1"
+                                android:ellipsize="end"
+                                android:text="00:00"
+                                android:textColor="#D6E2EA"
+                                android:textSize="@dimen/home_land_text_icon_lg"
+                                android:textStyle="bold" />
+
+                            <com.fadcam.ui.utils.ElapsedCompactAnimatedView
+                                android:id="@+id/viewElapsedCompact"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="0dp"
+                                android:gravity="center"
+                                android:visibility="gone" />
+
+                            <TextView
+                                android:id="@+id/tvElapsedReadable"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="0dp"
+                                android:includeFontPadding="false"
+                                android:gravity="center"
+                                android:text="m • s"
+                                android:textColor="#B0BEC5"
+                                android:textSize="@dimen/home_land_text_label"
+                                android:visibility="gone" />
+
+                        </LinearLayout>
+
+                    </FrameLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                </LinearLayout>
+
+                <!-- Right Column: Clock, Stats, and Recording Controls -->
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="@dimen/home_land_gap_s" android:orientation="vertical">
+
+                    <!-- Clock Card -->
+                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="@dimen/home_land_card_radius" app:cardElevation="@dimen/home_land_card_elevation_m" app:strokeWidth="0dp">
+
+                        <LinearLayout android:id="@+id/layoutClockInner" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="@dimen/home_land_gap">
+
+                                    <TextView android:layout_width="@dimen/home_land_touch_m" android:layout_height="@dimen/home_land_touch_m" android:layout_gravity="center_vertical" android:layout_marginEnd="@dimen/home_land_gap" android:fontFamily="@font/materialicons" android:text="access_time" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_land_text_icon" android:gravity="center" />
+
+                            <LinearLayout android:id="@+id/layoutClockContent" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="@dimen/home_land_gap">
+
+                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="@dimen/home_land_text_clock" android:textStyle="bold" android:layout_gravity="top" android:textColor="?attr/colorHeading" android:includeFontPadding="false" />
+
+                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateEnglish" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="@dimen/home_land_text_body" android:layout_gravity="left" android:textColor="?attr/homeRailTextPrimary" android:includeFontPadding="false" />
+
+                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateArabic" android:layout_width="wrap_content" android:layout_gravity="end" android:layout_height="wrap_content" android:textSize="@dimen/home_land_text_body" android:textColor="?attr/homeRailTextPrimary" android:includeFontPadding="false" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Stats Card -->
+                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" android:clickable="true" android:focusable="true" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="@dimen/home_land_card_radius" app:cardElevation="@dimen/home_land_card_elevation_m" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="@dimen/home_land_card_stroke">
+
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="@dimen/home_land_gap">
+
+                            <TextView android:layout_width="@dimen/home_land_touch_m" android:layout_height="@dimen/home_land_touch_m" android:layout_gravity="center" android:layout_marginEnd="@dimen/home_land_gap" android:fontFamily="@font/materialicons" android:text="folder" android:textColor="?attr/sectionHeaderColor" android:textSize="@dimen/home_land_text_icon" android:gravity="center" />
+
+                            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="@dimen/home_land_gap">
+                                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/stats_label_videos" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_land_text_body" android:textStyle="bold" android:layout_marginEnd="@dimen/home_land_gap" android:tag="preserve_color" />
+                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvVideoCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_land_text_body" android:tag="preserve_color" />
+                                </LinearLayout>
+                                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="@dimen/home_land_stroke">
+                                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/stats_label_used" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_land_text_body" android:textStyle="bold" android:layout_marginEnd="@dimen/home_land_gap" android:tag="preserve_color" />
+                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvVideoSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 B" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_land_text_body" android:tag="preserve_color" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <ImageView android:layout_width="@dimen/home_land_gap_3xl" android:layout_height="@dimen/home_land_gap_3xl" android:layout_gravity="center" android:layout_marginStart="@dimen/home_land_gap_xs" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open video stats" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Recording Controls Card. wrap_content (not weight) so every card
+                         in the rail sizes to its own content; a weighted card here grew
+                         to swallow the leftover height and made the decks unequal. -->
+                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="@dimen/home_land_card_radius" app:cardElevation="@dimen/home_land_card_elevation_s" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="@dimen/home_land_card_stroke">
+
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_vertical" android:padding="@dimen/home_land_gap_l">
+
+                            <TextView android:id="@+id/tv_recording_controls_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/recording_controls_title" android:textSize="@dimen/home_land_text_small" android:textStyle="bold" android:textColor="?attr/sectionHeaderColor" android:gravity="center" android:paddingStart="@dimen/home_land_gap" android:paddingEnd="@dimen/home_land_gap" android:paddingTop="0dp" android:paddingBottom="@dimen/home_land_gap_l" android:includeFontPadding="false" />
+
+                            <include android:id="@+id/includeRecordingTiles" layout="@layout/home_recording_tiles_row" android:layout_width="match_parent" android:layout_height="wrap_content" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+                </com.fadcam.ui.widgets.EqualHeightRowLayout>
+                <!-- Close 2-column container -->
+                </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+    </LinearLayout>
+
+    <!-- Fold arrow: rides the seam between the rail and the preview. It is a direct
+         child of the root because rightPanel and leftPanel both chain off it, so it
+         cannot live inside the rail card. Its vertical position is centred on the rail
+         card at runtime (see centreLandscapeFoldArrow), which is why the bottom
+         constraint is absent here. -->
+    <FrameLayout
+        android:id="@+id/cardRailToggleLandscape"
+        android:layout_width="@dimen/home_land_touch_s"
+        android:layout_height="@dimen/home_land_row_l"
+        android:layout_marginTop="@dimen/home_land_gap"
+        android:background="@drawable/bg_home_fold_toggle_right"
+        android:clickable="true"
+        android:contentDescription="@string/home_cards_fold_toggle"
+        android:focusable="true"
+        android:nextFocusUp="@+id/rowStorageAvailable"
+        android:nextFocusDown="@+id/buttonTorchSwitch"
+        app:layout_constraintEnd_toStartOf="@id/rightPanel"
+        app:layout_constraintStart_toEndOf="@id/leftPanel"
+        app:layout_constraintTop_toBottomOf="@id/header_bar">
+
+        <ImageView
+            android:id="@+id/ivCardRailToggleLandscape"
+            android:layout_width="@dimen/home_land_icon_m"
+            android:layout_height="@dimen/home_land_icon_l"
+            android:layout_gravity="center"
+            android:rotation="180"
+            android:src="@drawable/ic_double_chevron"
+            android:tint="#555555" />
+    </FrameLayout>
+
+    <!-- Right Panel: Camera Preview and Controls (Half Screen) -->
+    <LinearLayout android:id="@+id/rightPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="@dimen/home_land_gap_s" android:layout_marginTop="@dimen/home_land_gap" android:layout_marginEnd="@dimen/home_land_gap_l" android:layout_marginBottom="0dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_weight="1.30" app:layout_constraintStart_toEndOf="@+id/cardRailToggleLandscape" app:layout_constraintTop_toBottomOf="@id/header_bar">
+
+        <!-- Camera Preview Area -->
         <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="@dimen/home_land_card_radius" app:cardElevation="0dp" app:strokeColor="?attr/homeRailAccent" app:strokeWidth="@dimen/home_land_preview_stroke">
 
             <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:background="@android:color/transparent">
@@ -274,491 +626,371 @@
                 <!-- Hidden placeholder text (replaced by icons) -->
                 <TextView android:id="@+id/tvPreviewPlaceholder" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="@string/ui_preview_area" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_land_text_placeholder" android:visibility="gone" />
 
+                <!-- Bottom-right controls container (quick actions row — mirrors portrait exactly) -->
+            <FrameLayout
+                 android:id="@+id/quick_actions_row"
+                 android:layout_width="match_parent"
+                 android:layout_height="wrap_content"
+                 android:layout_gravity="bottom"
+                 android:layout_margin="@dimen/home_land_gap_xs"
+                 android:paddingStart="@dimen/home_land_header_padding_h"
+                 android:paddingEnd="@dimen/home_land_header_padding_h"
+                 android:paddingTop="@dimen/home_land_gap_xs"
+                 android:paddingBottom="@dimen/home_land_gap_xs"
+                 android:clipChildren="false"
+                 android:clipToPadding="false">
+
+                <!-- Maximum recording duration timer button with value line (leftmost).
+                     Direct child of quick_actions_row — drag-reorder math requires
+                     the button's parent to BE the row. -->
+                <LinearLayout
+                    android:id="@+id/btnQuickTimer"
+                    android:layout_width="@dimen/home_land_touch_2xl"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone"
+                    android:background="?attr/selectableItemBackgroundBorderless" android:clipChildren="false" android:clipToPadding="false">
+
+                    <ImageView
+                        android:layout_width="@dimen/home_land_touch_xl"
+                        android:layout_height="@dimen/home_land_touch_xl"
+                        android:background="@drawable/fullscreen_icon_bg_gradient"
+                        android:src="@drawable/hourglass_top_24px"
+                        android:tint="@android:color/white"
+                        android:scaleType="centerInside"
+                        android:padding="@dimen/home_land_gap_l"
+                        android:contentDescription="@string/quick_timer_desc" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/quick_timer_label"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/home_land_text_label"
+                        android:textStyle="bold"
+                        android:maxLines="2"
+                        android:gravity="center"
+                        android:layout_marginTop="@dimen/home_land_gap_xs"
+                        android:shadowColor="#BB000000"
+                        android:shadowDx="1"
+                        android:shadowDy="1"
+                        android:shadowRadius="1"/>
+
+                    <!-- Compact value line under the label (e.g. "5m", "1h 30m", "45s", "Off").
+                         AnimatedTextView: rolls digits like the elapsed display. -->
+                    <com.fadcam.ui.utils.AnimatedTextView
+                        android:id="@+id/tvQuickTimerValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Off"
+                        android:textColor="#FFD54F"
+                        android:textSize="@dimen/home_land_text_tiny"
+                        android:fontFamily="monospace"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:gravity="center"
+                        android:layout_marginTop="@dimen/home_land_stroke"
+                        android:includeFontPadding="false"/>
+                </LinearLayout>
+
+                <!-- Realtime audio mute/unmute button with label -->
+                <LinearLayout
+                    android:id="@+id/btnQuickMuteAudio"
+                    android:layout_width="@dimen/home_land_touch_2xl"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone"
+                    android:background="?attr/selectableItemBackgroundBorderless" android:clipChildren="false" android:clipToPadding="false">
+
+                    <TextView
+                        android:id="@+id/ivQuickMuteIcon"
+                        android:layout_width="@dimen/home_land_touch_xl"
+                        android:layout_height="@dimen/home_land_touch_xl"
+                        android:background="@drawable/fullscreen_icon_bg_gradient"
+                        android:fontFamily="@font/materialicons"
+                        android:gravity="center"
+                        android:text="mic"
+                        android:textSize="@dimen/home_land_text_icon"
+                        android:textColor="@android:color/white"
+                        android:contentDescription="@string/quick_mute_label" />
+
+                    <TextView
+                        android:id="@+id/tvQuickMuteLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/quick_mute_label"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/home_land_text_label"
+                        android:textStyle="bold"
+                        android:maxLines="2"
+                        android:gravity="center"
+                        android:layout_marginTop="@dimen/home_land_gap_xs"
+                        android:shadowColor="#BB000000"
+                        android:shadowDx="1"
+                        android:shadowDy="1"
+                        android:shadowRadius="1"/>
+                </LinearLayout>
+
+                <!-- Fullscreen preview button with label -->
+                <LinearLayout
+                    android:id="@+id/btnFullscreenPreview"
+                    android:layout_width="@dimen/home_land_touch_2xl"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone"
+                    android:background="?attr/selectableItemBackgroundBorderless" android:clipChildren="false" android:clipToPadding="false">
+
+                    <ImageView
+                        android:layout_width="@dimen/home_land_touch_xl"
+                        android:layout_height="@dimen/home_land_touch_xl"
+                        android:background="@drawable/fullscreen_icon_bg_gradient"
+                        android:src="@drawable/fullscreen_rounded"
+                        android:tint="@android:color/white"
+                        android:scaleType="centerInside"
+                        android:padding="@dimen/home_land_gap_l"
+                        android:contentDescription="@string/watch_fullscreen_desc" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Full"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/home_land_text_label"
+                        android:textStyle="bold"
+                        android:maxLines="2"
+                        android:gravity="center"
+                        android:layout_marginTop="@dimen/home_land_gap_xs"
+                        android:shadowColor="#BB000000"
+                        android:shadowDx="1"
+                        android:shadowDy="1"
+                        android:shadowRadius="1"/>
+                </LinearLayout>
+
+                <!-- Quick shot button with label -->
+                <LinearLayout
+                    android:id="@+id/btnCaptureShotPreview"
+                    android:layout_width="@dimen/home_land_touch_2xl"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone"
+                    android:background="?attr/selectableItemBackgroundBorderless" android:clipChildren="false" android:clipToPadding="false">
+
+                    <ImageView
+                        android:layout_width="@dimen/home_land_touch_xl"
+                        android:layout_height="@dimen/home_land_touch_xl"
+                        android:background="@drawable/fullscreen_icon_bg_gradient"
+                        android:src="@drawable/camera_rounded"
+                        android:tint="@android:color/white"
+                        android:scaleType="centerInside"
+                        android:padding="@dimen/home_land_gap_l"
+                        android:contentDescription="@string/watch_fadshot_desc" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="FadShot"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/home_land_text_label"
+                        android:textStyle="bold"
+                        android:maxLines="2"
+                        android:gravity="center"
+                        android:layout_marginTop="@dimen/home_land_gap_xs"
+                        android:shadowColor="#BB000000"
+                        android:shadowDx="1"
+                        android:shadowDy="1"
+                        android:shadowRadius="1"/>
+                </LinearLayout>
+
+            </FrameLayout>
+
+                <LinearLayout
+                    android:id="@+id/containerPreviewZoomHud"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="@dimen/home_land_gap_2xl"
+                    android:layout_marginEnd="@dimen/home_land_gap_2xl"
+                    android:background="@drawable/fullscreen_icon_bg"
+                    android:elevation="@dimen/home_land_elevation"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="@dimen/home_land_gap_xl"
+                    android:paddingTop="@dimen/home_land_gap_l"
+                    android:paddingEnd="@dimen/home_land_gap_l"
+                    android:paddingBottom="@dimen/home_land_gap_l"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/textPreviewZoomHud"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1.0x"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/home_land_text_caption"
+                        android:textStyle="bold" />
+
+                    <FrameLayout
+                        android:id="@+id/containerPreviewZoomMap"
+                        android:layout_width="@dimen/home_land_zoom_map_w"
+                        android:layout_height="@dimen/home_land_row_l"
+                        android:layout_marginStart="@dimen/home_land_gap_xl"
+                        android:clipChildren="true"
+                        android:clipToPadding="true"
+                        android:background="@drawable/fullscreen_icon_bg">
+
+                        <View
+                            android:id="@+id/viewPreviewZoomMapViewport"
+                            android:layout_width="@dimen/home_land_icon"
+                            android:layout_height="@dimen/home_land_icon"
+                            android:layout_gravity="top|start"
+                            android:background="@drawable/fadcam_zoom_viewport_indicator" />
+                    </FrameLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPreviewZoomReset"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="@dimen/home_land_touch_ml"
+                        android:layout_height="@dimen/home_land_touch_ml"
+                        android:layout_marginStart="@dimen/home_land_gap_l"
+                        android:insetLeft="0dp"
+                        android:insetTop="0dp"
+                        android:insetRight="0dp"
+                        android:insetBottom="0dp"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        app:backgroundTint="#5A0D1015"
+                        app:cornerRadius="@dimen/home_land_card_radius_m"
+                        app:icon="@drawable/ic_zoom_out_map"
+                        app:iconGravity="textStart"
+                        app:iconPadding="0dp"
+                        app:iconSize="@dimen/home_land_icon_ms"
+                        app:iconTint="@android:color/white"
+                        app:rippleColor="#33FFFFFF"
+                        app:strokeColor="#2AFFFFFF"
+                        app:strokeWidth="@dimen/home_land_card_stroke" />
+                </LinearLayout>
+
+                <!-- Hint text for long press to enable preview — INSIDE the preview
+                     card (bottom), same placement as portrait. -->
+                <TextView android:id="@+id/tvPreviewHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center|bottom" android:layout_marginBottom="@dimen/home_land_gap_l" android:text="@string/preview_enable_hint" android:textColor="?attr/colorHeading" android:textSize="@dimen/home_land_text_body" android:alpha="0.75" android:letterSpacing="0.05" android:visibility="gone" />
+
             </FrameLayout>
         </androidx.cardview.widget.CardView>
 
-    </LinearLayout>
-
-    <!-- ============ RIGHT: WIDGET DASHBOARD ============ -->
-    <LinearLayout android:id="@+id/widgetDashboard" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginTop="@dimen/home_land_panel_margin_top" android:layout_marginEnd="@dimen/home_land_panel_margin" android:layout_marginBottom="@dimen/home_land_gap_s" android:orientation="vertical" app:layout_constraintBottom_toTopOf="@+id/layoutQuickActions" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="@+id/dashboardGuideline" app:layout_constraintTop_toBottomOf="@id/header_bar" app:layout_constraintWidth_max="@dimen/home_land_dashboard_max_width">
-
-        <androidx.core.widget.NestedScrollView android:id="@+id/widgetDashboardScroll" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="false" android:overScrollMode="ifContentScrolls" android:clipToPadding="false" android:paddingBottom="@dimen/home_land_scroll_padding_bottom" android:focusable="false" android:descendantFocusability="afterDescendants">
-
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/bg_home_card_rail_section"
-                    android:clipChildren="false"
-                    android:paddingStart="@dimen/home_rail_padding_h"
-                    android:paddingTop="@dimen/home_rail_padding_v"
-                    android:paddingEnd="@dimen/home_rail_padding_h"
-                    android:paddingBottom="@dimen/home_rail_padding_v">
-
-                <include android:id="@+id/mode_switcher" layout="@layout/mode_switcher_segmented" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/home_land_gap" />
-
-                <com.fadcam.ui.widgets.EqualHeightRowLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="@dimen/home_land_gap_s" android:orientation="vertical">
-
-                        <com.google.android.material.card.MaterialCardView android:id="@+id/cardStorage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="@dimen/home_land_card_radius_l" app:cardElevation="@dimen/home_land_card_elevation_l" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="@dimen/home_land_card_stroke">
-
-                            <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="@dimen/home_land_gap_l">
-
-                                <!-- Camera Row -->
-                                <com.google.android.material.card.MaterialCardView 
-                                    android:id="@+id/rowCamera" 
-                                    android:layout_width="match_parent" 
-                                    android:layout_height="wrap_content" 
-                                    android:layout_marginBottom="@dimen/home_land_gap_s" 
-                                    android:clickable="true" 
-                                    android:focusable="true"
-                                    android:nextFocusDown="@+id/rowEstimateTime"
-                                    android:nextFocusUp="@+id/btnGetPro"
-                                    app:cardBackgroundColor="@android:color/transparent" 
-                                    app:cardCornerRadius="@dimen/home_land_card_radius_m" 
-                                    app:cardElevation="0dp" 
-                                    app:rippleColor="#22FFFFFF" 
-                                    app:strokeWidth="0dp">
-
-                                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="@dimen/home_land_gap_xs" android:paddingTop="@dimen/home_land_stroke" android:paddingEnd="@dimen/home_land_gap_xs" android:paddingBottom="@dimen/home_land_stroke">
-
-                                        <FrameLayout android:layout_width="@dimen/home_land_touch_l" android:layout_height="@dimen/home_land_touch_m" android:layout_marginEnd="@dimen/home_land_gap_l">
-                                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/ivCameraIcon" android:layout_width="@dimen/home_land_touch_m" android:layout_height="@dimen/home_land_touch_m" android:layout_gravity="center" android:fontFamily="@font/materialicons" android:text="camera_alt" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_land_text_icon" android:gravity="center" />
-                                        </FrameLayout>
-
-                                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-
-                                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Rear Camera" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_land_text_body" android:textStyle="bold" />
-
-                                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4K • 60fps" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_land_text_caption" />
-                                        </LinearLayout>
-
-                                        <ImageView android:layout_width="@dimen/home_land_gap_3xl" android:layout_height="@dimen/home_land_gap_3xl" android:layout_marginStart="@dimen/home_land_gap_xs" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
-                                    </LinearLayout>
-                                </com.google.android.material.card.MaterialCardView>
-
-                                <!-- Estimated Time Row -->
-                                <View
-                                    android:layout_width="match_parent"
-                                    android:layout_height="@dimen/home_land_stroke"
-                                    android:layout_marginStart="@dimen/home_land_divider_indent"
-                                    android:layout_marginEnd="@dimen/home_land_gap_xs"
-                                    android:layout_marginBottom="@dimen/home_land_gap_s"
-                                    android:alpha="0.5"
-                                    android:background="#22FFFFFF" />
-
-                                <com.google.android.material.card.MaterialCardView 
-                                    android:id="@+id/rowEstimateTime" 
-                                    android:layout_width="match_parent" 
-                                    android:layout_height="wrap_content" 
-                                    android:layout_marginBottom="@dimen/home_land_gap_s" 
-                                    android:clickable="true" 
-                                    android:focusable="true"
-                                    android:nextFocusUp="@+id/rowCamera"
-                                    android:nextFocusDown="@+id/rowStorageAvailable"
-                                    app:cardBackgroundColor="@android:color/transparent" 
-                                    app:cardCornerRadius="@dimen/home_land_card_radius_m" 
-                                    app:cardElevation="0dp" 
-                                    app:rippleColor="#22FFFFFF" 
-                                    app:strokeWidth="0dp">
-
-                                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="@dimen/home_land_gap_xs" android:paddingTop="@dimen/home_land_stroke" android:paddingEnd="@dimen/home_land_gap_xs" android:paddingBottom="@dimen/home_land_stroke">
-
-                                        <FrameLayout android:layout_width="@dimen/home_land_touch_l" android:layout_height="@dimen/home_land_touch_m" android:layout_marginEnd="@dimen/home_land_gap_l">
-                                            <ImageView android:id="@+id/ivEstimateIcon" android:layout_width="@dimen/home_land_touch_m" android:layout_height="@dimen/home_land_touch_m" android:layout_gravity="center" android:padding="@dimen/home_land_gap" android:src="@drawable/hourglass_top_24px" android:tint="#F44336" android:contentDescription="Time left icon" android:scaleType="centerInside" />
-                                        </FrameLayout>
-
-                                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-
-                                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvEstimateTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textDirection="ltr" android:text="1h 30m" android:textColor="#F44336" android:textSize="@dimen/home_land_text_body" android:textStyle="bold" />
-
-                                            <TextView android:id="@+id/tvEstimateSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/recording_time_left" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_land_text_caption" />
-                                        </LinearLayout>
-
-                                        <ImageView android:layout_width="@dimen/home_land_gap_3xl" android:layout_height="@dimen/home_land_gap_3xl" android:layout_marginStart="@dimen/home_land_gap_xs" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
-                                    </LinearLayout>
-                                </com.google.android.material.card.MaterialCardView>
-
-                                <View
-                                    android:layout_width="match_parent"
-                                    android:layout_height="@dimen/home_land_stroke"
-                                    android:layout_marginStart="@dimen/home_land_divider_indent"
-                                    android:layout_marginEnd="@dimen/home_land_gap_xs"
-                                    android:layout_marginBottom="@dimen/home_land_gap_s"
-                                    android:alpha="0.5"
-                                    android:background="#22FFFFFF" />
-
-                                <!-- Available Space Row -->
-                                <com.google.android.material.card.MaterialCardView 
-                                    android:id="@+id/rowStorageAvailable" 
-                                    android:layout_width="match_parent" 
-                                    android:layout_height="wrap_content" 
-                                    android:clickable="true" 
-                                    android:focusable="true"
-                                    android:nextFocusUp="@+id/rowEstimateTime"
-                                    android:nextFocusDown="@+id/cardRailToggleLandscape"
-                                    app:cardBackgroundColor="@android:color/transparent" 
-                                    app:cardCornerRadius="@dimen/home_land_card_radius_m" 
-                                    app:cardElevation="0dp" 
-                                    app:rippleColor="#22FFFFFF" 
-                                    app:strokeWidth="0dp">
-
-                                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="@dimen/home_land_gap_xs" android:paddingTop="@dimen/home_land_stroke" android:paddingEnd="@dimen/home_land_gap_xs" android:paddingBottom="@dimen/home_land_stroke">
-
-                                        <FrameLayout android:layout_width="@dimen/home_land_touch_l" android:layout_height="@dimen/home_land_touch_m" android:layout_marginEnd="@dimen/home_land_gap_l">
-                                            <com.fadcam.ui.utils.StorageProgressRingView android:id="@+id/storageProgressRing" android:layout_width="@dimen/home_land_touch_xs" android:layout_height="@dimen/home_land_touch_xs" android:layout_gravity="center" android:contentDescription="Available space progress" />
-                                        </FrameLayout>
-
-                                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-
-                                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-                                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvSpaceTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1.13 GB" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_land_text_body" android:textStyle="bold" />
-                                                <TextView android:id="@+id/tvSpaceTotal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1" android:layout_marginStart="@dimen/home_land_gap_xs" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_land_text_caption" />
-                                            </LinearLayout>
-
-                                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvSpaceSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/storage_available_space" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_land_text_caption" />
-                                        </LinearLayout>
-
-                                        <ImageView android:layout_width="@dimen/home_land_gap_3xl" android:layout_height="@dimen/home_land_gap_3xl" android:layout_marginStart="@dimen/home_land_gap_xs" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
-                                    </LinearLayout>
-                                </com.google.android.material.card.MaterialCardView>
-
-                            </LinearLayout>
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:id="@+id/cardElapsedHero"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/home_land_gap_xs"
-                            android:clickable="true"
-                            android:focusable="true"
-                            app:cardBackgroundColor="@android:color/transparent"
-                            app:cardCornerRadius="@dimen/home_land_card_radius_l"
-                            app:cardElevation="0dp"
-                            app:rippleColor="#22FFFFFF"
-                            app:strokeWidth="0dp">
-
-                            <FrameLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:minHeight="@dimen/home_land_elapsed_min_h"
-                                android:clipChildren="true"
-                                android:clipToPadding="true"
-                                android:paddingStart="@dimen/home_land_gap_s"
-                                android:paddingTop="0dp"
-                                android:paddingEnd="@dimen/home_land_gap_s"
-                                android:paddingBottom="0dp">
-
-                                <ImageView
-                                    android:id="@+id/ivElapsedAccent"
-                                    android:layout_width="@dimen/home_land_row_l"
-                                    android:layout_height="@dimen/home_land_touch_2xl"
-                                    android:layout_gravity="bottom|end"
-                                    android:alpha="0.72"
-                                    android:scaleType="fitCenter"
-                                    android:contentDescription="@null"
-                                    android:src="@drawable/fadseclab_flag"
-                                    android:translationX="0dp"
-                                    android:translationY="@dimen/home_land_gap_l" />
-
-                                <LinearLayout
-                                    android:id="@+id/layoutElapsedContent"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center"
-                                    android:gravity="center"
-                                    android:orientation="vertical"
-                                    android:paddingTop="@dimen/home_hero_padding_v"
-                                    android:paddingBottom="@dimen/home_hero_padding_v">
-
-                                    <LinearLayout
-                                        android:id="@+id/layoutElapsedMetaRow"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:gravity="center"
-                                        android:orientation="horizontal">
-
-                                    <ImageView
-                                        android:id="@+id/tvElapsedStateIcon"
-                                        android:layout_width="@dimen/home_land_gap_2xl"
-                                        android:layout_height="@dimen/home_land_gap_2xl"
-                                        android:layout_marginEnd="@dimen/home_land_gap_s"
-                                        android:contentDescription="@null"
-                                        android:scaleType="fitCenter"
-                                        android:src="@drawable/play_button_rounded"
-                                        android:tint="#90A4AE" />
-
-                                    <TextView
-                                        android:id="@+id/tvElapsedSubtitle"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="@string/recording_elapsed_time"
-                                        android:textAllCaps="true"
-                                        android:textColor="#90A4AE"
-                                        android:textSize="@dimen/home_land_text_tiny"
-                                        android:textStyle="bold" />
-                                    </LinearLayout>
-
-                                    <com.fadcam.ui.utils.AnimatedTextView
-                                        android:id="@+id/tvElapsedTitle"
-                                        android:textDirection="ltr"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginTop="0dp"
-                                        android:fontFamily="@font/ubuntu_regular"
-                                        android:includeFontPadding="false"
-                                        android:gravity="center"
-                                        android:letterSpacing="0.005"
-                                        android:fontFeatureSettings="tnum"
-                                        android:maxLines="1"
-                                        android:ellipsize="end"
-                                        android:text="00:00"
-                                        android:textColor="#D6E2EA"
-                                        android:textSize="@dimen/home_land_text_icon_lg"
-                                        android:textStyle="bold" />
-
-                                    <com.fadcam.ui.utils.ElapsedCompactAnimatedView
-                                        android:id="@+id/viewElapsedCompact"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginTop="0dp"
-                                        android:gravity="center"
-                                        android:visibility="gone" />
-
-                                    <TextView
-                                        android:id="@+id/tvElapsedReadable"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginTop="0dp"
-                                        android:includeFontPadding="false"
-                                        android:gravity="center"
-                                        android:text="m • s"
-                                        android:textColor="#B0BEC5"
-                                        android:textSize="@dimen/home_land_text_label"
-                                        android:visibility="gone" />
-
-                                </LinearLayout>
-
-                            </FrameLayout>
-
-                        </com.google.android.material.card.MaterialCardView>
-
-                    </LinearLayout>
-
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="@dimen/home_land_gap_s" android:orientation="vertical">
-
-                        <com.google.android.material.card.MaterialCardView android:id="@+id/cardClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="@dimen/home_land_card_radius" app:cardElevation="@dimen/home_land_card_elevation_m" app:strokeWidth="0dp">
-
-                            <LinearLayout android:id="@+id/layoutClockInner" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="@dimen/home_land_gap">
-
-                                        <TextView android:layout_width="@dimen/home_land_touch_m" android:layout_height="@dimen/home_land_touch_m" android:layout_gravity="center_vertical" android:layout_marginEnd="@dimen/home_land_gap" android:fontFamily="@font/materialicons" android:text="access_time" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_land_text_icon" android:gravity="center" />
-
-                                <LinearLayout android:id="@+id/layoutClockContent" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="@dimen/home_land_gap">
-
-                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="@dimen/home_land_text_clock" android:textStyle="bold" android:layout_gravity="top" android:textColor="?attr/colorHeading" android:includeFontPadding="false" />
-
-                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateEnglish" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="@dimen/home_land_text_body" android:layout_gravity="left" android:textColor="?attr/homeRailTextPrimary" android:includeFontPadding="false" />
-
-                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateArabic" android:layout_width="wrap_content" android:layout_gravity="end" android:layout_height="wrap_content" android:textSize="@dimen/home_land_text_body" android:textColor="?attr/homeRailTextPrimary" android:includeFontPadding="false" />
-                                </LinearLayout>
-                            </LinearLayout>
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <com.google.android.material.card.MaterialCardView android:id="@+id/cardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" android:clickable="true" android:focusable="true" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="@dimen/home_land_card_radius" app:cardElevation="@dimen/home_land_card_elevation_m" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="@dimen/home_land_card_stroke">
-
-                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="@dimen/home_land_gap">
-
-                                <TextView android:layout_width="@dimen/home_land_touch_m" android:layout_height="@dimen/home_land_touch_m" android:layout_gravity="center" android:layout_marginEnd="@dimen/home_land_gap" android:fontFamily="@font/materialicons" android:text="folder" android:textColor="?attr/sectionHeaderColor" android:textSize="@dimen/home_land_text_icon" android:gravity="center" />
-
-                                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="@dimen/home_land_gap">
-                                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-                                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/stats_label_videos" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_land_text_body" android:textStyle="bold" android:layout_marginEnd="@dimen/home_land_gap" android:tag="preserve_color" />
-                                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvVideoCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_land_text_body" android:tag="preserve_color" />
-                                    </LinearLayout>
-                                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="@dimen/home_land_stroke">
-                                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/stats_label_used" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_land_text_body" android:textStyle="bold" android:layout_marginEnd="@dimen/home_land_gap" android:tag="preserve_color" />
-                                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvVideoSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 B" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_land_text_body" android:tag="preserve_color" />
-                                    </LinearLayout>
-                                </LinearLayout>
-
-                                <ImageView android:layout_width="@dimen/home_land_gap_3xl" android:layout_height="@dimen/home_land_gap_3xl" android:layout_gravity="center" android:layout_marginStart="@dimen/home_land_gap_xs" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open video stats" />
-                            </LinearLayout>
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="@dimen/home_land_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="@dimen/home_land_card_radius" app:cardElevation="@dimen/home_land_card_elevation_s" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="@dimen/home_land_card_stroke">
-
-                            <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical" android:padding="@dimen/home_land_gap_l">
-
-                                <TextView android:id="@+id/tv_recording_controls_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/recording_controls_title" android:textSize="@dimen/home_land_text_small" android:textStyle="bold" android:textColor="?attr/sectionHeaderColor" android:gravity="center" android:paddingStart="@dimen/home_land_gap" android:paddingEnd="@dimen/home_land_gap" android:paddingTop="0dp" android:paddingBottom="@dimen/home_land_gap_l" android:includeFontPadding="false" />
-
-                                <include android:id="@+id/includeRecordingTiles" layout="@layout/home_recording_tiles_row" android:layout_width="match_parent" android:layout_height="wrap_content" />
-                            </LinearLayout>
-                        </com.google.android.material.card.MaterialCardView>
-
-                    </LinearLayout>
-
-                </com.fadcam.ui.widgets.EqualHeightRowLayout>
-
-                </LinearLayout>
-            </LinearLayout>
-        </androidx.core.widget.NestedScrollView>
+        <!-- Main Action Buttons -->
+        <LinearLayout android:id="@+id/layoutControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="0dp" android:layout_marginBottom="@dimen/home_controls_bottom_margin" android:paddingTop="@dimen/home_land_gap" android:paddingBottom="@dimen/home_land_gap" android:gravity="center" android:orientation="horizontal" android:clipChildren="false" android:clipToPadding="false" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent">
+
+        <com.fadcam.ui.widgets.StatusControlButton
+            android:id="@+id/torch_btn_wrapper"
+            android:layout_width="@dimen/home_land_control_size"
+            android:layout_height="@dimen/home_land_control_size"
+            android:layout_marginEnd="@dimen/home_land_gap"
+            app:scb_background="@drawable/control_button_bg"
+            app:scb_buttonId="@+id/buttonTorchSwitch"
+            app:scb_icon="@drawable/ic_flashlight_on"
+            app:scb_iconSize="@dimen/home_land_control_icon"
+            app:scb_iconTint="@color/button_icon_tint_selector"
+            app:scb_nextFocusDown="@+id/buttonStartStop"
+            app:scb_nextFocusUp="@+id/cardRailToggleLandscape"
+            app:scb_statusId="@+id/torch_status_label"
+            app:scb_statusMarginBottom="@dimen/home_land_gap_l"
+            app:scb_statusMarginEnd="@dimen/home_land_gap_w"
+            app:scb_statusText="OFF"
+            app:scb_statusTextColor="#E43C3C"
+            app:scb_statusTextSize="@dimen/home_land_text_micro" />
+
+
+        <com.fadcam.ui.utils.AnimatedMaterialButton
+            android:id="@+id/buttonStartStop"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="@dimen/home_land_control_start_h"
+            android:layout_marginEnd="@dimen/home_land_gap"
+            android:minHeight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="@dimen/home_land_gap_l"
+            android:paddingEnd="@dimen/home_land_gap_l"
+            android:minWidth="0dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:icon="@drawable/play_button_rounded"
+            app:iconSize="@dimen/home_land_control_icon_start"
+            app:iconGravity="textStart"
+            app:iconPadding="@dimen/home_land_gap_s"
+            android:gravity="center"
+            android:enabled="false"
+            android:background="@drawable/control_button_bg_green"
+            app:iconTint="@color/white"
+            android:textColor="@color/white"
+            android:text="@string/button_start"
+            android:nextFocusUp="@+id/cardRailToggleLandscape"
+            android:nextFocusDown="@+id/buttonPauseResume" />
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonPauseResume" android:layout_width="@dimen/home_land_control_size" android:layout_height="@dimen/home_land_control_size" android:layout_marginStart="@dimen/home_land_gap" app:icon="@drawable/pause_rounded" app:iconSize="@dimen/home_land_control_icon_s" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg_orange" app:iconTint="@color/white" app:cornerRadius="@dimen/home_land_preview_stroke"
+            android:nextFocusUp="@+id/cardRailToggleLandscape"
+            android:nextFocusDown="@+id/buttonCamSwitch" />
+
+        <com.fadcam.ui.widgets.StatusControlButton
+            android:id="@+id/fadrec_mute_wrapper"
+            android:layout_width="@dimen/home_land_control_size"
+            android:layout_height="@dimen/home_land_control_size"
+            android:layout_marginStart="@dimen/home_land_gap"
+            android:visibility="gone"
+            app:scb_background="@drawable/control_button_bg_orange"
+            app:scb_buttonGone="true"
+            app:scb_buttonId="@+id/buttonFadRecMute"
+            app:scb_centerIconId="@+id/fadrec_mute_icon"
+            app:scb_centerIconSize="@dimen/home_land_text_icon"
+            app:scb_centerIconText="mic"
+            app:scb_iconTint="@android:color/white"
+            app:scb_statusId="@+id/fadrec_mute_status_label"
+            app:scb_statusMarginBottom="@dimen/home_land_gap_l"
+            app:scb_statusMarginEnd="@dimen/home_land_gap_w"
+            app:scb_statusText="OFF"
+            app:scb_statusTextColor="@android:color/white"
+            app:scb_statusTextSize="@dimen/home_land_text_micro" />
+
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="@dimen/home_land_control_size" android:layout_height="@dimen/home_land_control_size" android:layout_marginStart="@dimen/home_land_gap" app:icon="@drawable/cam_switch" app:iconTint="@color/white" app:iconSize="@dimen/home_land_control_icon" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="@dimen/home_land_preview_stroke"
+            android:nextFocusUp="@+id/cardRailToggleLandscape"
+            android:nextFocusDown="@+id/buttonMirrorSwitch" />
+
+
+
+        <com.fadcam.ui.widgets.StatusControlButton
+            android:id="@+id/mirror_btn_wrapper"
+            android:layout_width="@dimen/home_land_control_size"
+            android:layout_height="@dimen/home_land_control_size"
+            android:layout_marginStart="@dimen/home_land_gap"
+            app:scb_background="@drawable/control_button_bg"
+            app:scb_buttonGone="true"
+            app:scb_buttonId="@+id/buttonMirrorSwitch"
+            app:scb_icon="@drawable/ic_mirror_video"
+            app:scb_iconSize="@dimen/home_land_control_icon_s"
+            app:scb_iconTint="@android:color/white"
+            app:scb_nextFocusDown="@+id/buttonMirrorSwitch"
+            app:scb_nextFocusUp="@+id/cardRailToggleLandscape"
+            app:scb_statusId="@+id/mirror_status_label"
+            app:scb_statusMarginBottom="@dimen/home_land_gap_l"
+            app:scb_statusMarginEnd="@dimen/home_land_gap_w"
+            app:scb_statusText="OFF"
+            app:scb_statusTextColor="#FFB0BEC5"
+            app:scb_statusTextSize="@dimen/home_land_text_micro" />
 
     </LinearLayout>
-
-    <!-- ============ BOTTOM DECK ============ -->
-    <!-- Camera tools: bottom-left, width bounded by the preview column (it stops at
-         the dashboard seam, so it can never drift towards the recording controls). -->
-    <FrameLayout android:id="@+id/layoutQuickActions" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/home_land_gap_s" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@+id/dashboardGuideline" app:layout_constraintStart_toStartOf="parent">
-
-<FrameLayout
-        android:id="@+id/cardRailToggleLandscape"
-        android:layout_width="@dimen/home_land_touch_s"
-        android:layout_height="@dimen/home_land_touch_s"
-        android:layout_marginBottom="@dimen/home_land_gap_s"
-        android:background="@drawable/bg_home_fold_toggle_right"
-        android:clickable="true"
-        android:contentDescription="@string/home_cards_fold_toggle"
-        android:focusable="true"
-        app:layout_constraintBottom_toTopOf="@+id/layoutQuickActions"
-        app:layout_constraintEnd_toStartOf="@+id/widgetDashboard">
-
-        <ImageView
-            android:id="@+id/ivCardRailToggleLandscape"
-            android:layout_width="@dimen/home_land_icon_m"
-            android:layout_height="@dimen/home_land_icon_l"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_double_chevron"
-            android:tint="#555555" />
-    </FrameLayout>
-
-    </FrameLayout>
-
-    <!-- Recording controls: bottom-right, always reachable. -->
-    <LinearLayout android:id="@+id/layoutControls" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/home_land_gap_s" android:orientation="horizontal" android:gravity="bottom" android:clipChildren="false" android:clipToPadding="false" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent">
-
-
-
-            <com.fadcam.ui.widgets.StatusControlButton
-                android:id="@+id/torch_btn_wrapper"
-                android:layout_width="@dimen/home_land_control_size"
-                android:layout_height="@dimen/home_land_control_size"
-                android:layout_marginEnd="@dimen/home_land_gap"
-                app:scb_background="@drawable/control_button_bg"
-                app:scb_buttonId="@+id/buttonTorchSwitch"
-                app:scb_icon="@drawable/ic_flashlight_on"
-                app:scb_iconSize="@dimen/home_land_control_icon"
-                app:scb_iconTint="@color/button_icon_tint_selector"
-                app:scb_nextFocusDown="@+id/buttonStartStop"
-                app:scb_nextFocusUp="@+id/cardRailToggleLandscape"
-                app:scb_statusId="@+id/torch_status_label"
-                app:scb_statusMarginBottom="@dimen/home_land_gap_l"
-                app:scb_statusMarginEnd="@dimen/home_land_gap_w"
-                app:scb_statusText="OFF"
-                app:scb_statusTextColor="#E43C3C"
-                app:scb_statusTextSize="@dimen/home_land_text_micro" />
-
-            <com.fadcam.ui.utils.AnimatedMaterialButton
-                android:id="@+id/buttonStartStop"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="@dimen/home_land_control_start_h"
-                android:layout_marginEnd="@dimen/home_land_gap"
-                android:minHeight="0dp"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:paddingStart="@dimen/home_land_gap_l"
-                android:paddingEnd="@dimen/home_land_gap_l"
-                android:minWidth="0dp"
-                android:maxLines="1"
-                android:ellipsize="end"
-                app:icon="@drawable/play_button_rounded"
-                app:iconSize="@dimen/home_land_control_icon_start"
-                app:iconPadding="0dp"
-                android:enabled="false"
-                android:background="@drawable/control_button_bg_green"
-                app:iconTint="@color/white"
-                android:textColor="@color/white"
-                android:text="@string/button_start"
-                android:nextFocusUp="@+id/cardRailToggleLandscape"
-                android:nextFocusDown="@+id/buttonPauseResume" />
-
-            <com.google.android.material.button.MaterialButton android:id="@+id/buttonPauseResume" android:layout_width="@dimen/home_land_control_size" android:layout_height="@dimen/home_land_control_size" android:layout_marginStart="@dimen/home_land_gap" app:icon="@drawable/pause_rounded" app:iconSize="@dimen/home_land_control_icon_s" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg_orange" app:iconTint="@color/white" app:cornerRadius="@dimen/home_land_preview_stroke"
-                android:nextFocusUp="@+id/cardRailToggleLandscape"
-                android:nextFocusDown="@+id/buttonCamSwitch" />
-
-            <com.fadcam.ui.widgets.StatusControlButton
-                android:id="@+id/fadrec_mute_wrapper"
-                android:layout_width="@dimen/home_land_control_size"
-                android:layout_height="@dimen/home_land_control_size"
-                android:layout_marginStart="@dimen/home_land_gap"
-                android:visibility="gone"
-                app:scb_background="@drawable/control_button_bg_orange"
-                app:scb_buttonGone="true"
-                app:scb_buttonId="@+id/buttonFadRecMute"
-                app:scb_centerIconId="@+id/fadrec_mute_icon"
-                app:scb_centerIconSize="@dimen/home_land_text_icon"
-                app:scb_centerIconText="mic"
-                app:scb_iconTint="@android:color/white"
-                app:scb_statusId="@+id/fadrec_mute_status_label"
-                app:scb_statusMarginBottom="@dimen/home_land_gap_l"
-                app:scb_statusMarginEnd="@dimen/home_land_gap_w"
-                app:scb_statusText="OFF"
-                app:scb_statusTextColor="@android:color/white"
-                app:scb_statusTextSize="@dimen/home_land_text_micro" />
-
-            <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="@dimen/home_land_control_size" android:layout_height="@dimen/home_land_control_size" android:layout_marginStart="@dimen/home_land_gap" app:icon="@drawable/cam_switch" app:iconTint="@color/white" app:iconSize="@dimen/home_land_control_icon" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="@dimen/home_land_preview_stroke"
-                android:nextFocusUp="@+id/cardRailToggleLandscape"
-                android:nextFocusDown="@+id/buttonMirrorSwitch" />
-
-            <com.fadcam.ui.widgets.StatusControlButton
-                android:id="@+id/mirror_btn_wrapper"
-                android:layout_width="@dimen/home_land_control_size"
-                android:layout_height="@dimen/home_land_control_size"
-                android:layout_marginStart="@dimen/home_land_gap"
-                app:scb_background="@drawable/control_button_bg"
-                app:scb_buttonGone="true"
-                app:scb_buttonId="@+id/buttonMirrorSwitch"
-                app:scb_icon="@drawable/ic_mirror_video"
-                app:scb_iconSize="@dimen/home_land_control_icon_s"
-                app:scb_iconTint="@android:color/white"
-                app:scb_nextFocusDown="@+id/buttonMirrorSwitch"
-                app:scb_nextFocusUp="@+id/cardRailToggleLandscape"
-                app:scb_statusId="@+id/mirror_status_label"
-                app:scb_statusMarginBottom="@dimen/home_land_gap_l"
-                app:scb_statusMarginEnd="@dimen/home_land_gap_w"
-                app:scb_statusText="OFF"
-                app:scb_statusTextColor="#FFB0BEC5"
-                app:scb_statusTextSize="@dimen/home_land_text_micro" />
-
-        
     </LinearLayout>
-
-    <!-- Fold arrow: bottom-left corner of the dashboard column, riding the seam. -->
-    <FrameLayout
-        android:id="@+id/cardRailToggleLandscape"
-        android:layout_width="@dimen/home_land_touch_s"
-        android:layout_height="@dimen/home_land_touch_s"
-        android:layout_marginBottom="@dimen/home_land_gap_s"
-        android:background="@drawable/bg_home_fold_toggle_right"
-        android:clickable="true"
-        android:contentDescription="@string/home_cards_fold_toggle"
-        android:focusable="true"
-        app:layout_constraintBottom_toTopOf="@+id/layoutQuickActions"
-        app:layout_constraintEnd_toStartOf="@+id/widgetDashboard">
-
-        <ImageView
-            android:id="@+id/ivCardRailToggleLandscape"
-            android:layout_width="@dimen/home_land_icon_m"
-            android:layout_height="@dimen/home_land_icon_l"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_double_chevron"
-            android:tint="#555555" />
-    </FrameLayout>
-
-    <FrameLayout android:id="@+id/leftPanel" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

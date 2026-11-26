@@ -1,0 +1,129 @@
+package com.fadcam.opengl;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import android.opengl.Matrix;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
+
+/**
+ * The inverted orientations rotate the recorded frame 180°. Two properties make that safe:
+ * the rotation must map the texture's unit square onto itself (otherwise the GPU samples
+ * outside the texture and the frame comes out white or smeared), and it must compose with the
+ * camera's own transform matrix, which is not a pure rotation.
+ */
+@RunWith(RobolectricTestRunner.class)
+@Config(sdk = 31)
+public class InvertedTexMatrixTest {
+
+    /** Mirrors GLWatermarkRenderer#applyInvertedTexMatrix. */
+    private static float[] build() {
+        float[] m = new float[16];
+        Matrix.setIdentityM(m, 0);
+        Matrix.translateM(m, 0, 1f, 1f, 0f);
+        Matrix.scaleM(m, 0, -1f, -1f, 1f);
+        return m;
+    }
+
+    private static float[] map(float[] m, float x, float y) {
+        float[] out = new float[4];
+        Matrix.multiplyMV(out, 0, m, 0, new float[]{x, y, 0f, 1f}, 0);
+        return new float[]{out[0], out[1]};
+    }
+
+    @Test
+    public void everyCornerStaysInsideTheTexture() {
+        float[] m = build();
+        float[][] corners = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
+        for (float[] c : corners) {
+            float[] p = map(m, c[0], c[1]);
+            String where = "corner (" + c[0] + "," + c[1] + ") -> (" + p[0] + "," + p[1] + ")";
+            assertTrue(where + " x<0", p[0] >= -1e-4f);
+            assertTrue(where + " y<0", p[1] >= -1e-4f);
+            assertTrue(where + " x>1", p[0] <= 1f + 1e-4f);
+            assertTrue(where + " y>1", p[1] <= 1f + 1e-4f);
+        }
+    }
+
+    /** A 180° rotation must actually turn the image, not leave it alone. */
+    @Test
+    public void cornersSwapDiagonally() {
+        float[] m = build();
+        float[] p00 = map(m, 0f, 0f);
+        assertEquals(1f, p00[0], 1e-4f);
+        assertEquals(1f, p00[1], 1e-4f);
+        float[] p11 = map(m, 1f, 1f);
+        assertEquals(0f, p11[0], 1e-4f);
+        assertEquals(0f, p11[1], 1e-4f);
+    }
+
+    /** The centre must stay put, or the frame drifts instead of rotating in place. */
+    @Test
+    public void centreIsFixed() {
+        float[] p = map(build(), 0.5f, 0.5f);
+        assertEquals(0.5f, p[0], 1e-4f);
+        assertEquals(0.5f, p[1], 1e-4f);
+    }
+
+    /** Applying it twice must return to the original, so the transform is a true 180° rotation. */
+    @Test
+    public void applyingTwiceIsIdentity() {
+        float[] twice = new float[16];
+        Matrix.multiplyMM(twice, 0, build(), 0, build(), 0);
+        float[][] corners = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
+        for (float[] c : corners) {
+            float[] p = map(twice, c[0], c[1]);
+            assertEquals("x " + c[0], c[0], p[0], 1e-4f);
+            assertEquals("y " + c[1], c[1], p[1], 1e-4f);
+        }
+    }
+
+    /**
+     * The camera matrix is not a pure rotation: SurfaceTexture crops a one-texel border, so it
+     * scales and translates too. Composing must still stay in range.
+     */
+    @Test
+    public void composesSafelyWithBorderCroppingSource() {
+        float[] source = new float[16];
+        Matrix.setIdentityM(source, 0);
+        Matrix.scaleM(source, 0, 0.995f, 0.995f, 1f);
+        Matrix.translateM(source, 0, 0.0025f, 0.0025f, 0f);
+
+        float[] out = new float[16];
+        Matrix.multiplyMM(out, 0, source, 0, build(), 0);
+
+        for (float[] c : new float[][]{{0, 0}, {1, 0}, {1, 1}, {0, 1}}) {
+            float[] p = map(out, c[0], c[1]);
+            assertTrue("x out of range: " + p[0], p[0] >= -0.02f && p[0] <= 1.02f);
+            assertTrue("y out of range: " + p[1], p[1] >= -0.02f && p[1] <= 1.02f);
+        }
+    }
+
+    /** The watermark quad must flip to the opposite corner, not stay on top. */
+    @Test
+    public void watermarkQuadMovesToTheOppositeEdge() {
+        // Mirrors computeWatermarkRectVertices for the default top-anchored placement.
+        float topY = 1.0f;
+        float ndcHeight = 0.1f;
+        float ndcWidth = 0.6f;
+        float[] before = {-1.0f, topY, -1.0f + ndcWidth, topY,
+                -1.0f, topY - ndcHeight, -1.0f + ndcWidth, topY - ndcHeight};
+        float[] after = new float[before.length];
+        for (int i = 0; i < before.length; i++) {
+            after[i] = -before[i];
+        }
+        // Top edge y=+1 becomes the bottom edge y=-1.
+        assertEquals(1f, before[1], 1e-4f);
+        assertEquals(-1f, after[1], 1e-4f);
+        // Left-anchored x=-1 becomes the right edge.
+        assertEquals(-1f, before[0], 1e-4f);
+        assertEquals(1f, after[0], 1e-4f);
+        // The quad keeps its size. Negation flips the sign, so compare magnitudes.
+        assertEquals(Math.abs(before[2] - before[0]), Math.abs(after[2] - after[0]), 1e-4f);
+        assertEquals(Math.abs(before[5] - before[1]), Math.abs(after[5] - after[1]), 1e-4f);
+    }
+}

@@ -1572,8 +1572,10 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         }
         int mapW;
         int mapH;
-        String orientation = prefs != null ? prefs.getVideoOrientation() : null;
-        boolean portrait = orientation == null || !orientation.toLowerCase(java.util.Locale.US).contains("landscape");
+        String orientation = prefs != null
+                ? SharedPreferencesManager.resolveShape(prefs.getVideoOrientation(), this)
+                : null;
+        boolean portrait = !SharedPreferencesManager.isLandscapeOrientation(orientation);
         float density = getResources().getDisplayMetrics().density;
         if (portrait) {
             mapW = Math.round(42f * density);

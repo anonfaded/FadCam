@@ -79,7 +79,8 @@ public final class PreviewGeometry {
             if (res.getWidth() <= 0 || res.getHeight() <= 0) {
                 return 0f;
             }
-            boolean appWantsPortrait = !prefs.isOrientationLandscape();
+            boolean appWantsPortrait = !SharedPreferencesManager.isLandscapeOrientation(
+                    prefs.getVideoOrientation());
             boolean isSensorPortrait = res.getHeight() > res.getWidth();
             boolean needsSwap = appWantsPortrait != isSensorPortrait;
             int w = needsSwap ? res.getHeight() : res.getWidth();

@@ -1274,8 +1274,12 @@
     <string name="helper_watermark_option">Scegli lo stile della filigrana per i tuoi video.</string>
     <string name="setting_video_orientation_title">Orientamento video</string>
     <string name="setting_video_orientation_summary">Scegli l\'orientamento di registrazione</string>
+    <string name="video_orientation_auto">Automatico</string>
     <string name="video_orientation_portrait">Verticale</string>
+    <string name="video_orientation_portrait_inverted">Verticale (invertito)</string>
     <string name="video_orientation_landscape">Orizzontale</string>
+    <string name="video_orientation_landscape_inverted">Orizzontale (invertito)</string>
+    <string name="helper_video_orientation">Invertito registra sottosopra e si corregge quando il telefono è montato sottosopra. Automatico sceglie Verticale o Orizzontale in base a come tieni il telefono all\'avvio.</string>
     <string name="setting_video_bitrate_title">Bitrate video</string>
     <string name="button_video_bitrate_settings">Impostazioni bitrate</string>
     <string name="bitrate_mode_default">Predefinito</string>
@@ -2560,8 +2564,12 @@
 
     <!-- Home screen camera info -->
     <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_auto">Automatico</string>
+    <string name="home_orientation_auto_value">Automatico (%1$s)</string>
     <string name="home_orientation_portrait">Ritratto</string>
+    <string name="home_orientation_portrait_inverted">Ritratto (invertito)</string>
     <string name="home_orientation_landscape">Paesaggio</string>
+    <string name="home_orientation_landscape_inverted">Paesaggio (invertito)</string>
     <string name="home_storage_format">%.2f GB</string>
 
     <!-- Appearance Settings -->

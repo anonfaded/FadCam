@@ -274,8 +274,12 @@
 Önerilen: Çoğu kullanıcı için 192000 bps, 48000 Hz.</string>
     <string name="setting_video_orientation_title">Video Yönü</string>
     <string name="setting_video_orientation_summary">Videolarınız için yön seçin. Portre, sosyal medya için idealdir; Yatay, YouTube, sunumlar vb. için en iyisidir.</string>
+    <string name="video_orientation_auto">Otomatik</string>
     <string name="video_orientation_portrait">Portre (varsayılan)</string>
+    <string name="video_orientation_portrait_inverted">Portre (ters)</string>
     <string name="video_orientation_landscape">Yatay</string>
+    <string name="video_orientation_landscape_inverted">Yatay (ters)</string>
+    <string name="helper_video_orientation">Ters, telefon baş aşağı monte edildiğinde kendini düzeltir. Otomatik, kayıt başlarken telefonun tutulduğu konuma göre Portre veya Yatay seçer.</string>
     <!-- Video Bitrate Settings -->
     <string name="setting_video_bitrate_title">Video Bit Hızı</string>
     <string name="button_video_bitrate_settings">Bit Hızını Ayarla</string>
@@ -2472,8 +2476,12 @@
 
     <!-- Home screen camera info -->
     <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_auto">Otomatik</string>
+    <string name="home_orientation_auto_value">Otomatik (%1$s)</string>
     <string name="home_orientation_portrait">Dikey</string>
+    <string name="home_orientation_portrait_inverted">Dikey (ters)</string>
     <string name="home_orientation_landscape">Yatay</string>
+    <string name="home_orientation_landscape_inverted">Yatay (ters)</string>
     <string name="home_storage_format">%.2f GB</string>
 
     <!-- Appearance Settings -->

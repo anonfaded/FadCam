@@ -1329,8 +1329,12 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="helper_watermark_option">Pilih konten overlay: stempel waktu + merek, stempel waktu saja, atau tidak ada.</string>
     <string name="setting_video_orientation_title">Orientasi Video</string>
     <string name="setting_video_orientation_summary">Pilih orientasi untuk video Anda. Potret terbaik untuk media sosial; Lanskap terbaik untuk YouTube, presentasi, dll.</string>
+    <string name="video_orientation_auto">Otomatis</string>
     <string name="video_orientation_portrait">Potret (default)</string>
+    <string name="video_orientation_portrait_inverted">Potret (terbalik)</string>
     <string name="video_orientation_landscape">Lanskap</string>
+    <string name="video_orientation_landscape_inverted">Lanskap (terbalik)</string>
+    <string name="helper_video_orientation">Terbalik merekam terbalik dan mengoreksi sendiri saat ponsel dipasang terbalik. Otomatis memilih Potret atau Lanskap sesuai posisi ponsel saat mulai merekam.</string>
     <!-- Video Bitrate Settings -->
     <string name="setting_video_bitrate_title">Kualitas &amp; Performa Perekaman</string>
     <string name="button_video_bitrate_settings">Atur Bitrate</string>
@@ -2823,8 +2827,12 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
 
     <!-- Home screen camera info -->
     <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_auto">Otomatis</string>
+    <string name="home_orientation_auto_value">Otomatis (%1$s)</string>
     <string name="home_orientation_portrait">Potret</string>
+    <string name="home_orientation_portrait_inverted">Potret (terbalik)</string>
     <string name="home_orientation_landscape">Lanskap</string>
+    <string name="home_orientation_landscape_inverted">Lanskap (terbalik)</string>
     <string name="home_storage_format">%.2f GB</string>
 
     <!-- Appearance Settings -->

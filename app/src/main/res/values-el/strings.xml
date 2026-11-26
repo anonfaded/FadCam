@@ -1275,8 +1275,12 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="helper_watermark_option">Επιλέξτε περιεχόμενο επικάλυψης.</string>
     <string name="setting_video_orientation_title">Προσανατολισμός Βίντεο</string>
     <string name="setting_video_orientation_summary">Επιλέξτε τον προσανατολισμό για τα βίντεό σας.</string>
+    <string name="video_orientation_auto">Αυτόματο</string>
     <string name="video_orientation_portrait">Κατακόρυφος (προεπιλογή)</string>
+    <string name="video_orientation_portrait_inverted">Κατακόρυφος (Αντεστραμμένος)</string>
     <string name="video_orientation_landscape">Οριζόντιος</string>
+    <string name="video_orientation_landscape_inverted">Οριζόντιος (Αντεστραμμένος)</string>
+    <string name="helper_video_orientation">Ο Αντεστραμμένος εγγράφει ανάποδα και διορθώνεται όταν το τηλέφωνο είναι τοποθετημένο ανάποδα. Το Αυτόματο επιλέγει Κατακόρυφο ή Οριζόντιο ανάλογα με το πώς κρατάτε το τηλέφωνο κατά την έναρξη.</string>
     <!-- Video Bitrate Settings -->
     <string name="setting_video_bitrate_title">Ποιότητα &amp; Απόδοση Εγγραφής</string>
     <string name="button_video_bitrate_settings">Ορισμός Ρυθμού Μετάδοσης</string>
@@ -2664,8 +2668,12 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
 
     <!-- Home screen camera info -->
     <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_auto">Αυτόματο</string>
+    <string name="home_orientation_auto_value">Αυτόματο (%1$s)</string>
     <string name="home_orientation_portrait">Κατακόρυφο</string>
+    <string name="home_orientation_portrait_inverted">Κατακόρυφο (Αντεστραμμένο)</string>
     <string name="home_orientation_landscape">Οριζόντιο</string>
+    <string name="home_orientation_landscape_inverted">Οριζόντιο (Αντεστραμμένο)</string>
     <string name="home_storage_format">%.2f GB</string>
 
     <!-- Appearance Settings -->

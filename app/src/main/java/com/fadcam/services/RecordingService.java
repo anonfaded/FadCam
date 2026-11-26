@@ -2287,7 +2287,7 @@ public class RecordingService extends Service {
             String orientation = sharedPreferencesManager != null
                     ? sharedPreferencesManager.getVideoOrientation()
                     : SharedPreferencesManager.ORIENTATION_PORTRAIT;
-            boolean portrait = SharedPreferencesManager.ORIENTATION_PORTRAIT.equalsIgnoreCase(orientation);
+            boolean portrait = !SharedPreferencesManager.isLandscapeOrientation(orientation);
             if (portrait && targetW > targetH) {
                 int tmp = targetW;
                 targetW = targetH;
@@ -7775,7 +7775,10 @@ public class RecordingService extends Service {
             int videoHeight = resolution.getHeight();
             CameraType cameraType = sharedPreferencesManager.getCameraSelection();
             int videoFramerate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
-            String orientation = sharedPreferencesManager.getVideoOrientation();
+            // Resolved once here and frozen for the session: Auto decides the shape at
+            // capture start and the encoder cannot change shape mid-recording.
+            String orientation = SharedPreferencesManager.resolveShape(
+                    sharedPreferencesManager.getVideoOrientation(), this);
             VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
 
             int sensorOrientation = 0;
@@ -8057,6 +8060,7 @@ public class RecordingService extends Service {
                 + " codec=" + sharedPreferencesManager.getVideoCodec());
         FLog.i(TAG, "[REC] ===== startRecording() requested =====");
 
+
         // Clear STREAM_ONLY temp file tracking from any previous session
         streamOnlyTempFiles.clear();
         streamOnlySafUris.clear();
@@ -8106,7 +8110,10 @@ public class RecordingService extends Service {
             android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
             
             // Resolution always from Recording Settings — presets only control bitrate + FPS
-            String orientation = sharedPreferencesManager.getVideoOrientation();
+            // Resolved once here and frozen for the session: Auto decides the shape at
+            // capture start and the encoder cannot change shape mid-recording.
+            String orientation = SharedPreferencesManager.resolveShape(
+                    sharedPreferencesManager.getVideoOrientation(), this);
             Size resolution = sharedPreferencesManager.getCameraResolution();
             int videoWidth  = resolution.getWidth();
             int videoHeight = resolution.getHeight();

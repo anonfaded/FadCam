@@ -230,8 +230,12 @@
     <!-- Video Orientation -->
     <string name="setting_video_orientation_title">视频方向</string>
     <string name="setting_video_orientation_summary">选择您的视频方向。竖屏最适合社交媒体；横屏最适合YouTube、演示等。</string>
+    <string name="video_orientation_auto">自动</string>
     <string name="video_orientation_portrait">竖屏(默认)</string>
+    <string name="video_orientation_portrait_inverted">竖屏(倒置)</string>
     <string name="video_orientation_landscape">横屏</string>
+    <string name="video_orientation_landscape_inverted">横屏(倒置)</string>
+    <string name="helper_video_orientation">倒置录制会上下翻转，并在手机倒置安装时自动校正。自动模式会根据开始录制时手机的持握方向选择竖屏或横屏。</string>
     <!-- Video Splitting -->
     <string name="video_split_size_summary_mb">当前: %1$d MB</string>
     <string name="video_split_size_summary_gb">当前: %1$s GB</string>
@@ -4484,8 +4488,12 @@
 
     <!-- Home screen camera info -->
     <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_auto">自动</string>
+    <string name="home_orientation_auto_value">自动 (%1$s)</string>
     <string name="home_orientation_portrait">竖屏</string>
+    <string name="home_orientation_portrait_inverted">竖屏(倒置)</string>
     <string name="home_orientation_landscape">横屏</string>
+    <string name="home_orientation_landscape_inverted">横屏(倒置)</string>
     <string name="home_storage_format">%.2f GB</string>
 
     <!-- Appearance Settings -->

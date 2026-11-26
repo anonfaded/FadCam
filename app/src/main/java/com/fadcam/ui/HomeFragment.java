@@ -3938,9 +3938,6 @@ public class HomeFragment extends BaseFragment {
             getView().post(() -> {
                     if (isAdded()) {
                         restoreCurrentState();
-                        // The dashboard split is width-derived, so it has to be
-                        // recomputed once the new configuration has settled.
-                        applyDashboardSplitWidth();
                         FLog.d(TAG, "State restored after orientation change");
                     }
                 });
@@ -7021,15 +7018,24 @@ public class HomeFragment extends BaseFragment {
         // Get orientation setting
         String orientationText = "";
         try {
-            String orientation = sharedPreferencesManager.getVideoOrientation();
-            if (
-                SharedPreferencesManager.ORIENTATION_LANDSCAPE.equals(
-                    orientation
-                )
-            ) {
-                orientationText = getString(R.string.home_orientation_landscape);
+            String stored = sharedPreferencesManager.getVideoOrientation();
+            String orientation = SharedPreferencesManager.resolveShape(stored, requireContext());
+            String resolvedLabel;
+            if (SharedPreferencesManager.isInvertedOrientation(stored)) {
+                resolvedLabel = getString(
+                        SharedPreferencesManager.isLandscapeOrientation(orientation)
+                                ? R.string.home_orientation_landscape_inverted
+                                : R.string.home_orientation_portrait_inverted);
+            } else if (SharedPreferencesManager.isLandscapeOrientation(orientation)) {
+                resolvedLabel = getString(R.string.home_orientation_landscape);
             } else {
-                orientationText = getString(R.string.home_orientation_portrait);
+                resolvedLabel = getString(R.string.home_orientation_portrait);
+            }
+            if (SharedPreferencesManager.ORIENTATION_AUTO.equals(stored)) {
+                // Show what Auto resolves to right now, so the row is never ambiguous.
+                orientationText = getString(R.string.home_orientation_auto_value, resolvedLabel);
+            } else {
+                orientationText = resolvedLabel;
             }
         } catch (Exception ignored) {
             orientationText = getString(R.string.home_orientation_portrait); // Default fallback
@@ -9219,7 +9225,7 @@ public class HomeFragment extends BaseFragment {
         int mapW;
         int mapH;
         String orientation = sharedPreferencesManager.getVideoOrientation();
-        boolean portrait = orientation == null || !orientation.toLowerCase(java.util.Locale.US).contains("landscape");
+        boolean portrait = !SharedPreferencesManager.isLandscapeOrientation(orientation);
         float density = getResources().getDisplayMetrics().density;
         if (portrait) {
             mapW = Math.round(42f * density);
@@ -10866,7 +10872,6 @@ public class HomeFragment extends BaseFragment {
         applyStorageTotalVisibilityPreference();
         applyTimeLeftAccentPreference();
         updateElapsedHeroAppearance();
-        applyDashboardSplitWidth();
         applyCardRailFoldedState(false);
         setupCardRailToggle();
 
@@ -13456,39 +13461,6 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-    /**
-     * Landscape only: sizes the dashboard column from the real screen width instead of a
-     * fixed percentage, so a small phone still fits two widget columns and a large phone
-     * gives the extra room to the preview.
-     */
-    private void applyDashboardSplitWidth() {
-        if (!isLandscapeMode() || homeRootLayout == null) {
-            return;
-        }
-        android.view.View guide = homeRootLayout.findViewById(R.id.dashboardGuideline);
-        if (guide == null) {
-            return;
-        }
-        androidx.constraintlayout.widget.ConstraintLayout root =
-                (androidx.constraintlayout.widget.ConstraintLayout) homeRootLayout;
-        if (root.getWidth() <= 0) {
-            root.post(this::applyDashboardSplitWidth);
-            return;
-        }
-        int dashMin = getResources().getDimensionPixelSize(R.dimen.home_land_dashboard_min_width);
-        int dashMax = getResources().getDimensionPixelSize(R.dimen.home_land_dashboard_max_width);
-        int previewMin = getResources().getDimensionPixelSize(R.dimen.home_land_preview_min_width);
-        int dashWidth = Math.min(dashMax, Math.max(dashMin, dashMin));
-        // Clamp so the preview always keeps its minimum on very small screens.
-        dashWidth = Math.min(dashWidth, Math.max(0, root.getWidth() - previewMin));
-        float percent = 1f - (dashWidth / (float) root.getWidth());
-        androidx.constraintlayout.widget.ConstraintSet set =
-                new androidx.constraintlayout.widget.ConstraintSet();
-        set.clone(root);
-        set.setGuidelinePercent(R.id.dashboardGuideline, percent);
-        set.applyTo(root);
-    }
-
     private void setupCardRailToggle() {
         View.OnClickListener listener = v -> {
             performHapticFeedback();
@@ -13578,19 +13550,13 @@ public class HomeFragment extends BaseFragment {
             applyLandscapeFoldConstraints(folded);
             if (ivCardRailToggleLandscape != null) {
                 ivCardRailToggleLandscape.animate().cancel();
-                // The dashboard sits on the RIGHT, so the chevron points right while it
-                // is open (collapse towards that edge) and left once folded, to bring it
-                // back. This is the mirror of the old left-rail handle, which pointed
-                // left when open because the rail was on the left.
-                float openDeg = 0f;
-                float foldedDeg = 180f;
                 if (animate) {
                     ivCardRailToggleLandscape.animate()
-                            .rotation(folded ? foldedDeg : openDeg)
+                            .rotation(folded ? 0f : 180f)
                             .setDuration(220)
                             .start();
                 } else {
-                    ivCardRailToggleLandscape.setRotation(folded ? foldedDeg : openDeg);
+                    ivCardRailToggleLandscape.setRotation(folded ? 0f : 180f);
                 }
             }
             if (cardRailToggleLandscape != null) {
@@ -13636,56 +13602,94 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-    /**
-     * Landscape fold: the dashboard and its fold arrow are swapped for the full width
-     * when folded, so the preview can take the whole screen. The guideline that splits
-     * the two columns carries a per-side margin, so folding only moves the guide and
-     * toggles visibility; nothing else in the tree is re-constrained.
-     */
     private void applyLandscapeFoldConstraints(boolean folded) {
-        if (homeRootLayout == null || rightPanel == null) {
+        if (homeRootLayout == null || leftPanel == null || rightPanel == null || cardRailToggleLandscape == null) {
             return;
         }
         ConstraintSet set = new ConstraintSet();
         set.clone(homeRootLayout);
+        set.clear(R.id.leftPanel, ConstraintSet.END);
+        set.clear(R.id.cardRailToggleLandscape, ConstraintSet.START);
+        set.clear(R.id.cardRailToggleLandscape, ConstraintSet.END);
+        set.clear(R.id.rightPanel, ConstraintSet.START);
 
-        // Visibility has to go through the ConstraintSet: applyTo() restores every
-        // captured property, so a plain setVisibility() would be undone immediately.
-        set.setVisibility(R.id.widgetDashboard,
-                folded ? android.view.View.GONE : android.view.View.VISIBLE);
-        set.setVisibility(R.id.dashboardGuideline,
-                folded ? android.view.View.GONE : android.view.View.VISIBLE);
+        final int panelMargin = getResources().getDimensionPixelSize(
+                R.dimen.home_land_panel_margin);
+        final int panelMarginTop = getResources().getDimensionPixelSize(
+                R.dimen.home_land_panel_margin_top);
+        final int toggleGap = getResources().getDimensionPixelSize(
+                R.dimen.home_land_gap_s);
 
-        // Preview keeps its leading edge and simply stops at the parent edge (folded)
-        // or at the dashboard seam (unfolded).
-        set.clear(R.id.rightPanel, ConstraintSet.END);
+        set.connect(R.id.leftPanel, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, panelMargin);
+        set.connect(R.id.leftPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, panelMarginTop);
+        set.connect(R.id.leftPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
+
+        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, panelMarginTop);
+        set.connect(R.id.rightPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, panelMarginTop);
+        set.connect(R.id.rightPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
+        set.connect(R.id.rightPanel, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, panelMargin);
+
         if (folded) {
-            set.connect(R.id.rightPanel, ConstraintSet.END,
-                    ConstraintSet.PARENT_ID, ConstraintSet.END,
-                    getResources().getDimensionPixelSize(R.dimen.home_land_panel_margin));
+            set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, panelMargin);
         } else {
-            set.connect(R.id.rightPanel, ConstraintSet.END,
-                    R.id.dashboardGuideline, ConstraintSet.START, 0);
+            set.connect(R.id.leftPanel, ConstraintSet.END, R.id.cardRailToggleLandscape, ConstraintSet.START, 0);
+            set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, R.id.leftPanel, ConstraintSet.END, 0);
         }
-        // The bottom bar spans the full width, so it only needs its right inset removed
-        // while the dashboard is folded.
-        set.clear(R.id.landBottomBar, ConstraintSet.END);
-        set.connect(R.id.landBottomBar, ConstraintSet.END,
-                ConstraintSet.PARENT_ID, ConstraintSet.END, 0);
-        // The arrow rides the seam: it hugs the dashboard when open, and moves to the
-        // screen edge when folded so the preview is genuinely full width.
-        if (cardRailToggleLandscape != null) {
-            set.clear(R.id.cardRailToggleLandscape, ConstraintSet.START);
-            set.clear(R.id.cardRailToggleLandscape, ConstraintSet.END);
-            if (folded) {
-                set.connect(R.id.cardRailToggleLandscape, ConstraintSet.END,
-                        ConstraintSet.PARENT_ID, ConstraintSet.END, 0);
-            } else {
-                set.connect(R.id.cardRailToggleLandscape, ConstraintSet.END,
-                        R.id.widgetDashboard, ConstraintSet.START, 0);
-            }
-        }
+        // The handle is the fixed link in the weighted chain, flush with the rail
+        // card and the preview. The old 3dp margins on both sides made it float.
+        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, R.id.leftPanel, ConstraintSet.END, 0);
+        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.END, R.id.rightPanel, ConstraintSet.START, 0);
+        set.connect(R.id.rightPanel, ConstraintSet.START, R.id.cardRailToggleLandscape, ConstraintSet.END, 0);
         set.applyTo(homeRootLayout);
+
+        // Vertical position is not a constraint: the rail card lives inside a
+        // NestedScrollView, so it cannot be referenced from the root ConstraintLayout.
+        // Centre the arrow on the rail card's actual height instead, so on tall
+        // screens it sits in the middle of the rail's side rather than hovering in
+        // the empty band below it.
+        centreLandscapeFoldArrow();
+    }
+
+    /**
+     * Landscape only. Centres the fold arrow on the rail card's side.
+     *
+     * <p>The arrow is a direct child of the root ConstraintLayout (rightPanel and
+     * leftPanel both chain off it, so it cannot live inside the rail card), and the
+     * rail card sits inside a NestedScrollView, so no constraint can reach it. Its
+     * vertical offset is therefore measured and applied as a translation, pinned to
+     * the rail card's midpoint.</p>
+     */
+    private void centreLandscapeFoldArrow() {
+        if (!isLandscapeMode() || homeRootLayout == null || cardRailToggleLandscape == null) {
+            return;
+        }
+        final View arrow = cardRailToggleLandscape;
+        final View rail = homeRootLayout.findViewById(R.id.leftRailCard);
+        if (rail == null) {
+            return;
+        }
+        arrow.post(() -> {
+            if (!isAdded() || homeRootLayout == null) {
+                return;
+            }
+            // Folded: the rail is gone, so keep the arrow where the layout put it.
+            if (leftPanel != null && leftPanel.getVisibility() != View.VISIBLE) {
+                arrow.setTranslationY(0f);
+                return;
+            }
+            int railHeight = rail.getHeight();
+            if (railHeight <= 0) {
+                return;
+            }
+            // Rail card top, expressed in the arrow's own parent coordinates.
+            int[] railPos = new int[2];
+            int[] arrowPos = new int[2];
+            rail.getLocationInWindow(railPos);
+            arrow.getLocationInWindow(arrowPos);
+            int railTopInParent = (railPos[1] - arrowPos[1]) + arrow.getTop();
+            float target = railTopInParent + (railHeight / 2f) - (arrow.getHeight() / 2f);
+            arrow.setTranslationY(target - arrow.getTop());
+        });
     }
 
     private void showElapsedCustomizeSheet() {

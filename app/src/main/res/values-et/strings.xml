@@ -1290,8 +1290,12 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="helper_watermark_option">Vali ülekatte sisu: ajatempel + bränd, ainult ajatempel või puudub.</string>
     <string name="setting_video_orientation_title">Video suund</string>
     <string name="setting_video_orientation_summary">Vali oma videote suund. Portree on parim sotsiaalmeedia jaoks; maastik on parim YouTube\'i, esitluste jne jaoks.</string>
+    <string name="video_orientation_auto">Automaatne</string>
     <string name="video_orientation_portrait">Portree (vaikimisi)</string>
+    <string name="video_orientation_portrait_inverted">Portree (pööratud)</string>
     <string name="video_orientation_landscape">Maastik</string>
+    <string name="video_orientation_landscape_inverted">Maastik (pööratud)</string>
+    <string name="helper_video_orientation">Pööratud salvestab tagurpidi ja parandab end, kui telefon on paigaldatud tagurpidi. Automaatne valib salvestuse alguses telefoniasendi järgi portree või maastiku.</string>
     <string name="setting_video_bitrate_title">Salvestuse kvaliteet ja jõudlus</string>
     <string name="button_video_bitrate_settings">Määra bitikiirus</string>
     <string name="bitrate_mode_default">Vaikimisi</string>
@@ -2569,8 +2573,12 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
 
     <!-- Home screen camera info -->
     <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_auto">Automaatne</string>
+    <string name="home_orientation_auto_value">Automaatne (%1$s)</string>
     <string name="home_orientation_portrait">Portree</string>
+    <string name="home_orientation_portrait_inverted">Portree (pööratud)</string>
     <string name="home_orientation_landscape">Maastik</string>
+    <string name="home_orientation_landscape_inverted">Maastik (pööratud)</string>
     <string name="home_storage_format">%.2f GB</string>
 
     <!-- Appearance Settings -->

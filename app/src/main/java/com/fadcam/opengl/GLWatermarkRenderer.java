@@ -280,7 +280,8 @@ public class GLWatermarkRenderer {
         this.recordingPipeline = pipeline;
     }
 
-    private float[] computeWatermarkRectVertices(float ndcWidth, float ndcHeight) {
+    private float[] computeWatermarkRectVertices(float ndcWidth, float ndcHeight,
+            boolean inverted) {
         // For screen recording (FadRec), position watermark with padding below the statusbar.
         // For camera recording (FadCam), position at the very top (no padding).
         float topY = 1.0f;
@@ -294,12 +295,22 @@ public class GLWatermarkRenderer {
             topY = 1.0f - statusbarPaddingNdc; // Shift down by statusbar padding
         }
         
-        return new float[] {
+        float[] verts = {
                 -1.0f, topY, // Top left
                 -1.0f + ndcWidth, topY, // Top right
                 -1.0f, topY - ndcHeight, // Bottom left
                 -1.0f + ndcWidth, topY - ndcHeight // Bottom right
         };
+        if (inverted) {
+            // The recorded scene is rotated 180°, so the watermark turns with it — otherwise
+            // the file contains an upside-down scene with upright text. Rotating about the
+            // NDC centre is negating both axes, which also keeps the text glyphs readable
+            // once the video itself is turned the right way up.
+            for (int i = 0; i < verts.length; i++) {
+                verts[i] = -verts[i];
+            }
+        }
+        return verts;
     }
 
     private int dynamicBitmapWidth = 0;
@@ -308,8 +319,27 @@ public class GLWatermarkRenderer {
     private static final int WATERMARK_MAX_BITMAP_WIDTH = 2048;
     private static final int WATERMARK_MAX_BITMAP_HEIGHT = 1024;
     private int watermarkLineCount = 1; // Fixed small height for dashcam style
+    /**
+     * Landscape or portrait shape for the live preview, resolved from the setting in force now.
+     *
+     * <p>There is exactly one orientation choice in the app; the preview must read the same one
+     * the encoder will. Auto follows the current window orientation so turning the phone updates
+     * the preview, while a fixed Portrait/Landscape stays fixed.</p>
+     */
+    private boolean previewShapeIsLandscape() {
+        String stored = SharedPreferencesManager.getInstance(context).getVideoOrientation();
+        if (!SharedPreferencesManager.ORIENTATION_AUTO.equalsIgnoreCase(stored)) {
+            return SharedPreferencesManager.isLandscapeOrientation(stored);
+        }
+        return context.getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+    }
+
     private int lastWatermarkVpW = -1;
+
     private int lastWatermarkVpH = -1;
+    /** Part of the rect cache key: the watermark turns with the frame when inverted. */
+    private boolean lastWatermarkInverted = false;
     private int lastWatermarkBitmapW = -1;
     private int lastWatermarkBitmapH = -1;
     private float lastWatermarkNdcW = -1f;
@@ -747,9 +777,9 @@ public class GLWatermarkRenderer {
             }
 
             // Determine correct texture matrix based on orientation
-            boolean isLandscape = false;
+            boolean isLandscape;
             if (userOrientationSetting != null) {
-                isLandscape = "landscape".equalsIgnoreCase(userOrientationSetting);
+                isLandscape = SharedPreferencesManager.isLandscapeOrientation(userOrientationSetting);
             } else {
                 isLandscape = (deviceOrientation == 1 || deviceOrientation == 3);
             }
@@ -765,6 +795,9 @@ public class GLWatermarkRenderer {
             } else {
                 // Portrait: use original texMatrix
                 encoderTexMatrix = texMatrix;
+            }
+            if (SharedPreferencesManager.shouldInvertOutput(userOrientationSetting)) {
+                encoderTexMatrix = applyInvertedTexMatrix(encoderTexMatrix);
             }
             float[] encoderCameraMvp = recordingMvpMatrix;
             if (isFullscreenCameraFront() && frontVideoMirrorEnabled) {
@@ -786,7 +819,12 @@ public class GLWatermarkRenderer {
                 // texture data comes from the PiP camera but encoderTexMatrix is from primary.
                 // Apply mirror flip if the front camera's texture is being shown fullscreen.
                 float[] fsTexMatrix = camerasSwapped ? pipLatestTexMatrix : encoderTexMatrix;
-                // pipLatestTexMatrix is raw from pipSurfaceTexture — apply flip if fullscreen camera is front
+                // pipLatestTexMatrix is raw from pipSurfaceTexture, so it did not get the
+                // orientation transform applied above — including the inverted rotation.
+                if (camerasSwapped && SharedPreferencesManager.shouldInvertOutput(userOrientationSetting)) {
+                    fsTexMatrix = applyInvertedTexMatrix(fsTexMatrix);
+                }
+                // Apply mirror flip if the front camera's texture is being shown fullscreen.
                 if (camerasSwapped && isFullscreenCameraFront() && frontVideoMirrorEnabled) {
                     fsTexMatrix = applyHorizontalTexFlip(fsTexMatrix);
                 }
@@ -907,9 +945,15 @@ public class GLWatermarkRenderer {
             boolean needsLetterbox = false;
 
             if (pvW[0] > 0 && pvH[0] > 0) {
-                // Content dimensions = encoder output (already rotation-corrected)
-                int contentW = encoderWidth > 0 ? encoderWidth : videoWidth;
-                int contentH = encoderHeight > 0 ? encoderHeight : videoHeight;
+                // Content dimensions = encoder output, swapped live to match the shape being
+                // recorded. Both this and the texture matrix below read previewShapeIsLandscape(),
+                // so the box and the drawn content always agree — the mismatch is what stretched
+                // the picture.
+                boolean appWantsPortrait = !previewShapeIsLandscape();
+                boolean isSensorPortrait = videoHeight > videoWidth;
+                boolean needsSwap = appWantsPortrait != isSensorPortrait;
+                int contentW = needsSwap ? videoHeight : videoWidth;
+                int contentH = needsSwap ? videoWidth : videoHeight;
 
                 float contentAR = (float) contentW / contentH;
                 float surfaceAR = (float) pvW[0] / pvH[0];
@@ -978,13 +1022,11 @@ public class GLWatermarkRenderer {
                 return;
             }
 
-            // Apply the same landscape orientation fix as in renderToEncoder
-            boolean isLandscape = false;
-            if (userOrientationSetting != null) {
-                isLandscape = "landscape".equalsIgnoreCase(userOrientationSetting);
-            } else {
-                isLandscape = (deviceOrientation == 1 || deviceOrientation == 3);
-            }
+            // Apply the same landscape orientation fix as in renderToEncoder.
+            // Reads the LIVE shape so the preview follows the phone: the widget label already
+            // resolves Auto live, and previously the renderer kept the shape it started with,
+            // so turning the phone moved the label but never the picture.
+            boolean isLandscape = previewShapeIsLandscape();
 
             float[] previewTexMatrix;
             if (isLandscape) {
@@ -997,6 +1039,12 @@ public class GLWatermarkRenderer {
             } else {
                 // Portrait: use original texMatrix
                 previewTexMatrix = texMatrix;
+            }
+            // The inverted option compensates an upside-down mount, so it applies here too:
+            // the preview shows the scene upright while the phone is physically inverted,
+            // which is what the user needs in order to frame the shot at all.
+            if (SharedPreferencesManager.shouldInvertOutput(userOrientationSetting)) {
+                previewTexMatrix = applyInvertedTexMatrix(previewTexMatrix);
             }
             float[] previewCameraMvp = previewMvpMatrix;
             if (isFullscreenCameraFront() && frontVideoMirrorEnabled) {
@@ -1556,8 +1604,10 @@ public class GLWatermarkRenderer {
 
         // CRITICAL FIX: Same as updateWatermarkTexture() — use encoder width, not Math.max
         int refWidth = Math.max(1, encoderWidth > 0 ? encoderWidth : videoWidth);
-        String orientationPref = SharedPreferencesManager.getInstance(context).getVideoOrientation();
-        boolean isPortrait = "portrait".equalsIgnoreCase(orientationPref);
+        // Take the shape from the viewport actually being drawn into, not from the saved
+        // preference. The setting describes the intended recording shape, so a Landscape
+        // setting applied a portrait width budget while the frame was wide.
+        boolean isPortrait = vpH >= vpW;
 
         float bitmapAspect = (float) dynamicBitmapWidth / (float) dynamicBitmapHeight;
         float intrinsicFraction = Math.max(0.35f, Math.min(0.90f, dynamicBitmapWidth / (float) refWidth));
@@ -1565,22 +1615,31 @@ public class GLWatermarkRenderer {
                 ? Math.min(0.82f, intrinsicFraction)
                 : Math.min(0.72f, intrinsicFraction);
         float ndcWidth = targetFractionOfWidth * 2.0f;
-        // Correct for active viewport aspect ratio so watermark text shape remains consistent.
+        // One NDC unit spans W/2 pixels horizontally and H/2 vertically, so the viewport aspect
+        // has to be folded in or the text stretches.
         float ndcHeight = (ndcWidth * ((float) vpW / (float) vpH)) / bitmapAspect;
+        // The height cap must shrink the width with it. Capping height alone changed the quad's
+        // aspect, so a long single-line watermark rendered vertically compressed in landscape.
         float maxNdcHeight = Math.min(0.65f, 0.08f + watermarkLineCount * 0.06f);
-        ndcHeight = Math.min(ndcHeight, maxNdcHeight);
+        if (ndcHeight > maxNdcHeight) {
+            float shrink = maxNdcHeight / ndcHeight;
+            ndcHeight = maxNdcHeight;
+            ndcWidth *= shrink;
+        }
 
+        boolean inverted = SharedPreferencesManager.shouldInvertOutput(userOrientationSetting);
         if (watermarkRectBuffer != null
                 && lastWatermarkVpW == vpW
                 && lastWatermarkVpH == vpH
                 && lastWatermarkBitmapW == dynamicBitmapWidth
                 && lastWatermarkBitmapH == dynamicBitmapHeight
+                && lastWatermarkInverted == inverted
                 && Math.abs(lastWatermarkNdcW - ndcWidth) < 0.0001f
                 && Math.abs(lastWatermarkNdcH - ndcHeight) < 0.0001f) {
             return;
         }
 
-        float[] rectVerts = computeWatermarkRectVertices(ndcWidth, ndcHeight);
+        float[] rectVerts = computeWatermarkRectVertices(ndcWidth, ndcHeight, inverted);
         watermarkRectBuffer = ByteBuffer.allocateDirect(rectVerts.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
@@ -1592,6 +1651,7 @@ public class GLWatermarkRenderer {
         lastWatermarkVpH = vpH;
         lastWatermarkBitmapW = dynamicBitmapWidth;
         lastWatermarkBitmapH = dynamicBitmapHeight;
+        lastWatermarkInverted = inverted;
         lastWatermarkNdcW = ndcWidth;
         lastWatermarkNdcH = ndcHeight;
     }
@@ -2100,6 +2160,10 @@ public class GLWatermarkRenderer {
         GLES20.glDisable(GLES20.GL_BLEND);
     }
 
+    /**
+     * Draws the watermark. The inverted orientation rotates it with the scene in both the
+     * preview and the file, so what the user sees is exactly what gets recorded.
+     */
     private void drawWatermark() {
         if (suppressWatermarkForSnapshot) {
             return;
@@ -2605,9 +2669,11 @@ public class GLWatermarkRenderer {
         }
 
         // Apply the same orientation fix as the primary camera for the PiP texture
-        boolean isLandscape = false;
+        boolean isLandscape;
         if (userOrientationSetting != null) {
-            isLandscape = "landscape".equalsIgnoreCase(userOrientationSetting);
+            isLandscape = SharedPreferencesManager.isLandscapeOrientation(userOrientationSetting);
+        } else {
+            isLandscape = (deviceOrientation == 1 || deviceOrientation == 3);
         }
 
         float[] pipEncoderTexMatrix;
@@ -2619,6 +2685,9 @@ public class GLWatermarkRenderer {
             pipEncoderTexMatrix = fixedTexMatrix;
         } else {
             pipEncoderTexMatrix = currentPipTexMatrix;
+        }
+        if (SharedPreferencesManager.shouldInvertOutput(userOrientationSetting)) {
+            pipEncoderTexMatrix = applyInvertedTexMatrix(pipEncoderTexMatrix);
         }
 
         // Apply mirror flip for PiP front camera (same logic as fullscreen encoder path)
@@ -3050,6 +3119,28 @@ public class GLWatermarkRenderer {
             // Fall through to legacy heuristic if prefs are temporarily unavailable.
         }
         return sensorOrientation == 270;
+    }
+
+    /**
+     * Rotates a camera texture matrix by 180° about the texture centre.
+     *
+     * <p>Rotating about the centre, rather than the UV origin, is what makes this safe to
+     * compose with the matrix from {@code SurfaceTexture#getTransformMatrix()}: that matrix is
+     * not a pure rotation — it also scales and translates to crop a one-texel border — so
+     * corner-based rotation can push UVs outside [0,1] and sample outside the texture. The
+     * centre rotation maps the unit square onto itself for any source matrix.</p>
+     */
+    private float[] applyInvertedTexMatrix(float[] source) {
+        float[] inverted = new float[16];
+        Matrix.setIdentityM(inverted, 0);
+        Matrix.translateM(inverted, 0, 1f, 1f, 0f);
+        Matrix.scaleM(inverted, 0, -1f, -1f, 1f);
+
+        float[] out = new float[16];
+        // Apply after the camera transform, matching the mirror above, so sensor rotation
+        // and the user's inversion stay independent.
+        Matrix.multiplyMM(out, 0, source, 0, inverted, 0);
+        return out;
     }
 
     private float[] applyHorizontalTexFlip(float[] source) {

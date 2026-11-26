@@ -317,8 +317,12 @@
 Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="setting_video_orientation_title">Videoausrichtung</string>
     <string name="setting_video_orientation_summary">Wähle die Ausrichtung für deine Videos. Hochformat ist am besten für soziale Medien; Querformat ist am besten für YouTube, Präsentationen usw.</string>
+    <string name="video_orientation_auto">Automatisch</string>
     <string name="video_orientation_portrait">Hochformat (Standard)</string>
+    <string name="video_orientation_portrait_inverted">Hochformat (Umgekehrt)</string>
     <string name="video_orientation_landscape">Querformat</string>
+    <string name="video_orientation_landscape_inverted">Querformat (Umgekehrt)</string>
+    <string name="helper_video_orientation">Umgekehrt nimmt kopfüber auf und korrigiert sich, wenn das Telefon kopfüber montiert ist. Automatisch wählt Hoch- oder Querformat danach, wie das Telefon beim Start gehalten wird.</string>
     <!-- Video Bitrate Settings -->
     <string name="setting_video_bitrate_title">Video-Bitrate</string>
     <string name="button_video_bitrate_settings">Bitrate einstellen</string>
@@ -2510,8 +2514,12 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
 
     <!-- Home screen camera info -->
     <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_auto">Automatisch</string>
+    <string name="home_orientation_auto_value">Automatisch (%1$s)</string>
     <string name="home_orientation_portrait">Hochformat</string>
+    <string name="home_orientation_portrait_inverted">Hochformat (Umgekehrt)</string>
     <string name="home_orientation_landscape">Querformat</string>
+    <string name="home_orientation_landscape_inverted">Querformat (Umgekehrt)</string>
     <string name="home_storage_format">%.2f GB</string>
 
     <!-- Appearance Settings -->

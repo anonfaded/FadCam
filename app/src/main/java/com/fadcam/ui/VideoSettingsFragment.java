@@ -394,9 +394,7 @@ public class VideoSettingsFragment extends Fragment {
 
         // Orientation
         String orient = prefs.getVideoOrientation();
-        valueOrientation.setText(SharedPreferencesManager.ORIENTATION_LANDSCAPE.equals(orient)
-                ? getString(R.string.video_orientation_landscape)
-                : getString(R.string.video_orientation_portrait));
+        valueOrientation.setText(getOrientationLabel(orient));
         if (valueLocationEmbed != null) {
             valueLocationEmbed.setText(
                     prefs.isLocationEmbeddingEnabled() ? getString(R.string.video_setting_location_embed_enabled)
@@ -729,10 +727,16 @@ public class VideoSettingsFragment extends Fragment {
     private void showOrientationBottomSheet() {
         // method(showOrientationBottomSheet)-----------
         ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(SharedPreferencesManager.ORIENTATION_AUTO,
+                getString(R.string.video_orientation_auto)));
         items.add(new com.fadcam.ui.picker.OptionItem(SharedPreferencesManager.ORIENTATION_PORTRAIT,
                 getString(R.string.video_orientation_portrait)));
+        items.add(new com.fadcam.ui.picker.OptionItem(SharedPreferencesManager.ORIENTATION_PORTRAIT_INVERTED,
+                getString(R.string.video_orientation_portrait_inverted)));
         items.add(new com.fadcam.ui.picker.OptionItem(SharedPreferencesManager.ORIENTATION_LANDSCAPE,
                 getString(R.string.video_orientation_landscape)));
+        items.add(new com.fadcam.ui.picker.OptionItem(SharedPreferencesManager.ORIENTATION_LANDSCAPE_INVERTED,
+                getString(R.string.video_orientation_landscape_inverted)));
         String current = prefs.getVideoOrientation();
         final String resultKey = "picker_result_orientation";
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
@@ -744,9 +748,26 @@ public class VideoSettingsFragment extends Fragment {
         });
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
                 .newInstance(
-                        getString(R.string.setting_video_orientation_title), items, current, resultKey);
+                        getString(R.string.setting_video_orientation_title), items, current, resultKey,
+                        getString(R.string.helper_video_orientation));
         sheet.show(getParentFragmentManager(), "orientation_picker");
         // method(showOrientationBottomSheet)-----------
+    }
+
+    /** Display label for a stored video orientation value. */
+    private String getOrientationLabel(String orient) {
+        if (SharedPreferencesManager.ORIENTATION_AUTO.equals(orient)) {
+            return getString(R.string.video_orientation_auto);
+        }
+        if (SharedPreferencesManager.ORIENTATION_PORTRAIT_INVERTED.equals(orient)) {
+            return getString(R.string.video_orientation_portrait_inverted);
+        }
+        if (SharedPreferencesManager.ORIENTATION_LANDSCAPE_INVERTED.equals(orient)) {
+            return getString(R.string.video_orientation_landscape_inverted);
+        }
+        return getString(SharedPreferencesManager.isLandscapeOrientation(orient)
+                ? R.string.video_orientation_landscape
+                : R.string.video_orientation_portrait);
     }
 
     // -------- Legacy logic helpers (migrated/adapted) --------

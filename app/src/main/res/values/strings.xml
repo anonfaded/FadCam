@@ -1363,8 +1363,12 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="helper_watermark_option">Choose overlay content: timestamp + brand, timestamp only, or none.</string>
     <string name="setting_video_orientation_title">Video Orientation</string>
     <string name="setting_video_orientation_summary">Choose the orientation for your videos. Portrait is best for social media; Landscape is best for YouTube, presentations, etc.</string>
+    <string name="video_orientation_auto">Auto</string>
     <string name="video_orientation_portrait">Portrait (default)</string>
+    <string name="video_orientation_portrait_inverted">Portrait (Inverted)</string>
     <string name="video_orientation_landscape">Landscape</string>
+    <string name="video_orientation_landscape_inverted">Landscape (Inverted)</string>
+    <string name="helper_video_orientation">Inverted records upside down and corrects itself when the phone is mounted upside down. Auto picks Portrait or Landscape from how the phone is held when recording starts.</string>
     <!-- Video Bitrate Settings -->
     <string name="setting_video_bitrate_title">Recording Quality &amp; Performance</string>
     <string name="button_video_bitrate_settings">Set Bitrate</string>
@@ -2946,8 +2950,12 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <!-- Home screen camera info -->
     <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_auto">Auto</string>
+    <string name="home_orientation_auto_value">Auto (%1$s)</string>
     <string name="home_orientation_portrait">Portrait</string>
+    <string name="home_orientation_portrait_inverted">Portrait (Inverted)</string>
     <string name="home_orientation_landscape">Landscape</string>
+    <string name="home_orientation_landscape_inverted">Landscape (Inverted)</string>
     <string name="home_storage_format">%.2f GB</string>
 
     <!-- HTTP methods -->

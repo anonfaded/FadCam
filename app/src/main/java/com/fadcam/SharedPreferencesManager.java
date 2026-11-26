@@ -1772,6 +1772,12 @@ public class SharedPreferencesManager {
     public static final String PREF_VIDEO_ORIENTATION = "video_orientation";
     public static final String ORIENTATION_PORTRAIT = "portrait";
     public static final String ORIENTATION_LANDSCAPE = "landscape";
+    /** Same file shape as {@link #ORIENTATION_PORTRAIT}, recorded upside down. */
+    public static final String ORIENTATION_PORTRAIT_INVERTED = "portrait_inverted";
+    /** Same file shape as {@link #ORIENTATION_LANDSCAPE}, recorded upside down. */
+    public static final String ORIENTATION_LANDSCAPE_INVERTED = "landscape_inverted";
+    /** Picks portrait or landscape from how the phone is held when capture starts. */
+    public static final String ORIENTATION_AUTO = "auto";
     public static final String DEFAULT_VIDEO_ORIENTATION = ORIENTATION_PORTRAIT;
 
     public String getVideoOrientation() {
@@ -1789,12 +1795,68 @@ public class SharedPreferencesManager {
     }
 
     /**
+     * Output shape of a video orientation value. True for both landscape variants.
+     *
+     * <p>Every consumer that only cares about the file shape must use this instead of
+     * comparing against {@link #ORIENTATION_LANDSCAPE}. A comparison silently treats the
+     * inverted values as portrait and swaps the encoder to the wrong shape.</p>
+     */
+    public static boolean isLandscapeOrientation(@Nullable String orientation) {
+        return ORIENTATION_LANDSCAPE.equalsIgnoreCase(orientation)
+            || ORIENTATION_LANDSCAPE_INVERTED.equalsIgnoreCase(orientation);
+    }
+
+    /** True when the recorded frame is rotated 180°, i.e. either inverted variant. */
+    public static boolean isInvertedOrientation(@Nullable String orientation) {
+        return ORIENTATION_PORTRAIT_INVERTED.equalsIgnoreCase(orientation)
+            || ORIENTATION_LANDSCAPE_INVERTED.equalsIgnoreCase(orientation);
+    }
+
+    /**
+     * True when the frame must be rotated 180°.
+     *
+     * <p>This is a static, install-time choice, exactly like the "Rotate video 180°" option on
+     * BlackVue, VIOFO and Mobius dashcams: it exists for a camera that is physically mounted
+     * upside down. No sensor is involved, so selecting it takes effect immediately and costs no
+     * battery. The preview and the file both rotate, so what you see is what gets recorded.</p>
+     */
+    public static boolean shouldInvertOutput(@Nullable String orientation) {
+        return isInvertedOrientation(orientation);
+    }
+
+    /**
+     * Resolves the stored preference to the concrete shape to record.
+     *
+     * <p>Auto asks the posture <b>once</b>, at capture start, and the caller keeps that value for
+     * the whole session — the encoder shape cannot change mid-recording anyway. One short sensor
+     * read rather than a listener, so there is no battery drain while the preview idles.
+     * Never returns {@link #ORIENTATION_AUTO}.</p>
+     */
+    public static String resolveShape(@Nullable String orientation, @Nullable Context context) {
+        if (!ORIENTATION_AUTO.equalsIgnoreCase(orientation)) {
+            return orientation;
+        }
+        if (context == null) {
+            return ORIENTATION_PORTRAIT;
+        }
+        Boolean landscape = com.fadcam.watermark.DevicePosture.get(context)
+                .readLandscapeNow(context);
+        if (landscape == null) {
+            // No usable reading: fall back to the layout the app is currently in.
+            return context.getResources().getConfiguration().orientation
+                    == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+                    ? ORIENTATION_LANDSCAPE : ORIENTATION_PORTRAIT;
+        }
+        return landscape ? ORIENTATION_LANDSCAPE : ORIENTATION_PORTRAIT;
+    }
+
+    /**
      * Checks if the video orientation is set to landscape.
      *
      * @return true if the orientation is landscape, false otherwise.
      */
     public boolean isOrientationLandscape() {
-        return ORIENTATION_LANDSCAPE.equals(getVideoOrientation());
+        return isLandscapeOrientation(getVideoOrientation());
     }
 
     // --- End Video Orientation ---

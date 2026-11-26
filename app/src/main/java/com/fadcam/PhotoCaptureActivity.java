@@ -398,11 +398,13 @@ public class PhotoCaptureActivity extends ComponentActivity {
         }
         int w = s.getWidth();
         int h = s.getHeight();
-        String orientation = prefs.getVideoOrientation();
-        if (SharedPreferencesManager.ORIENTATION_PORTRAIT.equalsIgnoreCase(orientation) && w > h) {
+        String orientation = SharedPreferencesManager.resolveShape(
+                prefs.getVideoOrientation(), this);
+        boolean landscape = SharedPreferencesManager.isLandscapeOrientation(orientation);
+        if (!landscape && w > h) {
             return new Size(h, w);
         }
-        if (SharedPreferencesManager.ORIENTATION_LANDSCAPE.equalsIgnoreCase(orientation) && h > w) {
+        if (landscape && h > w) {
             return new Size(h, w);
         }
         return s;
@@ -414,16 +416,24 @@ public class PhotoCaptureActivity extends ComponentActivity {
         if (source == null) return null;
         Bitmap oriented = applyExifRotationIfNeeded(source, file.getAbsolutePath());
         if (prefs == null) return oriented;
-        String orientation = prefs.getVideoOrientation();
-        if (SharedPreferencesManager.ORIENTATION_PORTRAIT.equalsIgnoreCase(orientation) && oriented.getWidth() > oriented.getHeight()) {
+        String orientation = SharedPreferencesManager.resolveShape(
+                prefs.getVideoOrientation(), this);
+        boolean landscape = SharedPreferencesManager.isLandscapeOrientation(orientation);
+        boolean inverted = SharedPreferencesManager.isInvertedOrientation(orientation);
+        if (!landscape && oriented.getWidth() > oriented.getHeight()) {
             Bitmap rotated = rotate(oriented, 90f);
             if (rotated != oriented && oriented != source && !oriented.isRecycled()) oriented.recycle();
-            return rotated;
+            oriented = rotated;
+        } else if (landscape && oriented.getHeight() > oriented.getWidth()) {
+            Bitmap rotated = rotate(oriented, 90f);
+            if (rotated != oriented && oriented != source && !oriented.isRecycled()) oriented.recycle();
+            oriented = rotated;
         }
-        if (SharedPreferencesManager.ORIENTATION_LANDSCAPE.equalsIgnoreCase(orientation) && oriented.getHeight() > oriented.getWidth()) {
-            Bitmap rotated = rotate(oriented, 90f);
+        if (inverted) {
+            // Same rotation the video path applies, so a photo matches the recording.
+            Bitmap rotated = rotate(oriented, 180f);
             if (rotated != oriented && oriented != source && !oriented.isRecycled()) oriented.recycle();
-            return rotated;
+            oriented = rotated;
         }
         return oriented;
     }

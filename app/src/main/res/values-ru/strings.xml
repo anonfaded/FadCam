@@ -763,8 +763,12 @@
     <string name="helper_watermark_option">Выберите содержимое наложения: временная метка + бренд, только временная метка или ничего.</string>
     <string name="setting_video_orientation_title">Video Orientation</string>
     <string name="setting_video_orientation_summary">Choose the orientation for your videos. Portrait is best for social media; Landscape is best for YouTube, presentations, etc.</string>
+    <string name="video_orientation_auto">Авто</string>
     <string name="video_orientation_portrait">Portrait (default)</string>
+    <string name="video_orientation_portrait_inverted">Портрет (перевёрнутый)</string>
     <string name="video_orientation_landscape">Landscape</string>
+    <string name="video_orientation_landscape_inverted">Ландшафт (перевёрнутый)</string>
+    <string name="helper_video_orientation">Перевёрнутый записывает вверх ногами и сам исправляется, когда телефон закреплён перевёрнутым. Авто выбирает портрет или ландшафт по положению телефона в начале записи.</string>
     <!-- Video Bitrate Settings -->
     <string name="setting_video_bitrate_title">Качество и производительность записи</string>
     <string name="button_video_bitrate_settings">Установить битрейт</string>
@@ -3239,8 +3243,12 @@
 
     <!-- Home screen camera info -->
     <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_auto">Авто</string>
+    <string name="home_orientation_auto_value">Авто (%1$s)</string>
     <string name="home_orientation_portrait">Портрет</string>
+    <string name="home_orientation_portrait_inverted">Портрет (перевёрнутый)</string>
     <string name="home_orientation_landscape">Ландшафт</string>
+    <string name="home_orientation_landscape_inverted">Ландшафт (перевёрнутый)</string>
     <string name="home_storage_format">%.2f ГБ</string>
 
     <!-- Appearance Settings -->

@@ -254,8 +254,12 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     <!-- Video Orientation -->
     <string name="setting_video_orientation_title">Orientation Vidéo</string>
     <string name="setting_video_orientation_summary">Choisissez l\'orientation de vos vidéos. Portrait est idéal pour les réseaux sociaux; Paysage est idéal pour YouTube, présentations, etc.</string>
+    <string name="video_orientation_auto">Automatique</string>
     <string name="video_orientation_portrait">Portrait (par défaut)</string>
+    <string name="video_orientation_portrait_inverted">Portrait (inversé)</string>
     <string name="video_orientation_landscape">Paysage</string>
+    <string name="video_orientation_landscape_inverted">Paysage (inversé)</string>
+    <string name="helper_video_orientation">Inversé enregistre à l\'envers et se corrige lorsque le téléphone est monté à l\'envers. Automatique choisit Portrait ou Paysage selon la position du téléphone au début de l\'enregistrement.</string>
     <!-- Video Splitting -->
     <string name="video_split_size_summary_mb">Actuel: %1$d MB</string>
     <string name="video_split_size_summary_gb">Actuel: %1$s GB</string>
@@ -4229,8 +4233,12 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
     <!-- Home screen camera info -->
     <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_auto">Automatique</string>
+    <string name="home_orientation_auto_value">Automatique (%1$s)</string>
     <string name="home_orientation_portrait">Portrait</string>
+    <string name="home_orientation_portrait_inverted">Portrait (inversé)</string>
     <string name="home_orientation_landscape">Paysage</string>
+    <string name="home_orientation_landscape_inverted">Paysage (inversé)</string>
     <string name="home_storage_format">%.2f Go</string>
 
     <!-- Appearance Settings -->

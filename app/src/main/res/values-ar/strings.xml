@@ -230,8 +230,12 @@
     <!-- Video Orientation -->
     <string name="setting_video_orientation_title">اتجاه الفيديو</string>
     <string name="setting_video_orientation_summary">اختر اتجاه الفيديو. الوضع العمودي أفضل لوسائل التواصل الاجتماعي؛ الوضع الأفقي أفضل لليوتيوب والعروض التقديمية وما إلى ذلك.</string>
+    <string name="video_orientation_auto">تلقائي</string>
     <string name="video_orientation_portrait">عمودي (افتراضي)</string>
+    <string name="video_orientation_portrait_inverted">عمودي (معكوس)</string>
     <string name="video_orientation_landscape">أفقي</string>
+    <string name="video_orientation_landscape_inverted">أفقي (معكوس)</string>
+    <string name="helper_video_orientation">يسجّل المعكوس مقلوبًا ويصحّح نفسه عندما يكون الهاتف مثبّتًا بالمقلوب. يختار التلقائي العمودي أو الأفقي حسب وضع الهاتف عند بدء التسجيل.</string>
     <!-- Video Splitting -->
     <string name="video_split_size_summary_mb">الحالي: %1$d ميجابايت</string>
     <string name="video_split_size_summary_gb">الحالي: %1$s جيجابايت</string>
@@ -4299,8 +4303,12 @@
 
     <!-- Home screen camera info -->
     <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_auto">تلقائي</string>
+    <string name="home_orientation_auto_value">تلقائي (%1$s)</string>
     <string name="home_orientation_portrait">عمودي</string>
+    <string name="home_orientation_portrait_inverted">عمودي (معكوس)</string>
     <string name="home_orientation_landscape">أفقي</string>
+    <string name="home_orientation_landscape_inverted">أفقي (معكوس)</string>
     <string name="home_storage_format">%.2f غيغابايت</string>
 
     <!-- Appearance Settings -->

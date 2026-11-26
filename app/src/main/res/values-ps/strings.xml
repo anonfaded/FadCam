@@ -244,8 +244,12 @@ Yadona: da H.265 (HEVC) sara, taso kawalai shai da H.264 pa nisbatan neema bitra
     <!-- Video Orientation -->
     <string name="setting_video_orientation_title">Da Video Samt</string>
     <string name="setting_video_orientation_summary">Da khpalo videogano lapara samt entekhab ka. Portrait (walaro) da social media lapara kha de; Landscape (paltano) da YouTube, presentations aw gharo lapara kha de.</string>
+    <string name="video_orientation_auto">Auto</string>
     <string name="video_orientation_portrait">Portrait (default)</string>
+    <string name="video_orientation_portrait_inverted">Portrait (Inverted)</string>
     <string name="video_orientation_landscape">Landscape</string>
+    <string name="video_orientation_landscape_inverted">Landscape (Inverted)</string>
+    <string name="helper_video_orientation">Inverted records upside down and corrects itself when the phone is mounted upside down. Auto picks Portrait or Landscape from how the phone is held when recording starts.</string>
     <!-- Video Splitting -->
     <string name="video_split_size_summary_mb">Osany: %1$d MB</string>
     <string name="video_split_size_summary_gb">Osany: %1$s GB</string>
@@ -2589,8 +2593,12 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
 
     <!-- Home screen camera info -->
     <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_auto">Auto</string>
+    <string name="home_orientation_auto_value">Auto (%1$s)</string>
     <string name="home_orientation_portrait">Portrait</string>
+    <string name="home_orientation_portrait_inverted">Portrait (Inverted)</string>
     <string name="home_orientation_landscape">Landscape</string>
+    <string name="home_orientation_landscape_inverted">Landscape (Inverted)</string>
     <string name="home_storage_format">%.2f GB</string>
 
     <!-- Appearance Settings -->

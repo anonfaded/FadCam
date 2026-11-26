@@ -140,11 +140,6 @@
     <dimen name="home_land_dock_side_height">94dp</dimen>
     <dimen name="home_land_dock_side_inset">44dp</dimen>
     <dimen name="home_land_dock_side_overlap">34dp</dimen>
-    <!-- Upper bound for the landscape widget dashboard. Beyond this the extra width
-         belongs to the camera preview, not to ever-wider cards. -->
-    <dimen name="home_land_dashboard_max_width">420dp</dimen>
-    <dimen name="home_land_dashboard_min_width">300dp</dimen>
-    <dimen name="home_land_preview_min_width">240dp</dimen>
     <dimen name="home_dock_side_inset">44dp</dimen>
     <dimen name="home_dock_gap">12dp</dimen>
     <dimen name="home_dock_side_width">78dp</dimen>
@@ -215,14 +210,6 @@
     <dimen name="home_land_header_logo_h">40dp</dimen>
     <dimen name="home_land_zoom_map_w">42dp</dimen>
     <dimen name="home_land_zoom_map_h">56dp</dimen>
-    <!-- Landscape control deck. Both rows (camera tools and recording controls) use the
-         same height so they read as one deck, matching the portrait button height. -->
-    <dimen name="home_land_control_h">44dp</dimen>
-    <dimen name="home_land_start_min_w">132dp</dimen>
-    <!-- One button size and one icon size for the whole landscape control deck, so the
-         camera tools and the recording controls are visually interchangeable. -->
-    <dimen name="home_land_deck_btn">44dp</dimen>
-    <dimen name="home_land_deck_icon">22dp</dimen>
     <dimen name="home_land_control_size">36dp</dimen>
     <dimen name="home_land_control_icon">18dp</dimen>
     <dimen name="home_land_control_icon_s">16dp</dimen>

@@ -1229,7 +1229,8 @@ public class DualCameraRecordingService extends Service {
                     config.getPrimaryCamera() == DualCameraConfig.PrimaryCamera.BACK
                             ? com.fadcam.CameraType.BACK : com.fadcam.CameraType.FRONT);
             com.fadcam.VideoCodec codec = prefs.getVideoCodec();
-            String orientation = prefs.getVideoOrientation();
+            String orientation = com.fadcam.SharedPreferencesManager.resolveShape(
+                    prefs.getVideoOrientation(), this);
 
             // ── Sensor orientation for primary camera ─────────────────
             String primaryId = (config.getPrimaryCamera() == DualCameraConfig.PrimaryCamera.BACK)

@@ -359,6 +359,12 @@ public class GLRecordingPipeline {
                 // input-to-output latency is fully drained.
                 for (int i = 0; i < 6; i++) {
                     glRenderer.renderToEncoderAllowStaleFrame();
+                    // Preview-only mode runs no drain thread (startDrainLoop() is only
+                    // reached from startRecording()/resumeRecording()), so nothing would
+                    // ever release the encoder's output buffers. Once that finite pool
+                    // fills, eglSwapBuffers() blocks forever on the GL thread and the
+                    // preview freezes. Release them here instead.
+                    discardEncoderOutput();
                     bitmap = glRenderer.captureEncoderFrameBitmap();
                     if (!isClearlyBlankFrame(bitmap) && i >= 2) {
                         break;
@@ -386,7 +392,53 @@ public class GLRecordingPipeline {
                 callback.onCaptured(bitmap);
             }
         });
-        handler.post(renderRunnable);
+        // Go through the CAS gate like every other render trigger. Posting bare here
+        // could queue the runnable twice and leave the gate out of sync with the queue.
+        if (renderRunnableQueued.compareAndSet(false, true)) {
+            handler.post(renderRunnable);
+        }
+    }
+
+    /**
+     * Releases every immediately-available encoder output buffer without muxing it.
+     *
+     * <p>Only safe while no drain thread is running, which in practice means
+     * preview-only mode and paused rollover work. During a real recording the drain
+     * thread owns dequeueOutputBuffer, and calling this would steal its buffers.</p>
+     */
+    private void discardEncoderOutput() {
+        if (videoEncoder == null) {
+            return;
+        }
+        // During a real recording the drain thread owns dequeueOutputBuffer. Stealing
+        // its buffers here would drop recorded frames, so only drain when it is idle.
+        if (isRecording && drainHandler != null) {
+            return;
+        }
+        MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+        while (true) {
+            int index;
+            try {
+                index = videoEncoder.dequeueOutputBuffer(info, 0);
+            } catch (IllegalStateException e) {
+                // Encoder torn down concurrently; nothing left to release.
+                return;
+            }
+            if (index == MediaCodec.INFO_TRY_AGAIN_LATER) {
+                return;
+            }
+            if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED
+                    || index == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+                continue;
+            }
+            if (index >= 0) {
+                try {
+                    videoEncoder.releaseOutputBuffer(index, false);
+                } catch (IllegalStateException e) {
+                    return;
+                }
+            }
+        }
     }
 
     private boolean isClearlyBlankFrame(@Nullable android.graphics.Bitmap bitmap) {
@@ -1394,8 +1446,11 @@ public class GLRecordingPipeline {
      * rung clamps to what the encoder actually advertises instead of failing the recording.
      */
     private void initializeEncoder() throws IOException {
-        // Use app's orientation setting, not device rotation
-        boolean appWantsPortrait = "portrait".equalsIgnoreCase(orientation);
+        // Use app's orientation setting, not device rotation.
+        // Must be shape-classified, not compared to "portrait": an inverted portrait value
+        // would fail that comparison and silently produce a landscape file.
+        boolean appWantsPortrait =
+                !com.fadcam.SharedPreferencesManager.isLandscapeOrientation(orientation);
         boolean isSensorPortrait = videoHeight > videoWidth;
         boolean needsSwap = appWantsPortrait != isSensorPortrait;
 

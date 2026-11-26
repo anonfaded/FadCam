@@ -1319,8 +1319,12 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="helper_watermark_option">Elige contenido de superposición: marca de tiempo + marca, solo marca de tiempo, o ninguno.</string>
     <string name="setting_video_orientation_title">Orientación de video</string>
     <string name="setting_video_orientation_summary">Elige la orientación para tus videos. Retrato es mejor para redes sociales; Paisaje es mejor para YouTube, presentaciones, etc.</string>
+    <string name="video_orientation_auto">Automático</string>
     <string name="video_orientation_portrait">Retrato (predeterminado)</string>
+    <string name="video_orientation_portrait_inverted">Retrato (invertido)</string>
     <string name="video_orientation_landscape">Paisaje</string>
+    <string name="video_orientation_landscape_inverted">Paisaje (invertido)</string>
+    <string name="helper_video_orientation">Invertido graba al revés y se corrige cuando el teléfono está montado boca abajo. Automático elige Retrato o Paisaje según cómo se sostenga el teléfono al iniciar la grabación.</string>
     <string name="setting_video_bitrate_title">Calidad y rendimiento de grabación</string>
     <string name="button_video_bitrate_settings">Establecer tasa de bits</string>
     <string name="bitrate_mode_default">Predeterminado</string>
@@ -2668,8 +2672,12 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
 
     <!-- Home screen camera info -->
     <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_auto">Automático</string>
+    <string name="home_orientation_auto_value">Automático (%1$s)</string>
     <string name="home_orientation_portrait">Retrato</string>
+    <string name="home_orientation_portrait_inverted">Retrato (invertido)</string>
     <string name="home_orientation_landscape">Paisaje</string>
+    <string name="home_orientation_landscape_inverted">Paisaje (invertido)</string>
     <string name="home_storage_format">%.2f GB</string>
 
     <!-- Appearance Settings -->
