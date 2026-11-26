@@ -573,6 +573,30 @@ public class MainActivity extends AppCompatActivity {
                 navLp.height = 0;
                 bottomNavigationView.setLayoutParams(navLp);
                 bottomNavigationView.setVisibility(android.view.View.INVISIBLE);
+            } else {
+                // Landscape: the same pill, stood up on the leading edge. The rail stays
+                // hidden (the compact dock replaces it) and the bottom pill is not used.
+                final android.view.View dockLand = findViewById(R.id.lite_dock_land);
+                if (dockLand != null) {
+                    android.widget.FrameLayout.LayoutParams navLp =
+                            (android.widget.FrameLayout.LayoutParams) bottomNavigationView.getLayoutParams();
+                    navLp.height = 0;
+                    bottomNavigationView.setLayoutParams(navLp);
+                    bottomNavigationView.setVisibility(android.view.View.INVISIBLE);
+                    railNavigationView.setVisibility(android.view.View.GONE);
+                    styleLiteLandscapeDock(dockLand);
+                    bindLiteDockItem(dockLand, R.id.lite_dock_land_item_records, R.id.navigation_records);
+                    bindLiteDockItem(dockLand, R.id.lite_dock_land_item_home, R.id.navigation_home);
+                    bindLiteDockItem(dockLand, R.id.lite_dock_land_item_settings, R.id.navigation_settings);
+                    android.view.View dockHome = dockLand.findViewById(R.id.lite_dock_land_item_home);
+                    if (dockHome != null) {
+                        dockHome.setOnLongClickListener(v -> {
+                            showHomeIconPicker();
+                            return true;
+                        });
+                    }
+                    dockLand.post(() -> updateLiteDockSelection());
+                }
             }
 
             final android.view.View dock = isLandscapeLayout()
@@ -2436,6 +2460,57 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
+     * Landscape counterpart of the portrait blob dock: the same pill stood upright.
+     * Home keeps the large circle in the middle; Records and Settings are the long
+     * bars that tuck underneath it, so their round ends only face outward and the
+     * trio reads as one shape, exactly like portrait.
+     */
+    private void styleLiteLandscapeDock(@NonNull android.view.View dockLand) {
+        android.util.TypedValue tv = new android.util.TypedValue();
+        int color = 0xFF1E1E1E;
+        if (getTheme().resolveAttribute(com.fadcam.R.attr.colorBottomNav, tv, true)) {
+            color = tv.data;
+        }
+        float d = getResources().getDisplayMetrics().density;
+        float sideW = getResources().getDimension(com.fadcam.R.dimen.home_land_dock_side_width);
+        int sideColor = mix(color, 0xFF000000, 0.30f);
+        int light = mix(color, 0xFFFFFFFF, 0.08f);
+        // Half the short side, so each end is a true semicircle.
+        float sideRadius = sideW * 0.45f;
+
+        android.graphics.drawable.GradientDrawable top = new android.graphics.drawable.GradientDrawable();
+        top.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        top.setColor(sideColor);
+        top.setCornerRadii(new float[]{sideRadius, sideRadius, sideRadius, sideRadius,
+                0f, 0f, 0f, 0f});
+
+        android.graphics.drawable.GradientDrawable bottom = new android.graphics.drawable.GradientDrawable();
+        bottom.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        bottom.setColor(sideColor);
+        bottom.setCornerRadii(new float[]{0f, 0f, 0f, 0f,
+                sideRadius, sideRadius, sideRadius, sideRadius});
+
+        android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
+        circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        circle.setGradientType(android.graphics.drawable.GradientDrawable.LINEAR_GRADIENT);
+        circle.setOrientation(android.graphics.drawable.GradientDrawable.Orientation.TL_BR);
+        circle.setColors(new int[]{light, mix(color, 0xFF000000, 0.10f)});
+        circle.setStroke((int) Math.max(1f, 1.2f * d), 0x22FFFFFF);
+
+        android.view.View records = dockLand.findViewById(R.id.lite_dock_land_item_records);
+        android.view.View settings = dockLand.findViewById(R.id.lite_dock_land_item_settings);
+        android.view.View home = dockLand.findViewById(R.id.lite_dock_land_item_home);
+        if (records != null) records.setBackground(top);
+        if (settings != null) settings.setBackground(bottom);
+        if (home != null) {
+            home.setBackground(circle);
+            home.setElevation(3f * d);
+        }
+        dockLand.setBackground(null);
+        dockLand.setVisibility(android.view.View.VISIBLE);
+    }
+
+    /**
      * Portrait: floating bottom pill, full-width content above it.
      * Landscape: the same items as a vertical rail on the leading edge, so the
      * short landscape height goes to the camera UI instead of the dock.
@@ -2468,16 +2543,37 @@ public class MainActivity extends AppCompatActivity {
         if (landscape && rail instanceof NavigationBarView) {
             int margin = getResources().getDimensionPixelSize(R.dimen.home_rail_dock_margin);
             int railWidth = getResources().getDimensionPixelSize(R.dimen.home_rail_dock_width);
+            boolean liteDockLand = com.fadcam.BuildConfig.LITE_EDITION
+                    && findViewById(R.id.lite_dock_land) != null;
             if (bottom != null) bottom.setVisibility(View.GONE);
-            rail.setVisibility(View.VISIBLE);
+            if (liteDockLand) {
+                // Lite supplies its own styled vertical dock; the Material rail would
+                // only duplicate it (and did: both were visible at once).
+                rail.setVisibility(View.GONE);
+                railWidth = getResources().getDimensionPixelSize(R.dimen.home_land_dock_width);
+            } else {
+                rail.setVisibility(View.VISIBLE);
+            }
             bottomNavigationView = (NavigationBarView) rail;
 
             set.constrainWidth(R.id.nav_container, railWidth + margin * 2);
-            // Wrap the rail's items: a full-height rail looked like a second screen edge.
-            set.constrainHeight(R.id.nav_container,
-                    androidx.constraintlayout.widget.ConstraintSet.WRAP_CONTENT);
-            set.connect(R.id.nav_container, top, parent, top, 0);
-            set.connect(R.id.nav_container, bottomEdge, parent, bottomEdge, 0);
+            if (liteDockLand) {
+                // Centre the short dock instead of stretching its container to the top
+                // and bottom edges: that stretch is what left the dead band below.
+                set.constrainHeight(R.id.nav_container,
+                        androidx.constraintlayout.widget.ConstraintSet.WRAP_CONTENT);
+                set.clear(R.id.nav_container, top);
+                set.clear(R.id.nav_container, bottomEdge);
+                set.connect(R.id.nav_container, top, parent, top, 0);
+                set.connect(R.id.nav_container, bottomEdge, parent, bottomEdge, 0);
+                set.setVerticalBias(R.id.nav_container, 0.5f);
+            } else {
+                // Wrap the rail's items: a full-height rail looked like a second screen edge.
+                set.constrainHeight(R.id.nav_container,
+                        androidx.constraintlayout.widget.ConstraintSet.WRAP_CONTENT);
+                set.connect(R.id.nav_container, top, parent, top, 0);
+                set.connect(R.id.nav_container, bottomEdge, parent, bottomEdge, 0);
+            }
             set.connect(R.id.nav_container, start, parent, start, 0);
             set.clear(R.id.nav_container, end);
             // match_parent on a ConstraintLayout child ignores constraints; make the

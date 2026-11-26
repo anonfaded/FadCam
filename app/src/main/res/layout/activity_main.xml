@@ -184,6 +184,78 @@
                     android:contentDescription="@string/nav_settings" />
             </LinearLayout>        </LinearLayout>
 
+        <!-- Lite landscape dock: the portrait pill rotated 90 degrees. Home keeps the
+             big 56dp circle; Records and Settings are the long tuck-under bars, with
+             their icons inset away from the circle exactly like portrait. -->
+        <LinearLayout
+            android:id="@+id/lite_dock_land"
+            android:layout_width="@dimen/home_land_dock_width"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start|center_vertical"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="@dimen/home_dock_padding"
+            android:paddingBottom="@dimen/home_dock_padding"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:elevation="12dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/lite_dock_land_item_records"
+                android:layout_width="@dimen/home_land_dock_side_width"
+                android:layout_height="@dimen/home_land_dock_side_height"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:animateLayoutChanges="true"
+                android:paddingBottom="@dimen/home_land_dock_side_inset"
+                android:layout_marginBottom="-34dp"
+                android:clickable="true"
+                android:focusable="true">
+                <ImageView
+                    android:id="@+id/lite_dock_land_icon_records"
+                    android:layout_width="@dimen/home_dock_icon"
+                    android:layout_height="@dimen/home_dock_icon"
+                    android:src="@drawable/ic_records_selector"
+                    android:contentDescription="@string/nav_records" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/lite_dock_land_item_home"
+                android:layout_width="@dimen/home_land_dock_width"
+                android:layout_height="@dimen/home_land_dock_width"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:animateLayoutChanges="true"
+                android:clickable="true"
+                android:focusable="true">
+                <ImageView
+                    android:id="@+id/lite_dock_land_icon_home"
+                    android:layout_width="@dimen/home_dock_icon"
+                    android:layout_height="@dimen/home_dock_icon"
+                    android:src="@drawable/pilot_steering_white"
+                    android:contentDescription="@string/nav_home" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/lite_dock_land_item_settings"
+                android:layout_width="@dimen/home_land_dock_side_width"
+                android:layout_height="@dimen/home_land_dock_side_height"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:animateLayoutChanges="true"
+                android:paddingTop="@dimen/home_land_dock_side_inset"
+                android:layout_marginTop="-34dp"
+                android:clickable="true"
+                android:focusable="true">
+                <ImageView
+                    android:id="@+id/lite_dock_land_icon_settings"
+                    android:layout_width="@dimen/home_dock_icon"
+                    android:layout_height="@dimen/home_dock_icon"
+                    android:src="@drawable/ic_nav_settings"
+                    android:contentDescription="@string/nav_settings" />
+            </LinearLayout>
+        </LinearLayout>
         </FrameLayout>
 
     <!-- ********************************************************** -->

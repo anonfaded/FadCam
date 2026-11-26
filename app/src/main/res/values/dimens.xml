@@ -130,6 +130,16 @@
     <dimen name="home_dock_icon">20dp</dimen>
     <dimen name="home_dock_label_size">9sp</dimen>
     <dimen name="home_dock_padding">4dp</dimen>
+    <!-- Lite landscape dock: the portrait pill rotated 90 degrees, so the numbers
+         are the portrait ones with width and height swapped. Home stays the big
+         circle (56dp); the two side buttons are the long tuck-under bars with the
+         same 44dp icon inset and -34dp overlap. -->
+    <dimen name="home_land_dock_width">56dp</dimen>
+    <dimen name="home_land_dock_padding">4dp</dimen>
+    <dimen name="home_land_dock_side_width">48dp</dimen>
+    <dimen name="home_land_dock_side_height">94dp</dimen>
+    <dimen name="home_land_dock_side_inset">44dp</dimen>
+    <dimen name="home_land_dock_side_overlap">34dp</dimen>
     <dimen name="home_dock_side_inset">44dp</dimen>
     <dimen name="home_dock_gap">12dp</dimen>
     <dimen name="home_dock_side_width">78dp</dimen>

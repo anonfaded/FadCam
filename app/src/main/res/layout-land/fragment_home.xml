@@ -103,12 +103,12 @@
     <LinearLayout android:id="@+id/layoutCards" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar" app:layout_constraintBottom_toBottomOf="parent" />
 
     <!-- Left Panel: Stats and Info (Half Screen) -->
-    <LinearLayout android:id="@+id/leftPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="@dimen/home_land_panel_margin" android:layout_marginTop="@dimen/home_land_panel_margin_top" android:layout_marginEnd="0dp" android:layout_marginBottom="0dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@+id/cardRailToggleLandscape" app:layout_constraintHorizontal_weight="1.25" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar">
+    <LinearLayout android:id="@+id/leftPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="@dimen/home_land_panel_margin" android:layout_marginTop="@dimen/home_land_panel_margin_top" android:layout_marginEnd="0dp" android:layout_marginBottom="0dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@+id/cardRailToggleLandscape" app:layout_constraintHorizontal_weight="1.35" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar">
 
         <!-- Scrollable content area (landscape-only). fillViewport is false so the
              dossier card WRAPS its rows: a short screen scrolls, a tall one leaves
              the card sized to the cards instead of stretching to the bottom. -->
-        <androidx.core.widget.NestedScrollView android:id="@+id/leftScroll" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="false" android:overScrollMode="ifContentScrolls" android:clipToPadding="false" android:paddingBottom="@dimen/home_land_scroll_padding_bottom" android:focusable="false" android:descendantFocusability="afterDescendants">
+        <androidx.core.widget.NestedScrollView android:id="@+id/leftScroll" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true" android:overScrollMode="ifContentScrolls" android:clipToPadding="false" android:paddingBottom="@dimen/home_land_scroll_padding_bottom" android:focusable="false" android:descendantFocusability="afterDescendants">
 
             <!-- Mode switcher and the two columns share one wrapping card -->
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -460,7 +460,7 @@
     </FrameLayout>
 
     <!-- Right Panel: Camera Preview and Controls (Half Screen) -->
-    <LinearLayout android:id="@+id/rightPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="@dimen/home_land_gap_s" android:layout_marginTop="@dimen/home_land_gap" android:layout_marginEnd="@dimen/home_land_gap_l" android:layout_marginBottom="0dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_weight="1" app:layout_constraintStart_toEndOf="@+id/cardRailToggleLandscape" app:layout_constraintTop_toBottomOf="@id/header_bar">
+    <LinearLayout android:id="@+id/rightPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="@dimen/home_land_gap_s" android:layout_marginTop="@dimen/home_land_gap" android:layout_marginEnd="@dimen/home_land_gap_l" android:layout_marginBottom="0dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_weight="1.30" app:layout_constraintStart_toEndOf="@+id/cardRailToggleLandscape" app:layout_constraintTop_toBottomOf="@id/header_bar">
 
         <!-- Camera Preview Area -->
         <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="@dimen/home_land_card_radius" app:cardElevation="0dp" app:strokeColor="?attr/homeRailAccent" app:strokeWidth="@dimen/home_land_preview_stroke">

@@ -3419,6 +3419,8 @@ public class RecordsFragment extends BaseFragment implements
             if (chipFilterFaditor != null) chipFilterFaditor.setVisibility(View.GONE);
             if (chipFilterStream != null) chipFilterStream.setVisibility(View.GONE);
             if (chipFilterMiniApps != null) chipFilterMiniApps.setVisibility(View.GONE);
+            // FadRec is absent from Lite, so its shot sub-chip has nothing to filter.
+            if (chipShotFadrec != null) chipShotFadrec.setVisibility(View.GONE);
         }
         if (chipFilterAll != null) {
             chipFilterAll.setOnClickListener(v -> setActiveFilter(VideoItem.Category.ALL));
