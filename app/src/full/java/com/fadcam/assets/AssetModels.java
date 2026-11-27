@@ -121,18 +121,8 @@ public final class AssetModels {
     /** Total bytes the models occupy on device, for the download manager UI. */
     public static long installedSize(@NonNull Context context) {
         AssetRegistry registry = AssetRegistry.get(context);
-        AssetStore store = registry.store();
-        long sum = 0L;
         List<AssetManifest.Entry> entries = registry.entriesFor(Asset.MODELS);
-        if (entries != null) {
-            for (AssetManifest.Entry e : entries) {
-                File f = store.fileFor(Asset.MODELS, e.file);
-                if (store.isPresent(f)) {
-                    sum += f.length();
-                }
-            }
-        }
-        return sum;
+        return entries == null ? 0L : registry.store().installedSize(Asset.MODELS, entries);
     }
 
     private static boolean assetExists(@NonNull Context context, @NonNull String path) {

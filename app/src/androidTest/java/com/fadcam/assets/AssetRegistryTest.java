@@ -63,12 +63,15 @@ public class AssetRegistryTest {
     }
 
     @Test
-    public void stateIsBundledOnCurrentBuilds() {
+    public void opencvAndModelsAreNoLongerBundled() {
         AssetRegistry reg = AssetRegistry.get(ctx());
-        // This build still ships the libraries, so nothing should ask for a download.
-        assertEquals(AssetState.BUNDLED, reg.state(Asset.OPENCV));
-        assertEquals(AssetState.BUNDLED, reg.state(Asset.FFMPEG));
-        assertTrue(reg.isUsable(Asset.OPENCV));
+        // OpenCV and the models left the APK. ffmpeg is still bundled until its own PR.
+        assertFalse("OpenCV must not report BUNDLED any more",
+                reg.isBundled(Asset.OPENCV));
+        assertFalse("models must not report BUNDLED any more",
+                reg.isBundled(Asset.MODELS));
+        assertTrue("ffmpeg still ships in the APK at this point",
+                reg.isBundled(Asset.FFMPEG));
         System.out.println(TAG + " REGISTRY opencv=" + reg.state(Asset.OPENCV)
                 + " ffmpeg=" + reg.state(Asset.FFMPEG)
                 + " models=" + reg.state(Asset.MODELS));
@@ -89,14 +92,16 @@ public class AssetRegistryTest {
     public void leftoverFilesReportCorruptForAssetsNotInTheApk() {
         AssetRegistry reg = AssetRegistry.get(ctx());
         AssetStore store = reg.store();
-        Asset asset = Asset.OPENCV;
+        // ffmpeg: still bundled, so drive the on-disk checks directly rather than through
+        // state(), which correctly prefers BUNDLED.
+        Asset asset = Asset.FFMPEG;
 
         // This build ships OpenCV in the APK, so BUNDLED correctly wins the resolution
         // order and masks on-disk state. To exercise the on-disk branch, the test drives
         // AssetStore directly — that is the code the DOWNLOADING/MISSING/CORRUPT states
         // depend on once the libraries leave the APK.
         File dir = store.dirFor(asset);
-        File fake = new File(dir, "libopencv_java5.so");
+        File fake = new File(dir, "libavcodec.so");
         List<AssetManifest.Entry> entries = reg.entriesFor(asset);
         try {
             assertTrue(fake.createNewFile());
@@ -114,17 +119,17 @@ public class AssetRegistryTest {
     }
 
     @Test
-    public void stateOrderPrefersDownloadingOverBundled() {
+    public void stateOrderPrefersDownloadingOverAnythingElse() {
         AssetRegistry reg = AssetRegistry.get(ctx());
-        // A download in flight must be reported as DOWNLOADING even on a build that also
-        // ships the libraries, because the UI shows progress for the in-flight work.
-        reg.onDownloadStarted(Asset.OPENCV);
+        // A download in flight must be reported as DOWNLOADING regardless of what is on
+        // disk, because the UI shows progress for the in-flight work.
+        reg.onDownloadStarted(Asset.FFMPEG);
         try {
-            assertEquals(AssetState.DOWNLOADING, reg.state(Asset.OPENCV));
+            assertEquals(AssetState.DOWNLOADING, reg.state(Asset.FFMPEG));
         } finally {
-            reg.onDownloadFinished(Asset.OPENCV);
+            reg.onDownloadFinished(Asset.FFMPEG);
         }
         assertEquals("once finished, the bundled copy is reported again",
-                AssetState.BUNDLED, reg.state(Asset.OPENCV));
+                AssetState.BUNDLED, reg.state(Asset.FFMPEG));
     }
 }

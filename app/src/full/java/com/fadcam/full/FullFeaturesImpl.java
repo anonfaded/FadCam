@@ -65,11 +65,13 @@ public final class FullFeaturesImpl implements FullFeatures {
     }
 
     @Override
-    public com.fadcam.motion.domain.detector.MotionDetector createOpenCvMotionDetector() {
+    public com.fadcam.motion.domain.detector.MotionDetector createOpenCvMotionDetector(
+            android.content.Context ctx) {
         // Deliberately no catch: a Full build must use MOG2 or report the failure.
         // Silently degrading to frame-diff produced inconsistent, less accurate
-        // behaviour without telling anyone.
-        return new com.fadcam.motion.domain.detector.OpenCvMog2MotionDetector();
+        // behaviour without telling anyone. A missing download surfaces as
+        // AssetException, which the UI turns into a download prompt.
+        return new com.fadcam.motion.domain.detector.OpenCvMog2MotionDetector(ctx);
     }
 
     @Override

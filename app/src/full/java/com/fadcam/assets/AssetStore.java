@@ -129,6 +129,34 @@ public final class AssetStore {
         return new File(tmpDir(), entry.file + ".part");
     }
 
+    /**
+     * Bytes this asset actually occupies on device.
+     *
+     * <p>Single source of truth: both the OpenCV and the model views asked for this and
+     * each got it subtly wrong, because a zipped asset is stored as its unpacked members
+     * rather than under the archive's published name.
+     */
+    public long installedSize(@NonNull Asset asset,
+                              @NonNull List<AssetManifest.Entry> entries) {
+        long sum = 0L;
+        for (AssetManifest.Entry e : entries) {
+            if (e.isArchive() && e.members != null) {
+                for (String member : e.members) {
+                    File f = fileFor(asset, member);
+                    if (isPresent(f)) {
+                        sum += f.length();
+                    }
+                }
+            } else {
+                File f = fileFor(asset, e.file);
+                if (isPresent(f)) {
+                    sum += f.length();
+                }
+            }
+        }
+        return sum;
+    }
+
     /** Reads up to {@code max} bytes of a UTF-8 text file, or null when absent. */
     @Nullable
     public static String readText(@Nullable File f, int max) {
