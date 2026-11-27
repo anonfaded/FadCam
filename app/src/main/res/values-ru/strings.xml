@@ -15,7 +15,6 @@
 
 
     <string name="view_source_code">Просмотреть исходный код</string>
-    <string name="buy_me_a_coffee">Угостить разработчика кофе ☕</string>
     <string name="contact">Связаться</string>
     <string name="send_email">Отправить email</string>
     <string name="join_community">Присоединяйтесь к сообществу: получите помощь, поделитесь идеями и следите за обновлениями</string>
@@ -902,10 +901,6 @@
     <string name="video_split_size_summary_gb">Текущий: %1$s ГБ</string>
     <string name="video_splitting_title">Включить разделение видео</string>
     <string name="video_splitting_description">Автоматически разделять записи на меньшие файлы (Отключено по умолчанию). Рекомендуется: 2 ГБ для баланса. Доступны предустановки до 4 ГБ и пользовательские размеры. Это помогает управлять большими записями и избегает ограничений размера файлов устройства.</string>
-    <string name="support_ko_fi">Поддержите нас на Ko-fi</string>
-    <string name="kofi_description">Описание будет установлено в коде.</string>
-    <string name="kofi_button_text">Купить Ko-fi</string>
-    <string name="kofi_footer_text">Сделано    в FadSec Lab в   </string>
 
     <string name="setting_audio_input_source_title">Источник аудиовхода</string>
     <string name="setting_audio_input_source_status_default">Микрофон телефона</string>
@@ -3845,4 +3840,8 @@
     <string name="report_dialog_body">Откроется трекер задач GitHub в браузере. Для публикации нужен аккаунт GitHub.</string>
     <string name="dialog_continue">Продолжить</string>
     <string name="dialog_cancel">Отмена</string>
+    <string name="support_on_patreon">Поддержите нас на Patreon</string>
+    <string name="patreon_content_desc">Поддержите нас на Patreon</string>
+    <string name="patreon_description">Описание будет установлено в коде.</string>
+    <string name="patreon_footer_text">Сделано    в FadSec Lab в   </string>
 </resources>

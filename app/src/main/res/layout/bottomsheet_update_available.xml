@@ -163,7 +163,7 @@
                 android:id="@+id/layoutUpdateButtonRow"
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
-                android:background="@drawable/kofi_button_bg"
+                android:background="@drawable/patreon_button_bg"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:layout_gravity="center_horizontal"

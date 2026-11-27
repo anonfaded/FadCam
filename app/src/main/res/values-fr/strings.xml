@@ -11,7 +11,6 @@ FadCam a été présenté dans les chaînes YouTube populaires comme <font color
     ]]>
 </string>
     <string name="view_source_code">Voir Code Source</string>
-    <string name="buy_me_a_coffee">Achète moi un café ☕</string>
     <string name="contact">Contact</string>
     <string name="send_email">Envoyer email</string>
     <string name="join_community">Rejoignez la communauté pour obtenir de l\'aide, partager des idées et les mises à jour futur de l\'application</string>
@@ -2432,13 +2431,9 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="trash_auto_delete_picker_helper">Choose when items in Trash should be auto‑deleted.</string>
 
-<string name="support_ko_fi">Support us on Ko-fi</string>
 
-<string name="kofi_description">Description will be set in code.</string>
 
-<string name="kofi_button_text">Buy me a Ko-fi</string>
 
-<string name="kofi_footer_text">Made with    at FadSec Lab in   </string>
 
 <string name="choose_language">Choose Language</string>
 
@@ -4832,4 +4827,8 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="report_dialog_body">Cela ouvre le suivi des problèmes GitHub dans le navigateur. Il faut un compte GitHub pour y publier.</string>
     <string name="dialog_continue">Continuer</string>
     <string name="dialog_cancel">Annuler</string>
+    <string name="support_on_patreon">Soutenez-nous sur Patreon</string>
+    <string name="patreon_content_desc">Soutenez-nous sur Patreon</string>
+    <string name="patreon_description">Description will be set in code.</string>
+    <string name="patreon_footer_text">Made with    at FadSec Lab in   </string>
 </resources>

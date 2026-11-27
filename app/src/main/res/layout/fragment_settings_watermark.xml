@@ -70,6 +70,9 @@
                 android:textStyle="bold" />
 
             <!-- Preview Mode Tabs (FadCam / FadRec) — transparent bg, dark ripple -->
+            <!-- Selected/unselected use the theme's primary and secondary text colours rather
+                 than colorPrimary. In Faded Night colorPrimary is #232323, which made both the
+                 selected label and the indicator all but invisible on the black content. -->
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/preview_mode_tabs"
                 android:layout_width="match_parent"
@@ -80,12 +83,12 @@
                 android:background="@android:color/transparent"
                 app:tabMode="fixed"
                 app:tabGravity="fill"
-                app:tabIndicatorColor="?attr/colorPrimary"
+                app:tabIndicatorColor="?attr/colorOnSurface"
                 app:tabIndicatorHeight="2dp"
                 app:tabPaddingStart="8dp"
                 app:tabPaddingEnd="8dp"
-                app:tabTextColor="?attr/colorOnSurface"
-                app:tabSelectedTextColor="?attr/colorPrimary"
+                app:tabTextColor="?android:attr/textColorSecondary"
+                app:tabSelectedTextColor="?attr/colorOnSurface"
                 app:tabRippleColor="#7A000000"
                 android:elevation="0dp">
                 <com.google.android.material.tabs.TabItem

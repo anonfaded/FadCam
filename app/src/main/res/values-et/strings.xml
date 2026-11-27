@@ -17,7 +17,6 @@
 
 
     <string name="view_source_code">Vaata lähtekoodi</string>
-    <string name="buy_me_a_coffee">Osta mulle kohvi ☕</string>
     <string name="contact">Kontakt</string>
     <string name="send_email">Saada e-kiri</string>
     <string name="join_community">Liitu kogukonnaga abi saamiseks, ideede jagamiseks ja tulevaste rakenduse uuenduste jaoks</string>
@@ -1404,10 +1403,6 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="video_split_size_summary_gb">Praegune: %1$s GB</string>
     <string name="video_splitting_title">Luba video tükeldamine</string>
     <string name="video_splitting_description">Jagab salvestised automaatselt väiksemateks failideks (vaikimisi keelatud). Soovitatav: 2 GB tasakaalu jaoks. Eelseadistused kuni 4 GB ja kohandatud suurused on saadaval. See aitab hallata suuri salvestisi ja väldib seadme failisuuruse piiranguid.</string>
-    <string name="support_ko_fi">Toeta meid Ko-fi-s</string>
-    <string name="kofi_description">Kirjeldus määratakse koodis.</string>
-    <string name="kofi_button_text">Osta mulle Ko-fi</string>
-    <string name="kofi_footer_text">Tehtud armastusega    FadSec Labis    </string>
     <string name="setting_audio_input_source_title">Heli sisendallikas</string>
     <string name="setting_audio_input_source_status_default">Telefoni mikrofon</string>
     <string name="setting_audio_input_source_status_wired">Juhtmega mikrofon</string>
@@ -3180,4 +3175,8 @@ Igavesti sinu.</string>
     <string name="report_dialog_body">See avab brauseris GitHubi vigade jälgija. Postitamiseks on vaja GitHubi kontot.</string>
     <string name="dialog_continue">Jätka</string>
     <string name="dialog_cancel">Tühista</string>
+    <string name="support_on_patreon">Toeta meid Patreonis</string>
+    <string name="patreon_content_desc">Toeta meid Patreonis</string>
+    <string name="patreon_description">Kirjeldus määratakse koodis.</string>
+    <string name="patreon_footer_text">Tehtud armastusega    FadSec Labis    </string>
 </resources>

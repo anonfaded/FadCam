@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Active page dot. Uses the theme's primary text colour rather than colorPrimary, which
+     is #232323 in Faded Night and would disappear against the black content background. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
-    <solid android:color="?attr/colorPrimary" />
+    <solid android:color="?attr/colorOnSurface" />
 </shape>

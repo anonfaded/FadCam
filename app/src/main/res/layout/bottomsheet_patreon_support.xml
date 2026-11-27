@@ -17,7 +17,7 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
     <ScrollView
-        android:id="@+id/kofiContentScroll"
+        android:id="@+id/patreonContentScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
@@ -55,10 +55,10 @@
                 android:layout_marginBottom="16dp" />
 
             <TextView
-                android:id="@+id/tvKoFiDescription"
+                android:id="@+id/tvPatreonDescription"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/kofi_description"
+                android:text="@string/patreon_description"
                 android:textSize="15sp"
                 android:gravity="start"
                 android:textAlignment="viewStart"
@@ -79,10 +79,10 @@
                 android:tint="#FFFFFF" />
 
             <LinearLayout
-                android:id="@+id/layoutKoFiButtonRow"
+                android:id="@+id/layoutPatreonButtonRow"
                 android:layout_width="wrap_content"
                 android:layout_height="48dp"
-                android:background="@drawable/kofi_button_bg"
+                android:background="@drawable/patreon_button_bg"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:layout_gravity="center_horizontal"
@@ -92,20 +92,20 @@
                 android:focusable="true">
 
                 <ImageView
-                    android:id="@+id/ivKoFiCup"
+                    android:id="@+id/ivSupportCup"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@drawable/coffee_cup"
-                    android:contentDescription="@string/support_ko_fi"
+                    android:contentDescription="@string/patreon_content_desc"
                     android:layout_marginStart="4dp"
                     android:layout_marginEnd="8dp"
                     android:scaleType="centerInside" />
 
                 <TextView
-                    android:id="@+id/tvKoFiText"
+                    android:id="@+id/tvPatreonText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/kofi_button_text"
+                    android:text="@string/support_on_patreon"
                     android:textColor="#222222"
                     android:textStyle="bold"
                     android:textSize="18sp"
@@ -141,7 +141,7 @@
             android:contentDescription="@string/app_name"
             android:layout_gravity="center_horizontal" />
         <TextView
-            android:id="@+id/tvKoFiFooterFull"
+            android:id="@+id/tvPatreonFooterFull"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
@@ -153,7 +153,7 @@
             android:maxLines="1"
             android:ellipsize="end"
             android:importantForAccessibility="auto"
-            android:text="@string/kofi_footer_text" />
+            android:text="@string/patreon_footer_text" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout> 

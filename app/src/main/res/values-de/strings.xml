@@ -13,7 +13,6 @@
     ]]>
 </string>
     <string name="view_source_code">Quellcode anzeigen</string>
-    <string name="buy_me_a_coffee">Gib mir einen Kaffee aus ☕</string>
     <string name="contact">Kontakt</string>
     <string name="send_email">E-Mail senden</string>
     <string name="join_community">Tritt der Community bei für Hilfe, Ideenaustausch und zukünftige App-Updates</string>
@@ -432,10 +431,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="video_split_size_summary_gb">Aktuell: %1$s GB</string>
     <string name="video_splitting_title">Video-Aufteilung aktivieren</string>
     <string name="video_splitting_description">Aufnahmen automatisch in kleinere Dateien aufteilen (standardmäßig deaktiviert). Empfohlen: 2 GB für eine gute Balance. Voreinstellungen bis zu 4 GB und benutzerdefinierte Größen sind verfügbar. Dies hilft bei der Verwaltung großer Aufnahmen und vermeidet Dateigrößenbeschränkungen des Geräts.</string>
-    <string name="support_ko_fi">Unterstütze uns auf Ko-fi</string>
-    <string name="kofi_description">Beschreibung wird im Code festgelegt.</string>
-    <string name="kofi_button_text">Kauf mir ein Ko-fi</string>
-    <string name="kofi_footer_text">Gemacht mit im FadSec Lab in</string>
     <string name="setting_audio_input_source_title">Audio-Eingangsquelle</string>
     <string name="setting_audio_input_source_status_default">Aktuell verwendet: Telefonmikrofon</string>
     <string name="setting_audio_input_source_status_wired">Aktuell verwendet: Kabelmikrofon</string>
@@ -3121,4 +3116,8 @@ Für immer dein.</string>
     <string name="report_dialog_body">Dies öffnet den GitHub-Issue-Tracker im Browser. Zum Posten brauchst du ein GitHub-Konto.</string>
     <string name="dialog_continue">Weiter</string>
     <string name="dialog_cancel">Abbrechen</string>
+    <string name="support_on_patreon">Unterstütze uns auf Patreon</string>
+    <string name="patreon_content_desc">Unterstütze uns auf Patreon</string>
+    <string name="patreon_description">Beschreibung wird im Code festgelegt.</string>
+    <string name="patreon_footer_text">Gemacht mit im FadSec Lab in</string>
 </resources>

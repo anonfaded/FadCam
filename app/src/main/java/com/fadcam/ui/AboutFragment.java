@@ -349,8 +349,8 @@ public class AboutFragment extends BaseFragment {
         // build flavor of it), so this must point at the repo, not the org landing page.
         sourceCodeButton.setOnClickListener(v -> openUrl("https://github.com/anonfaded/FadCam"));
         donateButton.setOnClickListener(v -> {
-            KoFiSupportBottomSheet bottomSheet = new KoFiSupportBottomSheet();
-            bottomSheet.show(getParentFragmentManager(), "KoFiSupportBottomSheet");
+            PatreonSupportBottomSheet bottomSheet = new PatreonSupportBottomSheet();
+            bottomSheet.show(getParentFragmentManager(), "PatreonSupportBottomSheet");
         });
         checkUpdatesButton.setOnClickListener(v -> checkForUpdates());
         emailText.setOnClickListener(v -> sendEmail());

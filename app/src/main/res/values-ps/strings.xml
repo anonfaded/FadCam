@@ -11,7 +11,6 @@
     ]]>
     </string>
     <string name="view_source_code">Source Code ogorai</string>
-    <string name="buy_me_a_coffee">Yao coffee ra wakhla ☕</string>
     <string name="contact">Rabta</string>
     <string name="send_email">Email oka</string>
     <string name="join_community">Community join kae, madad, ideas share kawalo, aw mustaqbil app updates da paara</string>
@@ -1246,9 +1245,6 @@ Fun fact: 10/Jul/2024 04:47 PM wakht ke FadCam v1.0 first shipped.</string>
     <string name="intel_zone_desc_v2">Sta camera view 9 zones ke taksim shwi. Zeati roghan = pa agha hissa ke zeati activity detect shwi.</string>
     <string name="keep_screen_on_helper_picker">Kala che faal wi, screen ba video chalao wakht ke na wridegi.</string>
     <string name="keep_screen_on_title">Screen chalu sawa ka</string>
-    <string name="kofi_button_text">Yao Ko-fi ra wakhla</string>
-    <string name="kofi_description">Tafseel will be set in code.</string>
-    <string name="kofi_footer_text">Made with    at FadSec Lab in</string>
     <string name="lab_hide_thumbnails_redacted">REDACTED</string>
     <string name="lab_hide_thumbnails_title">Classified Mode</string>
     <string name="lab_section_about">Maloomat</string>
@@ -2015,7 +2011,6 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="streaming_mode_local_desc">Stream to devices on the same WiFi</string>
     <string name="streaming_mode_stream_url">Stream URL</string>
     <string name="streaming_mode_title">Streaming Destination</string>
-    <string name="support_ko_fi">Ko-fi ta zamong mali mard ka</string>
     <string name="tap_to_add_description">Tap to add description</string>
     <string name="tap_to_focus_help">Tap anywhere on the camera preview to focus</string>
     <string name="tap_to_focus_instruction">Tap on preview to focus</string>
@@ -3221,4 +3216,8 @@ Da tase da hamisha paara.</string>
     <string name="report_dialog_body">Da pa browser ke da GitHub issue tracker pranzi. Da laga post kawlo lapara GitHub account ta zarurat da.</string>
     <string name="dialog_continue">Dwam</string>
     <string name="dialog_cancel">Nishta</string>
+    <string name="support_on_patreon">Patreon ta zamong mali mard ka</string>
+    <string name="patreon_content_desc">Patreon ta zamong mali mard ka</string>
+    <string name="patreon_description">Tafseel will be set in code.</string>
+    <string name="patreon_footer_text">Made with    at FadSec Lab in</string>
 </resources>

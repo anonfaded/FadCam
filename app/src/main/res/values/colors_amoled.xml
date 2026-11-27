@@ -9,7 +9,12 @@
     <color name="amoled_black_pure">#FF000000</color>
     <color name="amoled_black_absolute">#FF000000</color>
     
-    <color name="amoled_card">#181A1B</color>
+    <!-- Faded Night chrome: the surface the editor's header uses. Tab headers, the status
+         band and the dock all share it, so the chrome reads as one layer sitting a hair
+         above the black content instead of merging into it. -->
+    <color name="amoled_chrome">#181A1B</color>
+    <!-- Cards and the editor header are the same surface as the chrome. -->
+    <color name="amoled_card">@color/amoled_chrome</color>
     <color name="amoled_text_primary">#E0E0E0</color>
     <color name="amoled_text_secondary">#A0A0A0</color>
     <color name="amoled_border">#232323</color>

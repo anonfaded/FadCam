@@ -11,7 +11,6 @@
     FadCam 已在热门的 YouTube 频道中亮相，如 <font color="#cfbafd">HowToMen</font> 和 <font color="#cfbafd">Xtream Droid</font>，还在 <font color="#cfbafd">GrapheneOS</font> 及其他 55+ 著名平台上被讨论。
     ]]></string>
     <string name="view_source_code">查看源码</string>
-    <string name="buy_me_a_coffee">请我一杯咖啡 ☕</string>
     <string name="contact">联系方式</string>
     <string name="send_email">发送邮件</string>
     <string name="join_community">加入社区获得帮助，分享点子以及获得软件更新</string>
@@ -813,10 +812,6 @@
     <string name="saf_permission_missing_dialog_message_for_start_recording">为将录制内容保存到自定义位置，FadCam 需要权限以访问您所选的文件夹。请在系统提示时授予访问权限。</string>
     <string name="grant_permission_button">授予权限</string>
     <string name="trash_auto_delete_picker_helper">选择何时自动删除垃圾箱中的项目。</string>
-    <string name="support_ko_fi">在 Ko-fi 上支持我们</string>
-    <string name="kofi_description">描述信息将由代码设置。</string>
-    <string name="kofi_button_text">请我喝杯咖啡 (Ko-fi)</string>
-    <string name="kofi_footer_text">匠心打造于 FadSecLab</string>
     <string name="choose_language">选择语言</string>
     <string name="applock_set_pin_enable">设置并启用</string>
     <string name="applock_helper_create">使用 4 位 PIN 码、密码或指纹为您选择的标签页创建保护。应用进入后台时，它们会自动锁定。</string>
@@ -5094,4 +5089,8 @@
     <string name="report_dialog_body">这会在浏览器中打开 GitHub 问题追踪器。需要 GitHub 账号才能发布。</string>
     <string name="dialog_continue">继续</string>
     <string name="dialog_cancel">取消</string>
+    <string name="support_on_patreon">在 Patreon 上支持我们</string>
+    <string name="patreon_content_desc">在 Patreon 上支持我们</string>
+    <string name="patreon_description">描述信息将由代码设置。</string>
+    <string name="patreon_footer_text">匠心打造于 FadSecLab</string>
 </resources>

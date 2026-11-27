@@ -211,10 +211,10 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="16dp"
-            android:text="@string/buy_me_a_coffee"
+            android:text="@string/support_on_patreon"
             android:textColor="?attr/colorOnPrimary"
             app:backgroundTint="?attr/colorButton"
-            app:icon="@drawable/ic_kofi"
+            app:icon="@drawable/ic_patreon"
             app:iconTint="?attr/colorOnPrimary"/>
 
         <TextView
@@ -345,7 +345,7 @@
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:importantForAccessibility="auto"
-                android:text="@string/kofi_footer_text" />
+                android:text="@string/patreon_footer_text" />
         </LinearLayout>
         </LinearLayout>
     </ScrollView>

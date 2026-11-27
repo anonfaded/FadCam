@@ -33,15 +33,15 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.ImageSpan;
 
-public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
+public class PatreonSupportBottomSheet extends BottomSheetDialogFragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.bottomsheet_kofi_support, container, false);
+        View view = inflater.inflate(R.layout.bottomsheet_patreon_support, container, false);
 
-        // Animate the coffee cup icon (ivKoFiCup) with wiggle/rotation
-        ImageView ivKoFiCup = view.findViewById(R.id.ivKoFiCup);
-        if (ivKoFiCup != null) {
+        // Animate the coffee cup icon (ivSupportCup) with wiggle/rotation
+        ImageView ivSupportCup = view.findViewById(R.id.ivSupportCup);
+        if (ivSupportCup != null) {
             final float moveDistance = 10f; // pixels to move left/right
             final float rotateAngle = 15f;  // degrees to rotate left/right
             final long moveDuration = 160;  // ms for each move
@@ -50,20 +50,20 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
             startWiggle[0] = new Runnable() {
                 @Override
                 public void run() {
-                    ObjectAnimator moveRight = ObjectAnimator.ofFloat(ivKoFiCup, "translationX", 0f, moveDistance);
-                    ObjectAnimator rotateRight = ObjectAnimator.ofFloat(ivKoFiCup, "rotation", 0f, rotateAngle);
+                    ObjectAnimator moveRight = ObjectAnimator.ofFloat(ivSupportCup, "translationX", 0f, moveDistance);
+                    ObjectAnimator rotateRight = ObjectAnimator.ofFloat(ivSupportCup, "rotation", 0f, rotateAngle);
                     AnimatorSet rightSet = new AnimatorSet();
                     rightSet.playTogether(moveRight, rotateRight);
                     rightSet.setDuration(moveDuration);
 
-                    ObjectAnimator moveLeft = ObjectAnimator.ofFloat(ivKoFiCup, "translationX", moveDistance, -moveDistance);
-                    ObjectAnimator rotateLeft = ObjectAnimator.ofFloat(ivKoFiCup, "rotation", rotateAngle, -rotateAngle);
+                    ObjectAnimator moveLeft = ObjectAnimator.ofFloat(ivSupportCup, "translationX", moveDistance, -moveDistance);
+                    ObjectAnimator rotateLeft = ObjectAnimator.ofFloat(ivSupportCup, "rotation", rotateAngle, -rotateAngle);
                     AnimatorSet leftSet = new AnimatorSet();
                     leftSet.playTogether(moveLeft, rotateLeft);
                     leftSet.setDuration(moveDuration * 2);
 
-                    ObjectAnimator moveCenter = ObjectAnimator.ofFloat(ivKoFiCup, "translationX", -moveDistance, 0f);
-                    ObjectAnimator rotateCenter = ObjectAnimator.ofFloat(ivKoFiCup, "rotation", -rotateAngle, 0f);
+                    ObjectAnimator moveCenter = ObjectAnimator.ofFloat(ivSupportCup, "translationX", -moveDistance, 0f);
+                    ObjectAnimator rotateCenter = ObjectAnimator.ofFloat(ivSupportCup, "rotation", -rotateAngle, 0f);
                     AnimatorSet centerSet = new AnimatorSet();
                     centerSet.playTogether(moveCenter, rotateCenter);
                     centerSet.setDuration(moveDuration);
@@ -73,27 +73,27 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
                     wiggleSet.addListener(new AnimatorListenerAdapter() {
                         @Override
                         public void onAnimationEnd(Animator animation) {
-                            ivKoFiCup.postDelayed(startWiggle[0], pauseDuration);
+                            ivSupportCup.postDelayed(startWiggle[0], pauseDuration);
                         }
                     });
                     wiggleSet.start();
                 }
             };
-            ivKoFiCup.post(startWiggle[0]);
+            ivSupportCup.post(startWiggle[0]);
         }
         // Set click listener on the whole button row
-        View layoutKoFiButtonRow = view.findViewById(R.id.layoutKoFiButtonRow);
-        if (layoutKoFiButtonRow != null) {
-            layoutKoFiButtonRow.setOnClickListener(v -> {
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://ko-fi.com/fadedx"));
+        View layoutPatreonButtonRow = view.findViewById(R.id.layoutPatreonButtonRow);
+        if (layoutPatreonButtonRow != null) {
+            layoutPatreonButtonRow.setOnClickListener(v -> {
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.patreon.com/cw/Fadedx"));
                 startActivity(browserIntent);
             });
         }
 
         // Styled description (left-aligned, only keywords bold, project names red/clickable)
-        TextView tvKoFiDescription = view.findViewById(R.id.tvKoFiDescription);
-        if (tvKoFiDescription != null) {
-            String desc = "Built and maintained by the developer behind FadCam, FadCrypt, and other projects at FadSec Lab — a community-driven initiative focused on privacy-first, ad-free, tracker-free, and fully open-source tools, crafted over hundreds of hours of effort.\n\nIf you find value in this work and want to support the vision, you're welcome to buy the maintainer a coffee. ☕";
+        TextView tvPatreonDescription = view.findViewById(R.id.tvPatreonDescription);
+        if (tvPatreonDescription != null) {
+            String desc = "Built and maintained by the developer behind FadCam, FadCrypt, and other projects at FadSec Lab — a community-driven initiative focused on privacy-first, ad-free, tracker-free, and fully open-source tools, crafted over hundreds of hours of effort.\n\nIf you find value in this work and want to support the vision, you're welcome to become a patron. ♥";
             android.text.SpannableString spannable = new android.text.SpannableString(desc);
             // Make FadCam red and clickable
             int fadCamStart = desc.indexOf("FadCam");
@@ -160,15 +160,15 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
                     spannable.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), kStart, kStart + keyword.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 }
             }
-            tvKoFiDescription.setText(spannable);
-            tvKoFiDescription.setTextColor(Color.WHITE);
-            tvKoFiDescription.setMovementMethod(LinkMovementMethod.getInstance());
-            tvKoFiDescription.setGravity(android.view.Gravity.START);
+            tvPatreonDescription.setText(spannable);
+            tvPatreonDescription.setTextColor(Color.WHITE);
+            tvPatreonDescription.setMovementMethod(LinkMovementMethod.getInstance());
+            tvPatreonDescription.setGravity(android.view.Gravity.START);
         }
 
         // Footer: Made with Palestine at FadSec Lab in Pakistan here
-        TextView tvKoFiFooterFull = view.findViewById(R.id.tvKoFiFooterFull);
-        if (tvKoFiFooterFull != null) {
+        TextView tvPatreonFooterFull = view.findViewById(R.id.tvPatreonFooterFull);
+        if (tvPatreonFooterFull != null) {
             String footer = "Made with Palestine at FadSec Lab in Pakistan";
             SpannableString spannable = new SpannableString(footer);
             // Palestine flag image
@@ -212,9 +212,9 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
                     }
                 }, fadSecLabStart, fadSecLabEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
-            tvKoFiFooterFull.setText(spannable);
-            tvKoFiFooterFull.setTextColor(Color.WHITE);
-            tvKoFiFooterFull.setMovementMethod(LinkMovementMethod.getInstance());
+            tvPatreonFooterFull.setText(spannable);
+            tvPatreonFooterFull.setTextColor(Color.WHITE);
+            tvPatreonFooterFull.setMovementMethod(LinkMovementMethod.getInstance());
         }
 
         return view;

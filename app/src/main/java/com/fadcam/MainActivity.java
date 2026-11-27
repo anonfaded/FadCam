@@ -2345,8 +2345,11 @@ public class MainActivity extends AppCompatActivity {
             // Faditor uses the same surface as its header so the dock and the top bar
             // read as one chrome layer; champagne stays an accent on type and controls.
             setBottomNavColor(getResources().getColor(R.color.amoled_card, getTheme()));
-            setStatusBarColor(0xFF000000);
-            setNavigationBarColor(0xFF000000);
+            // Follow the theme's chrome rather than hardcoding black: in Faded Night this
+            // resolves to the same surface as the header below it, so the band and the
+            // header read as one piece instead of showing a black seam.
+            setStatusBarColor(0);
+            setNavigationBarColor(0);
         } else {
             // All other tabs use theme default colors
             setBottomNavColor(0);

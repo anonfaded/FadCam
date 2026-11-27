@@ -15,7 +15,6 @@
 
 
     <string name="view_source_code">Lihat Kode Sumber</string>
-    <string name="buy_me_a_coffee">Belikan saya kopi ☕</string>
     <string name="contact">Kontak</string>
     <string name="send_email">Kirim email</string>
     <string name="join_community">Bergabunglah dengan komunitas untuk mendapatkan bantuan, berbagi ide, dan pembaruan aplikasi di masa mendatang</string>
@@ -1468,10 +1467,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="video_split_size_summary_gb">Saat ini: %1$s GB</string>
     <string name="video_splitting_title">Aktifkan Pemisahan Video</string>
     <string name="video_splitting_description">Secara otomatis memisahkan rekaman menjadi file yang lebih kecil (Dinonaktifkan secara default). Direkomendasikan: 2 GB untuk keseimbangan. Tersedia preset hingga 4 GB dan ukuran kustom. Ini membantu mengelola rekaman besar dan menghindari batasan ukuran file perangkat.</string>
-    <string name="support_ko_fi">Dukung kami di Ko-fi</string>
-    <string name="kofi_description">Deskripsi akan diatur dalam kode.</string>
-    <string name="kofi_button_text">Belikan saya Ko-fi</string>
-    <string name="kofi_footer_text">Dibuat dengan penuh cinta di FadSec Lab di</string>
 
     <string name="setting_audio_input_source_title">Sumber Input Audio</string>
     <string name="setting_audio_input_source_status_default">Saat ini menggunakan: Mikrofon Ponsel</string>
@@ -3433,4 +3428,8 @@ Milikmu selamanya.</string>
     <string name="report_dialog_body">Ini membuka pelacak masalah GitHub di browser. Kamu perlu akun GitHub untuk memposting di sana.</string>
     <string name="dialog_continue">Lanjutkan</string>
     <string name="dialog_cancel">Batal</string>
+    <string name="support_on_patreon">Dukung kami di Patreon</string>
+    <string name="patreon_content_desc">Dukung kami di Patreon</string>
+    <string name="patreon_description">Deskripsi akan diatur dalam kode.</string>
+    <string name="patreon_footer_text">Dibuat dengan penuh cinta di FadSec Lab di</string>
 </resources>

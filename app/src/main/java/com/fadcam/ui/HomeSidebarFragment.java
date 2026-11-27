@@ -121,33 +121,19 @@ public class HomeSidebarFragment extends DialogFragment {
         CharSequence titleText;
         CharSequence valueText;
         android.widget.TextView updated = view.findViewById(R.id.tv_app_updated);
-        // Grow/shrink the card instead of letting it jump when the update line is added or
-        // removed. The transition is started before the height-affecting change and runs for
-        // the fade-in half, so the extra line appears exactly as the card has room for it.
         android.view.ViewGroup card = view.findViewById(R.id.card_app_usage);
-        if (crossfade && card != null) {
-            android.transition.AutoTransition grow = new android.transition.AutoTransition();
-            grow.setDuration(CROSSFADE_IN_HALF_MS);
-            grow.setStartDelay(CROSSFADE_IN_HALF_MS);
-            grow.setInterpolator(new android.view.animation.DecelerateInterpolator());
-            grow.excludeTarget(R.id.tv_app_usage_title, true);
-            grow.excludeTarget(R.id.tv_app_usage, true);
-            grow.excludeTarget(R.id.tv_app_updated, true);
-            grow.excludeTarget(R.id.tv_app_usage_icon, true);
-            android.transition.TransitionManager.beginDelayedTransition(card, grow);
-        }
         if (usageShowsInstallDate) {
             titleText = getString(R.string.app_usage_installed_on);
             valueText = com.fadcam.utils.AppUsageAge.installedAt(requireContext());
             if (updated != null) {
                 updated.setText(getString(R.string.app_usage_updated_on) + "\n"
                         + com.fadcam.utils.AppUsageAge.updatedAt(requireContext()));
-                setUpdatedLineVisible(updated, true, animate);
             }
+            setUpdatedLineVisible(card, updated, true, crossfade);
         } else {
             titleText = com.fadcam.utils.AppUsageAge.title(requireContext());
             valueText = com.fadcam.utils.AppUsageAge.value(requireContext());
-            setUpdatedLineVisible(updated, false, animate);
+            setUpdatedLineVisible(card, updated, false, crossfade);
         }
         android.widget.TextView icon = view.findViewById(R.id.tv_app_usage_icon);
         CharSequence iconGlyph = usageShowsInstallDate ? "download" : "history";
@@ -177,14 +163,23 @@ public class HomeSidebarFragment extends DialogFragment {
     private static final long CROSSFADE_IN_HALF_MS = CROSSFADE_MS / 2;
 
     /**
-     * Fades the last-update line in step with the value above it: it appears during the
-     * cross-fade's second half (exactly when the install date's new text fades in) and leaves
-     * during the first half. Animating it on its own clock made it pop in ahead of the date.
+     * Fades the last-update line in step with the value above it and animates the card's height
+     * at the same moment the line is added or removed.
+     *
+     * <p>The transition must be opened right before the visibility change — opening it at tap
+     * time made the grow work (visibility flipped in the same pass) but the collapse snap, since
+     * the {@code GONE} landed 130 ms later in an animation callback, outside the captured frame.
      */
-    private void setUpdatedLineVisible(android.widget.TextView updated, boolean visible, boolean animate) {
+    private void setUpdatedLineVisible(android.view.ViewGroup card, android.widget.TextView updated,
+                                       boolean visible, boolean animate) {
         if (updated == null) return;
         updated.animate().cancel();
         if (visible) {
+            if (updated.getVisibility() == android.view.View.VISIBLE) {
+                updated.setAlpha(1f);
+                return;
+            }
+            beginCardResize(card, animate, true);
             updated.setVisibility(android.view.View.VISIBLE);
             updated.setAlpha(0f);
             if (animate) {
@@ -195,17 +190,41 @@ public class HomeSidebarFragment extends DialogFragment {
             } else {
                 updated.setAlpha(1f);
             }
-        } else if (updated.getVisibility() == android.view.View.VISIBLE) {
-            if (animate) {
-                updated.animate().alpha(0f)
-                        .setDuration(CROSSFADE_IN_HALF_MS)
-                        .withEndAction(() -> updated.setVisibility(android.view.View.GONE))
-                        .start();
-            } else {
-                updated.setAlpha(1f);
-                updated.setVisibility(android.view.View.GONE);
-            }
+            return;
         }
+        if (updated.getVisibility() != android.view.View.VISIBLE) return;
+        if (animate) {
+            updated.animate().alpha(0f)
+                    .setDuration(CROSSFADE_IN_HALF_MS)
+                    .withEndAction(() -> {
+                        beginCardResize(card, true, false);
+                        updated.setVisibility(android.view.View.GONE);
+                    })
+                    .start();
+        } else {
+            beginCardResize(card, false, false);
+            updated.setAlpha(1f);
+            updated.setVisibility(android.view.View.GONE);
+        }
+    }
+
+    /**
+     * Opens a delayed transition on the card so its height change animates rather than jumps.
+     * Runs for the fade-in half; when growing it is also delayed by the other half, so the extra
+     * line never appears in a card that has not made room for it yet. The text targets are
+     * excluded: the crossfade owns them and the two animations would otherwise fight.
+     */
+    private void beginCardResize(android.view.ViewGroup card, boolean animate, boolean growing) {
+        if (card == null || !animate) return;
+        android.transition.AutoTransition resize = new android.transition.AutoTransition();
+        resize.setDuration(CROSSFADE_IN_HALF_MS);
+        resize.setInterpolator(new android.view.animation.DecelerateInterpolator());
+        if (growing) resize.setStartDelay(CROSSFADE_IN_HALF_MS);
+        resize.excludeTarget(R.id.tv_app_usage_title, true);
+        resize.excludeTarget(R.id.tv_app_usage, true);
+        resize.excludeTarget(R.id.tv_app_updated, true);
+        resize.excludeTarget(R.id.tv_app_usage_icon, true);
+        android.transition.TransitionManager.beginDelayedTransition(card, resize);
     }
 
     private void clearMaterialBackgrounds(android.view.ViewGroup group) {

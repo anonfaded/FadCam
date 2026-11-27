@@ -8,7 +8,6 @@
     تم عرض FadCam في قنوات يوتيوب الشهيرة <font color="#cfbafd">HowToMen</font> و <font color="#cfbafd">Xtream Droid</font>، وتم ذكره أيضًا في أنظمة <font color="#cfbafd">GrapheneOS</font> و+55 من الأنظمة الأخرى المعروفة.
     ]]>\n</string>
     <string name="view_source_code">عرض الشيفرة المصدرية</string>
-    <string name="buy_me_a_coffee">اشترِ لي قهوة ☕</string>
     <string name="contact">جهة الاتصال</string>
     <string name="send_email">إرسال بريد إلكتروني</string>
     <string name="join_community">انضم إلى المجتمع للحصول على المساعدة، ومشاركة الأفكار، والحصول على تحديثات البرنامج</string>
@@ -2485,13 +2484,9 @@
 
     <string name="trash_auto_delete_picker_helper">اختر متى يتم حذف العناصر في سلة المهملات تلقائيًا.</string>
 
-    <string name="support_ko_fi">ادعمنا على Ko-fi</string>
 
-    <string name="kofi_description">سيتم تعيين الوصف في الكود.</string>
 
-    <string name="kofi_button_text">اشترِ لي Ko-fi</string>
 
-    <string name="kofi_footer_text">صُنع بـ    في FadSec Lab في   </string>
 
     <string name="choose_language">اختر اللغة</string>
 
@@ -4908,4 +4903,8 @@
     <string name="report_dialog_body">سيُفتح متعقّب مشكلات GitHub في المتصفح. تحتاج إلى حساب GitHub للنشر هناك.</string>
     <string name="dialog_continue">متابعة</string>
     <string name="dialog_cancel">إلغاء</string>
+    <string name="support_on_patreon">ادعمنا على Patreon</string>
+    <string name="patreon_content_desc">ادعمنا على Patreon</string>
+    <string name="patreon_description">سيتم تعيين الوصف في الكود.</string>
+    <string name="patreon_footer_text">صُنع بـ    في FadSec Lab في   </string>
 </resources>

@@ -17,7 +17,6 @@
 
 
     <string name="view_source_code">Ver código fuente</string>
-    <string name="buy_me_a_coffee">Invítame un café ☕</string>
     <string name="contact">Contacto</string>
     <string name="send_email">Enviar correo</string>
     <string name="join_community">Únete a la comunidad para ayuda, compartir ideas y futuras actualizaciones</string>
@@ -1450,10 +1449,6 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="video_split_size_summary_gb">Actual: %1$s GB</string>
     <string name="video_splitting_title">Habilitar división de video</string>
     <string name="video_splitting_description">Dividir automáticamente grabaciones en archivos más pequeños (Desactivado por defecto). Recomendado: 2 GB para equilibrio. Preajustes hasta 4 GB y tamaños personalizados disponibles. Esto ayuda a gestionar grabaciones grandes y evita límites de tamaño de archivo del dispositivo.</string>
-    <string name="support_ko_fi">Apóyanos en Ko-fi</string>
-    <string name="kofi_description">La descripción se establecerá en el código.</string>
-    <string name="kofi_button_text">Invítame un Ko-fi</string>
-    <string name="kofi_footer_text">Hecho con    en FadSec Lab en   </string>
 
     <string name="setting_audio_input_source_title">Fuente de entrada de audio</string>
     <string name="setting_audio_input_source_status_default">Micrófono del teléfono</string>
@@ -3279,4 +3274,8 @@ Tuyas para siempre.</string>
     <string name="report_dialog_body">Esto abre el rastreador de problemas de GitHub en el navegador. Necesitas una cuenta de GitHub para publicar allí.</string>
     <string name="dialog_continue">Continuar</string>
     <string name="dialog_cancel">Cancelar</string>
+    <string name="support_on_patreon">Apóyanos en Patreon</string>
+    <string name="patreon_content_desc">Apóyanos en Patreon</string>
+    <string name="patreon_description">La descripción se establecerá en el código.</string>
+    <string name="patreon_footer_text">Hecho con    en FadSec Lab en   </string>
 </resources>

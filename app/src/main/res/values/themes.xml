@@ -159,8 +159,11 @@
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
-        <item name="colorTopBar">@color/amoled_black_pure</item>
-        <item name="colorBottomNav">@color/amoled_black_pure</item>
+        <!-- Chrome (tab headers, the status band and the dock) uses the editor header's
+             surface rather than pure black, so the chrome reads as its own layer instead of
+             disappearing into the content. The content itself stays true black for AMOLED. -->
+        <item name="colorTopBar">@color/amoled_chrome</item>
+        <item name="colorBottomNav">@color/amoled_chrome</item>
         <item name="colorHeading">@color/amoled_heading</item>
         <item name="colorButton">#232323</item>
         <item name="colorToggle">#44484D</item>
@@ -205,7 +208,7 @@
 
     <style name="Theme.FadCam.AmoledBottomNavigation" parent="Widget.Material3.BottomNavigationView">
         <item name="android:minHeight">64dp</item>
-        <item name="android:background">@color/amoled_background</item>
+        <item name="android:background">@color/amoled_chrome</item>
         <item name="itemIconTint">@color/amoled_text_primary</item>
         <item name="itemTextColor">@color/amoled_text_primary</item>
         <item name="itemActiveIndicatorStyle">@null</item>
