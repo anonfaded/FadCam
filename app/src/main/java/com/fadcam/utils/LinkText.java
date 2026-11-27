@@ -47,29 +47,31 @@ public final class LinkText {
      */
     @NonNull
     public static CharSequence parse(@NonNull String text, int linkColor) {
-        // Collapse "[label](url)" to "label" so the drawn text has no markup in it.
-        StringBuilder visible = new StringBuilder(text.length());
+        // Collect (start, end, url) as the collapsed string is built, then apply the spans.
+        // Recording the url directly avoids a second regex pass to recover it.
+        java.util.List<Object[]> spans = new java.util.ArrayList<>();
         Matcher m = LINK.matcher(text);
-        int cursor = 0;
+        StringBuilder visible = new StringBuilder(text.length());
+        int cursorInSource = 0;
+        int cursorInVisible = 0;
         while (m.find()) {
-            visible.append(text, cursor, m.start());
+            String before = text.substring(cursorInSource, m.start());
+            visible.append(before);
+            cursorInVisible += before.length();
+            int labelStart = cursorInVisible;
             visible.append(m.group(1));
-            cursor = m.end();
+            cursorInVisible += m.group(1).length();
+            cursorInSource = m.end();
+            spans.add(new Object[]{labelStart, cursorInVisible, m.group(2)});
         }
-        visible.append(text, cursor, text.length());
+        visible.append(text, cursorInSource, text.length());
 
-        // Walk the markup again, accumulating label offsets in the collapsed string.
-        SpannableString result = new SpannableString(visible.toString());
-        Matcher link = LINK.matcher(text);
-        int at = 0;
-        while (link.find()) {
-            int start = at;
-            int end = at + link.group(1).length();
-            result.setSpan(new ThemedLink(link.group(2), linkColor),
-                    start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            at = end;
+        SpannableString out = new SpannableString(visible.toString());
+        for (Object[] span : spans) {
+            out.setSpan(new ThemedLink((String) span[2], linkColor),
+                    (Integer) span[0], (Integer) span[1], Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
-        return result;
+        return out;
     }
 
     /** Applies {@link #parse} to a TextView and makes the links tappable. */

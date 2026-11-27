@@ -40,7 +40,15 @@ public class FullVideoInfoProbe implements VideoInfoProbe {
         // Load the ffmpeg runtime before any ffmpeg class is touched: its static
         // initialiser resolves the same libraries by bare name.
         if (context != null) {
-            com.fadcam.assets.AssetFfmpeg.ensureLoaded(context);
+            try {
+                com.fadcam.assets.AssetFfmpeg.ensureLoaded(context);
+            } catch (com.fadcam.assets.AssetException e) {
+                // ffmpeg is an optional download. Returning null makes the caller fall back
+                // to the platform's own metadata reader instead of crashing; the download
+                // banner explains how to enable the richer probe.
+                FLog.i(TAG, "ffprobe unavailable: " + e.getMessage());
+                return null;
+            }
         }
         FfprobeData data = new FfprobeData();
         try {

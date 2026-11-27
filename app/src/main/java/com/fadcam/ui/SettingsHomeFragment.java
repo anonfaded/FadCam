@@ -469,6 +469,18 @@ public class SettingsHomeFragment extends BaseFragment {
         bindRow(root, R.id.row_haptics_settings,
                 () -> openSubFragment(new HapticsSettingsFragment()));
 
+        // Downloadable assets manager. Full-only: Lite has no downloadable components, so the
+        // row is hidden rather than opening an empty screen.
+        android.view.View assetRow = root.findViewById(R.id.row_asset_manager);
+        if (assetRow != null) {
+            if (com.fadcam.BuildConfig.LITE_EDITION) {
+                assetRow.setVisibility(android.view.View.GONE);
+            } else {
+                bindRow(root, R.id.row_asset_manager,
+                        () -> openSubFragment(createAssetManager()));
+            }
+        }
+
         bindRow(root, R.id.group_appearance, () -> openSubFragment(new AppearanceSettingsFragment()));
         bindRow(root, R.id.group_video_quick, () -> openSubFragment(new VideoSettingsFragment()));
         bindRow(root, R.id.group_video_player_settings, () -> openSubFragment(new VideoPlayerSettingsFragment()));
@@ -800,6 +812,19 @@ public class SettingsHomeFragment extends BaseFragment {
                 }
             }
         });
+    }
+
+    /**
+     * Instantiates the Full-only download manager without naming it here, so Lite compiles
+     * and links this file without pulling in a class it does not ship.
+     */
+    private Fragment createAssetManager() {
+        try {
+            return (Fragment) Class.forName("com.fadcam.ui.AssetManagerFragment")
+                    .getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new IllegalStateException("asset manager unavailable in this build", e);
+        }
     }
 
     private void openSubFragment(Fragment fragment) {

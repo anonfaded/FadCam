@@ -75,7 +75,6 @@ public final class AssetFfmpeg {
             // Only now is it safe to touch the library's own classes.
             String version = com.arthenica.ffmpegkit.FFmpegKitConfig.getVersion();
 
-
             loaded = true;
             FLog.i(TAG, "ffmpeg initialised from " + source + ", version=" + version);
         }

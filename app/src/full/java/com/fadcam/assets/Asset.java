@@ -8,22 +8,40 @@ package com.fadcam.assets;
 public enum Asset {
 
     /** Native OpenCV runtime, needed by MOG2 motion detection. */
-    OPENCV("opencv", "Motion detection engine", "OpenCV", "Apache-2.0", true),
+    OPENCV("opencv", "OpenCV", "5.1.0", "Apache-2.0", true,
+            "Learns what the background looks like and flags what moves. Used by Motion Lab "
+                    + "to trigger recordings on movement.",
+            "Motion Lab"),
 
     /** Native ffmpeg runtime, needed by Faditor, remux, repair and batch export. */
-    FFMPEG("ffmpeg", "Video processing", "ffmpeg-kit", "GPL-3.0", true),
+    FFMPEG("ffmpeg", "ffmpeg-kit", "6.0.2 LTS", "GPL-3.0", true,
+            "Reads and rewrites video. Used by the Faditor editor to trim and export, by "
+                    + "Records to repair damaged files and merge clips, and by the player to "
+                    + "make recordings seekable.",
+            "Faditor editor", "Records repair and merge", "Video info", "Video player"),
 
     /** RF-DETR Nano detection graphs, needed by Motion Lab object detection. */
-    MODELS("models", "AI detection models", "RF-DETR Nano", "Apache-2.0", false);
+    MODELS("models", "RF-DETR Nano", "1.0", "Apache-2.0", false,
+            "Recognises people, vehicles and animals in a frame. Used by Motion Lab to "
+                    + "filter what triggers a recording, and by Digital Forensics to label "
+                    + "events in the timeline.",
+            "Motion Lab object filtering", "Digital Forensics");
 
     /** Stable key used in the manifest and on disk. */
     public final String id;
-    /** Row title in the download manager. */
+    /** Real project name, shown as the row title. */
     public final String title;
-    /** Component name shown next to version and size. */
-    public final String componentName;
+    /** Component version, shown beside the name. */
+    public final String version;
     /** SPDX identifier, shown in the UI. */
     public final String license;
+    /** One sentence on what the component actually does for the user. */
+    public final String purpose;
+    /**
+     * The FadCam features that stop working without this component, in the app's own wording.
+     * Verified against the call sites, not guessed: see the classes named in each comment.
+     */
+    public final String[] usedBy;
     /**
      * True when the download is a zip of shared libraries.
      *
@@ -33,12 +51,15 @@ public enum Asset {
      */
     public final boolean zipped;
 
-    Asset(String id, String title, String componentName, String license, boolean zipped) {
+    Asset(String id, String title, String version, String license, boolean zipped,
+          String purpose, String... usedBy) {
         this.id = id;
         this.title = title;
-        this.componentName = componentName;
+        this.version = version;
         this.license = license;
         this.zipped = zipped;
+        this.purpose = purpose;
+        this.usedBy = usedBy;
     }
 
     /** Returns the asset with this manifest id, or null when unknown. */

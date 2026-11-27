@@ -495,7 +495,18 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Load the ffmpeg runtime before any ffmpeg class is touched anywhere in the
         // editor. Its static initialiser resolves the libraries by bare name, so this must
         // happen first.
-        com.fadcam.assets.AssetFfmpeg.ensureLoaded(this);
+        try {
+            com.fadcam.assets.AssetFfmpeg.ensureLoaded(this);
+        } catch (com.fadcam.assets.AssetException e) {
+            // The editor cannot work without ffmpeg, so say so and close rather than
+            // crashing on the first probe. The banner on Records already offers the
+            // download, so the user is not stranded.
+            android.widget.Toast.makeText(this,
+                    getString(R.string.assets_feature_needs_download_ffmpeg),
+                    android.widget.Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         // Sheets opened from the editor are separate windows; without this they bring the
         // status and navigation bars back over the fullscreen editor.

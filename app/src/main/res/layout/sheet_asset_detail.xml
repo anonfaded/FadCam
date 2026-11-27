@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Detail sheet for one asset: what it is, what uses it, sizes, licence, fingerprint, actions. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:paddingTop="20dp"
+    android:paddingBottom="24dp">
+
+    <TextView
+        android:id="@+id/detail_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorHeading"
+        android:textAlignment="viewStart" />
+
+    <TextView
+        android:id="@+id/detail_meta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        android:textAlignment="viewStart" />
+
+    <TextView
+        android:id="@+id/detail_purpose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:textSize="13sp"
+        android:lineSpacingExtra="2dp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textAlignment="viewStart" />
+
+    <TextView
+        android:id="@+id/detail_used_by"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textSize="12sp"
+        android:lineSpacingExtra="2dp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textAlignment="viewStart" />
+
+    <TextView
+        android:id="@+id/detail_hash"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textSize="10sp"
+        android:fontFamily="monospace"
+        android:textColor="@android:color/darker_gray"
+        android:textAlignment="viewStart" />
+
+    <View
+        style="@style/SettingsDivider"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="4dp" />
+
+    <!-- Primary action: only present when the component is missing. -->
+    <LinearLayout
+        android:id="@+id/detail_download"
+        style="@style/SettingsGroupRow"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
+        android:background="?attr/selectableItemBackground">
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="16dp"
+            android:fontFamily="@font/materialicons"
+            android:gravity="center"
+            android:text="download"
+            android:textSize="20sp"
+            android:textColor="?attr/homeRailAccent"
+            android:importantForAccessibility="no" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/assets_download"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="?attr/homeRailAccent"
+            android:textAlignment="viewStart" />
+    </LinearLayout>
+
+    <!-- Offline path. -->
+    <LinearLayout
+        android:id="@+id/detail_import"
+        style="@style/SettingsGroupRow"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
+        android:background="?attr/selectableItemBackground">
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="16dp"
+            android:fontFamily="@font/materialicons"
+            android:gravity="center"
+            android:text="folder_open"
+            android:textSize="20sp"
+            android:textColor="@android:color/darker_gray"
+            android:importantForAccessibility="no" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/assets_import"
+                android:textSize="15sp"
+                android:textColor="?attr/colorHeading"
+                android:textAlignment="viewStart" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/assets_import_hint"
+                android:textSize="12sp"
+                android:textColor="@android:color/darker_gray"
+                android:textAlignment="viewStart" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/detail_remove"
+        style="@style/SettingsGroupRow"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
+        android:background="?attr/selectableItemBackground">
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="16dp"
+            android:fontFamily="@font/materialicons"
+            android:gravity="center"
+            android:text="delete"
+            android:textSize="20sp"
+            android:textColor="@android:color/holo_red_light"
+            android:importantForAccessibility="no" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/assets_remove"
+            android:textSize="15sp"
+            android:textColor="@android:color/holo_red_light"
+            android:textAlignment="viewStart" />
+    </LinearLayout>
+</LinearLayout>

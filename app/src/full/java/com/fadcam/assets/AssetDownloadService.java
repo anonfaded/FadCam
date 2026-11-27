@@ -55,9 +55,14 @@ public class AssetDownloadService extends Service {
     private static final String ACTION_CANCEL = "com.fadcam.assets.CANCEL";
     private static final String EXTRA_ASSET = "asset";
 
-    /** Receives state changes on the main thread. */
+    /** Receives state changes and progress. */
     public interface Listener {
         void onAssetStateChanged(@NonNull Asset asset);
+
+        /** Live download percentage for this asset, so a visible row can show it. */
+        default void onAssetProgress(@NonNull Asset asset, int percent) {
+            // Optional: most listeners only care that the state changed.
+        }
     }
 
     private static volatile Listener listener;
@@ -176,6 +181,7 @@ public class AssetDownloadService extends Service {
             throw new AssetException(asset, "manifest missing from the app");
         }
 
+        lastPercent = -1;
         registry.onDownloadStarted(asset);
         notifyListener(asset);
 
@@ -201,10 +207,20 @@ public class AssetDownloadService extends Service {
         FLog.i(TAG, "asset ready: " + asset.id);
     }
 
+    /** Last percentage pushed to listeners, so the UI is not rebuilt for every packet. */
+    private volatile int lastPercent = -1;
+
     private void updateProgress(@NonNull Asset asset, long done, long total) {
         int pct = total > 0 ? (int) Math.min(100L, (done * 100L) / total) : 0;
         updateNotification(getString(R.string.asset_download_in_progress), asset, pct, total);
-        notifyListener(asset);
+        // Tell the visible screen the number changed, at whole-percent granularity only.
+        if (pct != lastPercent) {
+            lastPercent = pct;
+            Listener l = listener;
+            if (l != null) {
+                l.onAssetProgress(asset, pct);
+            }
+        }
     }
 
     // ---------------------------------------------------------- notification

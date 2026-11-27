@@ -15,7 +15,8 @@
       "members": [
         "libc++_shared.so",
         "libopencv_java5.so"
-      ]
+      ],
+      "installedSize": 33995904
     },
     {
       "id": "ffmpeg",
@@ -37,7 +38,8 @@
         "libffmpegkit_abidetect.so",
         "libswresample.so",
         "libswscale.so"
-      ]
+      ],
+      "installedSize": 25829000
     },
     {
       "id": "opencv",
@@ -51,7 +53,8 @@
       "members": [
         "libc++_shared.so",
         "libopencv_java5.so"
-      ]
+      ],
+      "installedSize": 21779464
     },
     {
       "id": "ffmpeg",
@@ -73,7 +76,8 @@
         "libffmpegkit_abidetect.so",
         "libswresample.so",
         "libswscale.so"
-      ]
+      ],
+      "installedSize": 23272568
     },
     {
       "id": "models",
@@ -83,7 +87,8 @@
       "size": 48634176,
       "license": "Apache-2.0",
       "name": "RF-DETR Nano graph_a",
-      "version": "1.0"
+      "version": "1.0",
+      "installedSize": 48634176
     },
     {
       "id": "models",
@@ -93,7 +98,8 @@
       "size": 7594960,
       "license": "Apache-2.0",
       "name": "RF-DETR Nano graph_b",
-      "version": "1.0"
+      "version": "1.0",
+      "installedSize": 7594960
     }
   ]
 }
