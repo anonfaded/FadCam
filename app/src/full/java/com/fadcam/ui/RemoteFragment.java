@@ -62,6 +62,7 @@ public class RemoteFragment extends BaseFragment {
     
     private AvatarToggleView streamingToggle;
     private TextView statusText;
+    private View serverStateGradient;
     private TextView rootUrlText;
     private ImageView copyRootButton;
     private View statusIndicatorDot;
@@ -213,6 +214,7 @@ public class RemoteFragment extends BaseFragment {
         // Initialize views
         streamingToggle = view.findViewById(R.id.streaming_toggle);
         statusText = view.findViewById(R.id.status_text);
+        serverStateGradient = view.findViewById(R.id.server_state_gradient);
         rootUrlText = view.findViewById(R.id.root_url_text);
         copyRootButton = view.findViewById(R.id.copy_root_button);
         statusIndicatorDot = view.findViewById(R.id.status_indicator_dot);
@@ -646,6 +648,7 @@ public class RemoteFragment extends BaseFragment {
                     streamingToggle.setChecked(true);
             statusText.setText(R.string.stream_active);
             statusText.setTextColor(0xFF4CAF50); // Green for active
+            serverStateGradient.setBackgroundResource(R.drawable.remote_server_state_active);
             animateStatusIndicator(true);
             
             // Show URL based on streaming mode
@@ -673,6 +676,7 @@ public class RemoteFragment extends BaseFragment {
             streamingToggle.setChecked(false);
             statusText.setText(R.string.stream_inactive);
             statusText.setTextColor(0xFFFF5252); // Red for inactive
+            serverStateGradient.setBackgroundResource(R.drawable.remote_server_state_inactive);
             animateStatusIndicator(false);
             
             // Show placeholder URL based on streaming mode

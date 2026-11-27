@@ -285,7 +285,7 @@
     <string name="note_onboarding">قم بالتفعيل لرؤية مقدمة التطبيق ودليل الأذونات في المرة القادمة التي تفتح فيها FadCam.</string>
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">فحص التحديثات التلقائي عند بدء التشغيل</string>
-    <string name="note_auto_update_check">إذا كان مفعلاً، سيقوم FadCam بالتحقق من التحديثات في كل مرة تفتح فيها التطبيق. قم بإيقاف التشغيل لتعطيل فحص التحديثات التلقائي عند بدء التشغيل.\n(الافتراضي: مفعل)</string>
+    <string name="note_auto_update_check">عند التفعيل، يتحقق FadCam من GitHub بحثًا عن إصدار أحدث. يعمل فقط عند فتح التطبيق، بحد أقصى مرة واحدة في الساعة — ولا يعمل أبدًا في الخلفية.\n\nالفحص هو طلب GET عادي إلى تغذية الإصدارات العامة لهذا التطبيق. لا يتم إرسال أي شيء عنك: لا حساب، ولا معرّف، ولا تحليلات. اضغط لرؤية التغذية نفسها التي يقرأها التطبيق:\n[github.com/anonfaded/%1$s/releases.atom](https://github.com/anonfaded/%1$s/releases.atom)\n\nيذهب هذا الطلب إلى GitHub، لذا تنطبق عليه سياسة خصوصية GitHub — لا سياسة FadCam.\n(الافتراضي: مفعل)</string>
     <!-- Storage Location Settings -->
     <string name="storage_location_title">موقع التخزين</string>
     <string name="storage_location_description">اختر مكان حفظ التسجيلات.</string>
@@ -3347,7 +3347,7 @@
 
     <string name="stream_notes_resolution">• اتجاه البث ودقته مأخوذان من إعدادات التسجيل العادية (إعدادات الفيديو &gt; الدقة &amp; الاتجاه). عدّلها إذا أردت تغيير أبعاد البث</string>
 
-    <string name="stream_notes_cellular">⚠️ قيد WiFi فقط: شبكات الهاتف تمنع الاتصالات الواردة. للبث السلس من أي شبكة (WiFi، LTE، في أي مكان)، قم بالترقية إلى FadCam Pro+. بث من أي مكان عالميًا برابط خاص مولّد — بدون إعادة توجيه المنافذ، بدون تغييرات الراوتر، بدون قيود الشبكة</string>
+    <string name="stream_notes_cellular">⚠️ قيد WiFi فقط: الشبكات الخلوية تحجب الاتصالات الواردة، لذا يعمل البث فقط عندما يكون هاتفك والمشاهد على شبكة WiFi نفسها.\n\nFadCam Pro+ فئة منفصلة، وغير متاح حاليًا. سيتيح البث من أي مكان — WiFi أو شبكة خلوية — عبر خادم الترحيل المشفّر طرفيًا الخاص بـ FadCam، دون الحاجة إلى إعادة توجيه المنافذ أو تغيير الراوتر.</string>
 
     <string name="stream_notes_android14_screen">⚠️ Android 14+: قيد النظام يمنع التسجيل عند إطفاء الشاشة. الحلول: (1) فعّل \"وضع الشاشة السوداء\" في الإعدادات &gt; الأمان، أو (2) عطّل قفل الشاشة (بدون PIN/كلمة مرور/بصمة). كلاهما يسمح بالتسجيل عن بعد بسلاسة</string>
 
@@ -4918,4 +4918,33 @@
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">ينطبق على تسجيلات الشاشة فقط. أي تغيير تجريه في هذا التبويب يؤثر على تسجيلات الشاشة فقط.</string>
     <string name="update_fdroid_note">ثبّت التطبيق من F-Droid؟ تجاهل هذا — سيصل التحديث إلى F-Droid خلال أيام قليلة. ثبّته من GitHub؟ استخدم زر GitHub لفتح صفحة الإصدارات والتحديث مباشرة.</string>
+    <!-- Relative "time ago" labels for record cards. -->
+    <string name="time_ago_just_now">الآن</string>
+    <plurals name="time_ago_minutes">
+        <item quantity="one">منذ دقيقة واحدة</item>
+        <item quantity="other">منذ %d دقائق</item>
+    </plurals>
+    <plurals name="time_ago_hours">
+        <item quantity="one">منذ ساعة واحدة</item>
+        <item quantity="other">منذ %d ساعات</item>
+    </plurals>
+    <plurals name="time_ago_days">
+        <item quantity="one">منذ يوم واحد</item>
+        <item quantity="other">منذ %d أيام</item>
+    </plurals>
+    <plurals name="time_ago_weeks">
+        <item quantity="one">منذ أسبوع واحد</item>
+        <item quantity="other">منذ %d أسابيع</item>
+    </plurals>
+    <plurals name="time_ago_months">
+        <item quantity="one">منذ شهر واحد</item>
+        <item quantity="other">منذ %d أشهر</item>
+    </plurals>
+    <plurals name="time_ago_years">
+        <item quantity="one">منذ سنة واحدة</item>
+        <item quantity="other">منذ %d سنوات</item>
+    </plurals>
+    <string name="lite_promo_header">الأخ الصغير لـ FadCam</string>
+    <string name="lite_promo_title">FadCam Lite</string>
+    <string name="lite_promo_subtitle">نسخة أصغر من FadCam للتسجيل اليومي. مجانية، بلا إعلانات.</string>
 </resources>

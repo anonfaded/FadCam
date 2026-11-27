@@ -30,6 +30,11 @@
         <item name="colorSurfaceContainerHigh">@color/gray</item>
         <item name="colorSurfaceContainerHighest">@color/gray</item>
         <item name="colorOutline">@color/gray500</item>
+        <item name="colorOutlineVariant">#2A2A2A</item>
+        <item name="colorError">@color/colorError</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
         <item name="colorControlHighlight">#33FFFFFF</item>
 
 <!--        the color for statusbar at top-->

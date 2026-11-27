@@ -30,6 +30,11 @@
         <item name="colorSurfaceContainerHigh">@color/gray</item>
         <item name="colorSurfaceContainerHighest">@color/gray</item>
         <item name="colorOutline">@color/gray500</item>
+        <item name="colorOutlineVariant">#2A2A2A</item>
+        <item name="colorError">@color/colorError</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
         <item name="colorControlHighlight">#33FFFFFF</item>
 
         <!-- Status bar color -->
@@ -150,6 +155,28 @@
         <item name="colorOnSecondary">#E0E0E0</item>
         <item name="colorSurface">@color/amoled_surface</item>
         <item name="colorOnSurface">@color/amoled_text_primary</item>
+        <!-- Container / variant / outline / error roles. Theme.Material3.Dark already keeps
+             these dark, but its baseline values are purple-tinted (#211F26), which showed as
+             a faint lavender panel on the pure-black AMOLED surfaces. -->
+        <item name="colorPrimaryContainer">#232323</item>
+        <item name="colorOnPrimaryContainer">@color/amoled_text_primary</item>
+        <item name="colorSecondaryContainer">#232323</item>
+        <item name="colorOnSecondaryContainer">@color/amoled_text_primary</item>
+        <item name="colorTertiary">@color/amoled_accent</item>
+        <item name="colorOnTertiary">@color/amoled_text_primary</item>
+        <item name="colorTertiaryContainer">#232323</item>
+        <item name="colorOnTertiaryContainer">@color/amoled_text_primary</item>
+        <item name="colorSurfaceVariant">@color/amoled_dialog</item>
+        <item name="colorOnSurfaceVariant">@color/amoled_text_secondary</item>
+        <item name="colorSurfaceContainer">@color/amoled_dialog</item>
+        <item name="colorSurfaceContainerHigh">@color/amoled_dialog</item>
+        <item name="colorSurfaceContainerHighest">@color/amoled_dialog</item>
+        <item name="colorOutline">@color/amoled_border</item>
+        <item name="colorOutlineVariant">@color/amoled_primary_variant</item>
+        <item name="colorError">@color/amoled_error</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
         <!-- Dialog theme override -->
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Amoled.MaterialAlertDialog</item>
         <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
@@ -223,6 +250,21 @@
         <item name="android:textColorPrimary">@color/amoled_text_primary</item>
         <item name="android:textColorSecondary">@color/amoled_text_primary</item>
         <item name="android:background">@color/amoled_surface</item>
+        <item name="colorSurface">@color/amoled_surface</item>
+        <item name="colorOnSurface">@color/amoled_text_primary</item>
+        <!-- Faded Night is always dark, but this overlay still parents the DayNight baseline,
+             so the container / variant / outline / error roles must be pinned to avoid the
+             near-white panel in light system mode. -->
+        <item name="colorSurfaceContainerHigh">@color/amoled_surface</item>
+        <item name="colorSurfaceContainerHighest">@color/amoled_surface</item>
+        <item name="colorSurfaceVariant">@color/amoled_dialog</item>
+        <item name="colorOnSurfaceVariant">@color/amoled_text_secondary</item>
+        <item name="colorOutline">@color/amoled_border</item>
+        <item name="colorOutlineVariant">@color/amoled_primary_variant</item>
+        <item name="colorError">@color/amoled_error</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
         <item name="buttonBarPositiveButtonStyle">@style/AmoledDialogButton</item>
         <item name="buttonBarNegativeButtonStyle">@style/AmoledDialogButton</item>
     </style>
@@ -257,6 +299,28 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/red_theme_text_secondary_dark</item>
+        <!-- Remaining Material 3 colour roles. These are a full set on purpose: when a
+             DayNight theme does not declare them the Light baseline supplies lavender
+             containers and near-white surfaces in light system mode. -->
+        <item name="colorPrimaryContainer">@color/red_theme_surface_dark</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+        <item name="colorSecondaryContainer">@color/red_theme_surface_dark</item>
+        <item name="colorOnSecondaryContainer">@color/white</item>
+        <item name="colorTertiary">@color/red_theme_accent</item>
+        <item name="colorOnTertiary">@color/white</item>
+        <item name="colorTertiaryContainer">@color/red_theme_surface_dark</item>
+        <item name="colorOnTertiaryContainer">@color/white</item>
+        <item name="colorSurfaceVariant">@color/red_theme_surface_dark</item>
+        <item name="colorOnSurfaceVariant">@color/red_theme_text_secondary_dark</item>
+        <item name="colorSurfaceContainer">@color/red_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHigh">@color/red_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHighest">@color/red_theme_surface_dark</item>
+        <item name="colorOutline">@color/red_theme_outline</item>
+        <item name="colorOutlineVariant">@color/red_theme_primary_variant</item>
+        <item name="colorError">@color/red_theme_error</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
         <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.Red.Dialog</item>
         <item name="android:buttonStyle">@style/Widget.FadCam.Red.Button</item>
         <item name="android:editTextBackground">@drawable/red_theme_edittext_bg</item>
@@ -305,6 +369,21 @@
         <item name="android:textColorSecondary">@android:color/white</item>
         <item name="colorPrimary">@color/red_theme_primary</item>
         <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorSurface">@color/red_theme_surface_dark</item>
+        <item name="colorOnSurface">@android:color/white</item>
+        <!-- MaterialAlertDialog's content is a CardView that reads
+             colorSurfaceContainerHigh; undefined it resolved the near-white Light baseline
+             panel behind white text. -->
+        <item name="colorSurfaceContainerHigh">@color/red_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHighest">@color/red_theme_surface_dark</item>
+        <item name="colorSurfaceVariant">@color/red_theme_surface_dark</item>
+        <item name="colorOnSurfaceVariant">@color/red_theme_text_secondary_dark</item>
+        <item name="colorOutline">@color/red_theme_outline</item>
+        <item name="colorOutlineVariant">@color/red_theme_primary_variant</item>
+        <item name="colorError">@color/red_theme_error</item>
+        <item name="colorOnError">@android:color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
     </style>
 
     <style name="Widget.FadCam.Red.Button" parent="Widget.Material3.Button">
@@ -349,6 +428,26 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/gold_theme_text_secondary_dark</item>
+        <!-- Full Material 3 colour-role set; see the note on Theme.FadCam.Red. -->
+        <item name="colorPrimaryContainer">@color/gold_theme_surface_dark</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+        <item name="colorSecondaryContainer">@color/gold_theme_surface_dark</item>
+        <item name="colorOnSecondaryContainer">@color/white</item>
+        <item name="colorTertiary">@color/gold_theme_accent</item>
+        <item name="colorOnTertiary">@color/black</item>
+        <item name="colorTertiaryContainer">@color/gold_theme_surface_dark</item>
+        <item name="colorOnTertiaryContainer">@color/white</item>
+        <item name="colorSurfaceVariant">@color/gold_theme_surface_dark</item>
+        <item name="colorOnSurfaceVariant">@color/gold_theme_text_secondary_dark</item>
+        <item name="colorSurfaceContainer">@color/gold_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHigh">@color/gold_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHighest">@color/gold_theme_surface_dark</item>
+        <item name="colorOutline">@color/gold_theme_outline</item>
+        <item name="colorOutlineVariant">@color/gold_theme_primary_variant</item>
+        <item name="colorError">@color/gold_theme_error</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
         <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.Gold.Dialog</item>
         <item name="android:buttonStyle">@style/Widget.FadCam.Gold.Button</item>
         <item name="android:editTextBackground">@drawable/gold_theme_edittext_bg</item>
@@ -397,6 +496,18 @@
         <item name="android:textColorSecondary">@android:color/white</item>
         <item name="colorPrimary">@color/gold_theme_primary</item>
         <item name="colorOnPrimary">@color/black</item>
+        <item name="colorSurface">@color/gold_theme_surface_dark</item>
+        <item name="colorOnSurface">@android:color/white</item>
+        <item name="colorSurfaceContainerHigh">@color/gold_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHighest">@color/gold_theme_surface_dark</item>
+        <item name="colorSurfaceVariant">@color/gold_theme_surface_dark</item>
+        <item name="colorOnSurfaceVariant">@color/gold_theme_text_secondary_dark</item>
+        <item name="colorOutline">@color/gold_theme_outline</item>
+        <item name="colorOutlineVariant">@color/gold_theme_primary_variant</item>
+        <item name="colorError">@color/gold_theme_error</item>
+        <item name="colorOnError">@android:color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
     </style>
 
     <style name="Widget.FadCam.Gold.Button" parent="Widget.Material3.Button">
@@ -435,6 +546,26 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/silentforest_theme_text_secondary_dark</item>
+        <!-- Full Material 3 colour-role set; see the note on Theme.FadCam.Red. -->
+        <item name="colorPrimaryContainer">@color/silentforest_theme_surface_dark</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+        <item name="colorSecondaryContainer">@color/silentforest_theme_surface_dark</item>
+        <item name="colorOnSecondaryContainer">@color/white</item>
+        <item name="colorTertiary">@color/silentforest_theme_accent</item>
+        <item name="colorOnTertiary">@color/black</item>
+        <item name="colorTertiaryContainer">@color/silentforest_theme_surface_dark</item>
+        <item name="colorOnTertiaryContainer">@color/white</item>
+        <item name="colorSurfaceVariant">@color/silentforest_theme_surface_dark</item>
+        <item name="colorOnSurfaceVariant">@color/silentforest_theme_text_secondary_dark</item>
+        <item name="colorSurfaceContainer">@color/silentforest_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHigh">@color/silentforest_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHighest">@color/silentforest_theme_surface_dark</item>
+        <item name="colorOutline">@color/silentforest_theme_outline</item>
+        <item name="colorOutlineVariant">@color/silentforest_theme_primary_variant</item>
+        <item name="colorError">@color/silentforest_theme_error</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
         <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.SilentForest.Dialog</item>
         <item name="android:buttonStyle">@style/Widget.FadCam.SilentForest.Button</item>
         <item name="android:editTextBackground">@drawable/silentforest_theme_edittext_bg</item>
@@ -483,6 +614,18 @@
         <item name="android:textColorSecondary">@android:color/white</item>
         <item name="colorPrimary">@color/silentforest_theme_primary</item>
         <item name="colorOnPrimary">@color/black</item>
+        <item name="colorSurface">@color/silentforest_theme_surface_dark</item>
+        <item name="colorOnSurface">@android:color/white</item>
+        <item name="colorSurfaceContainerHigh">@color/silentforest_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHighest">@color/silentforest_theme_surface_dark</item>
+        <item name="colorSurfaceVariant">@color/silentforest_theme_surface_dark</item>
+        <item name="colorOnSurfaceVariant">@color/silentforest_theme_text_secondary_dark</item>
+        <item name="colorOutline">@color/silentforest_theme_outline</item>
+        <item name="colorOutlineVariant">@color/silentforest_theme_primary_variant</item>
+        <item name="colorError">@color/silentforest_theme_error</item>
+        <item name="colorOnError">@android:color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
     </style>
 
     <style name="Widget.FadCam.SilentForest.Button" parent="Widget.Material3.Button">
@@ -521,6 +664,26 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/shadowalloy_theme_text_secondary_dark</item>
+        <!-- Full Material 3 colour-role set; see the note on Theme.FadCam.Red. -->
+        <item name="colorPrimaryContainer">@color/shadowalloy_theme_surface_dark</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+        <item name="colorSecondaryContainer">@color/shadowalloy_theme_surface_dark</item>
+        <item name="colorOnSecondaryContainer">@color/white</item>
+        <item name="colorTertiary">@color/shadowalloy_theme_accent</item>
+        <item name="colorOnTertiary">@color/black</item>
+        <item name="colorTertiaryContainer">@color/shadowalloy_theme_surface_dark</item>
+        <item name="colorOnTertiaryContainer">@color/white</item>
+        <item name="colorSurfaceVariant">@color/shadowalloy_theme_surface_dark</item>
+        <item name="colorOnSurfaceVariant">@color/shadowalloy_theme_text_secondary_dark</item>
+        <item name="colorSurfaceContainer">@color/shadowalloy_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHigh">@color/shadowalloy_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHighest">@color/shadowalloy_theme_surface_dark</item>
+        <item name="colorOutline">@color/shadowalloy_theme_outline</item>
+        <item name="colorOutlineVariant">@color/shadowalloy_theme_primary_variant</item>
+        <item name="colorError">@color/shadowalloy_theme_error</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
         <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.ShadowAlloy.Dialog</item>
         <item name="android:buttonStyle">@style/Widget.FadCam.ShadowAlloy.Button</item>
         <item name="android:editTextBackground">@drawable/shadowalloy_theme_edittext_bg</item>
@@ -569,6 +732,18 @@
         <item name="android:textColorSecondary">@android:color/white</item>
         <item name="colorPrimary">@color/shadowalloy_theme_primary</item>
         <item name="colorOnPrimary">@color/black</item>
+        <item name="colorSurface">@color/shadowalloy_theme_surface_dark</item>
+        <item name="colorOnSurface">@android:color/white</item>
+        <item name="colorSurfaceContainerHigh">@color/shadowalloy_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHighest">@color/shadowalloy_theme_surface_dark</item>
+        <item name="colorSurfaceVariant">@color/shadowalloy_theme_surface_dark</item>
+        <item name="colorOnSurfaceVariant">@color/shadowalloy_theme_text_secondary_dark</item>
+        <item name="colorOutline">@color/shadowalloy_theme_outline</item>
+        <item name="colorOutlineVariant">@color/shadowalloy_theme_primary_variant</item>
+        <item name="colorError">@color/shadowalloy_theme_error</item>
+        <item name="colorOnError">@android:color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
     </style>
 
     <style name="Widget.FadCam.ShadowAlloy.Button" parent="Widget.Material3.Button">
@@ -607,6 +782,26 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/pookiepink_theme_text_secondary_dark</item>
+        <!-- Full Material 3 colour-role set; see the note on Theme.FadCam.Red. -->
+        <item name="colorPrimaryContainer">@color/pookiepink_theme_surface_dark</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+        <item name="colorSecondaryContainer">@color/pookiepink_theme_surface_dark</item>
+        <item name="colorOnSecondaryContainer">@color/white</item>
+        <item name="colorTertiary">@color/pookiepink_theme_accent</item>
+        <item name="colorOnTertiary">@color/black</item>
+        <item name="colorTertiaryContainer">@color/pookiepink_theme_surface_dark</item>
+        <item name="colorOnTertiaryContainer">@color/white</item>
+        <item name="colorSurfaceVariant">@color/pookiepink_theme_surface_dark</item>
+        <item name="colorOnSurfaceVariant">@color/pookiepink_theme_text_secondary_dark</item>
+        <item name="colorSurfaceContainer">@color/pookiepink_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHigh">@color/pookiepink_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHighest">@color/pookiepink_theme_surface_dark</item>
+        <item name="colorOutline">@color/pookiepink_theme_outline</item>
+        <item name="colorOutlineVariant">@color/pookiepink_theme_primary_variant</item>
+        <item name="colorError">@color/pookiepink_theme_error</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
         <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.PookiePink.Dialog</item>
         <item name="android:buttonStyle">@style/Widget.FadCam.PookiePink.Button</item>
         <item name="android:editTextBackground">@drawable/pookiepink_theme_edittext_bg</item>
@@ -655,6 +850,18 @@
         <item name="android:textColorSecondary">@android:color/white</item>
         <item name="colorPrimary">@color/pookiepink_theme_primary</item>
         <item name="colorOnPrimary">@color/black</item>
+        <item name="colorSurface">@color/pookiepink_theme_surface_dark</item>
+        <item name="colorOnSurface">@android:color/white</item>
+        <item name="colorSurfaceContainerHigh">@color/pookiepink_theme_surface_dark</item>
+        <item name="colorSurfaceContainerHighest">@color/pookiepink_theme_surface_dark</item>
+        <item name="colorSurfaceVariant">@color/pookiepink_theme_surface_dark</item>
+        <item name="colorOnSurfaceVariant">@color/pookiepink_theme_text_secondary_dark</item>
+        <item name="colorOutline">@color/pookiepink_theme_outline</item>
+        <item name="colorOutlineVariant">@color/pookiepink_theme_primary_variant</item>
+        <item name="colorError">@color/pookiepink_theme_error</item>
+        <item name="colorOnError">@android:color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
     </style>
 
     <style name="Widget.FadCam.PookiePink.Button" parent="Widget.Material3.Button">
@@ -693,6 +900,27 @@
         <item name="android:textColor">@color/black</item>
         <item name="android:textColorPrimary">@color/black</item>
         <item name="android:textColorSecondary">@color/snowveil_theme_text_secondary_light</item>
+        <!-- Snow Veil is the light theme, so its containers stay light and its
+             on-colours dark. Full Material 3 colour-role set; see Theme.FadCam.Red. -->
+        <item name="colorPrimaryContainer">@color/snowveil_theme_primary_variant</item>
+        <item name="colorOnPrimaryContainer">@color/black</item>
+        <item name="colorSecondaryContainer">@color/snowveil_theme_secondary</item>
+        <item name="colorOnSecondaryContainer">@color/black</item>
+        <item name="colorTertiary">@color/snowveil_theme_primary</item>
+        <item name="colorOnTertiary">@color/white</item>
+        <item name="colorTertiaryContainer">@color/snowveil_theme_accent</item>
+        <item name="colorOnTertiaryContainer">@color/black</item>
+        <item name="colorSurfaceVariant">@color/snowveil_theme_surface_light</item>
+        <item name="colorOnSurfaceVariant">@color/snowveil_theme_text_secondary_light</item>
+        <item name="colorSurfaceContainer">@color/snowveil_theme_surface_light</item>
+        <item name="colorSurfaceContainerHigh">@color/snowveil_theme_card_background</item>
+        <item name="colorSurfaceContainerHighest">@color/snowveil_theme_card_background</item>
+        <item name="colorOutline">@color/snowveil_theme_outline</item>
+        <item name="colorOutlineVariant">@color/snowveil_theme_primary_variant</item>
+        <item name="colorError">@color/snowveil_theme_error</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#FFDAD6</item>
+        <item name="colorOnErrorContainer">#8C1D18</item>
         <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.SnowVeil.Dialog</item>
         <item name="android:buttonStyle">@style/Widget.FadCam.SnowVeil.Button</item>
         <item name="android:editTextBackground">@drawable/snowveil_theme_edittext_bg</item>
@@ -775,6 +1003,21 @@
         <item name="android:textColorSecondary">@android:color/black</item>
         <item name="colorPrimary">@color/snowveil_theme_primary</item>
         <item name="colorOnPrimary">@color/black</item>
+        <!-- Light theme: containers stay light and on-colours dark, mirroring
+             Theme.FadCam.SnowVeil. Without these the dialog card fell back to the
+             baseline panel, which clashed with the Snow Veil white surface. -->
+        <item name="colorSurface">@color/snowveil_theme_surface_light</item>
+        <item name="colorOnSurface">@color/black</item>
+        <item name="colorSurfaceContainerHigh">@color/snowveil_theme_card_background</item>
+        <item name="colorSurfaceContainerHighest">@color/snowveil_theme_card_background</item>
+        <item name="colorSurfaceVariant">@color/snowveil_theme_surface_light</item>
+        <item name="colorOnSurfaceVariant">@color/snowveil_theme_text_secondary_light</item>
+        <item name="colorOutline">@color/snowveil_theme_outline</item>
+        <item name="colorOutlineVariant">@color/snowveil_theme_primary_variant</item>
+        <item name="colorError">@color/snowveil_theme_error</item>
+        <item name="colorOnError">@android:color/white</item>
+        <item name="colorErrorContainer">#FFDAD6</item>
+        <item name="colorOnErrorContainer">#8C1D18</item>
     </style>
 
     <style name="Widget.FadCam.SnowVeil.Button" parent="Widget.Material3.Button">
@@ -876,6 +1119,31 @@
         <item name="colorAccent">?attr/colorHeading</item>
         <item name="android:colorAccent">?attr/colorHeading</item>
         <item name="colorControlActivated">?attr/colorHeading</item>
+        <!-- ThemeOverlay.Material3.MaterialAlertDialog only carries the colour subset the
+             dialog itself uses. MaterialAlertDialog's content is a CardView that reads
+             colorSurfaceContainerHigh, so leaving it undefined pulled the near-white Light
+             baseline panel behind white text. -->
+        <item name="colorPrimaryContainer">?attr/colorDialog</item>
+        <item name="colorOnPrimaryContainer">@android:color/white</item>
+        <item name="colorSecondaryContainer">?attr/colorDialog</item>
+        <item name="colorOnSecondaryContainer">@android:color/white</item>
+        <item name="colorTertiary">?attr/colorHeading</item>
+        <item name="colorOnTertiary">@android:color/white</item>
+        <item name="colorTertiaryContainer">?attr/colorDialog</item>
+        <item name="colorOnTertiaryContainer">@android:color/white</item>
+        <item name="colorSurface">?attr/colorDialog</item>
+        <item name="colorOnSurface">@android:color/white</item>
+        <item name="colorSurfaceVariant">?attr/colorDialog</item>
+        <item name="colorOnSurfaceVariant">@color/gray_text_light</item>
+        <item name="colorSurfaceContainer">?attr/colorDialog</item>
+        <item name="colorSurfaceContainerHigh">?attr/colorDialog</item>
+        <item name="colorSurfaceContainerHighest">?attr/colorDialog</item>
+        <item name="colorOutline">#33FFFFFF</item>
+        <item name="colorOutlineVariant">#22FFFFFF</item>
+        <item name="colorError">@color/colorError</item>
+        <item name="colorOnError">@android:color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
     </style>
     <!-- Fix End: Add theme overlays for bottom sheets and dialogs for all themes -->
 
@@ -912,6 +1180,28 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/gray_text_light</item>
+        <!-- Midnight Dusk parents the always-dark baseline, but its inherited container and
+             outline roles are purple-tinted (#211F26). Pin them to its own grey palette so
+             panels and the inactive page dot match the theme. -->
+        <item name="colorPrimaryContainer">@color/gray</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+        <item name="colorSecondaryContainer">@color/gray</item>
+        <item name="colorOnSecondaryContainer">@color/white</item>
+        <item name="colorTertiary">@color/colorPrimary</item>
+        <item name="colorOnTertiary">@color/black</item>
+        <item name="colorTertiaryContainer">@color/gray</item>
+        <item name="colorOnTertiaryContainer">@color/white</item>
+        <item name="colorSurfaceVariant">@color/midnight_dusk_bg</item>
+        <item name="colorOnSurfaceVariant">@color/gray_text_light</item>
+        <item name="colorSurfaceContainer">@color/midnight_dusk_bg</item>
+        <item name="colorSurfaceContainerHigh">@color/midnight_dusk_bg</item>
+        <item name="colorSurfaceContainerHighest">@color/midnight_dusk_bg</item>
+        <item name="colorOutline">@color/gray500</item>
+        <item name="colorOutlineVariant">#2A2A2A</item>
+        <item name="colorError">@color/colorError</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
@@ -955,6 +1245,28 @@
         <item name="colorOnSurface">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">#B0B0B0</item>
+        <!-- This theme parents the DayNight dialog baseline, so in light system mode the
+             MaterialAlertDialog card resolved a near-white container behind these white
+             text colours. Pin the full role set to the same fixed dark panel. -->
+        <item name="colorPrimaryContainer">#2C2C2C</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+        <item name="colorSecondaryContainer">#2C2C2C</item>
+        <item name="colorOnSecondaryContainer">@color/white</item>
+        <item name="colorTertiary">@color/picker_button_background</item>
+        <item name="colorOnTertiary">@color/white</item>
+        <item name="colorTertiaryContainer">#2C2C2C</item>
+        <item name="colorOnTertiaryContainer">@color/white</item>
+        <item name="colorSurfaceVariant">#2C2C2C</item>
+        <item name="colorOnSurfaceVariant">#B0B0B0</item>
+        <item name="colorSurfaceContainer">#2C2C2C</item>
+        <item name="colorSurfaceContainerHigh">#2C2C2C</item>
+        <item name="colorSurfaceContainerHighest">#2C2C2C</item>
+        <item name="colorOutline">#33FFFFFF</item>
+        <item name="colorOutlineVariant">#22FFFFFF</item>
+        <item name="colorError">@color/colorError</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
         <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.Title</item>
         <item name="materialAlertDialogBodyTextStyle">@style/MaterialAlertDialog.Body</item>
     </style>

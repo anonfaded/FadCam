@@ -1015,7 +1015,7 @@
 
     <!-- Fix Start: Add auto update check toggle strings -->
     <string name="setting_auto_update_check_title">Автоматическая проверка обновлений</string>
-    <string name="note_auto_update_check">Если включено, FadCam будет проверять обновления каждый раз при открытии приложения. Отключите, чтобы отключить автоматические проверки обновлений при запуске.\n(По умолчанию: Включено)</string>
+    <string name="note_auto_update_check">Если включено, FadCam проверяет на GitHub, есть ли более новая версия. Проверка выполняется только при открытии приложения, не чаще одного раза в час — никогда в фоне.\n\nЭто обычный GET-запрос к публичной ленте релизов этого приложения. О вас ничего не передаётся: ни аккаунта, ни идентификатора, ни аналитики. Нажмите, чтобы увидеть ту же ленту, которую читает приложение:\n[github.com/anonfaded/%1$s/releases.atom](https://github.com/anonfaded/%1$s/releases.atom)\n\nЗапрос идёт на GitHub, поэтому к нему применяется политика конфиденциальности GitHub, а не FadCam.\n(По умолчанию: включено)</string>
     <!-- Fix End: Add auto update check toggle strings -->
 
     <!-- Storage Location Settings -->
@@ -1366,7 +1366,7 @@
     <string name="stream_notes_wifi">• Клиенты должны быть в той же WiFi-сети для доступа к стриму</string>
     <string name="stream_notes_quality">• Качество стрима (LOW/MEDIUM/HIGH/ULTRA) контролирует ограничение FPS и битрейта для предотвращения сетевых проблем</string>
     <string name="stream_notes_resolution">• Ориентация и разрешение стрима берутся из ваших обычных настроек записи (Настройки видео → Разрешение и ориентация). Измените их, если хотите изменить размеры стрима</string>
-    <string name="stream_notes_cellular">⚠️ Только WiFi: мобильные сети блокируют входящие соединения. Для бесперебойной потоковой передачи из любой сети (WiFi, LTE, везде), обновитесь до FadCam Pro+. Транслируйте отовсюду по всему миру с приватной сгенерированной ссылкой—без переадресации портов, без изменений маршрутизатора, без сетевых ограничений</string>
+    <string name="stream_notes_cellular">⚠️ Ограничение только WiFi: сотовые сети блокируют входящие соединения, поэтому трансляция работает только когда телефон и зритель в одной сети WiFi.\n\nFadCam Pro+ — отдельный уровень, и он пока недоступен. Он позволит транслировать из любого места — по WiFi или сотовой сети — через сквозной зашифрованный relay-сервер FadCam, без проброса портов и настроек роутера.</string>
     <string name="stream_notes_android14_screen">⚠️ Android 14+: Системное ограничение блокирует запись при выключенном экране. Решения: (1) Включите «Черный экран» в Настройки → Безопасность, или (2) Отключите блокировку экрана (без PIN/пароля/отпечатка). Оба способа позволяют беспроблемной удаленной записи</string>
 
     <string name="app_name" translatable="false">FadCam</string>
@@ -3855,4 +3855,33 @@
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Применяется только к записям экрана. Любое изменение на этой вкладке влияет только на записи экрана.</string>
     <string name="update_fdroid_note">Установлено из F-Droid? Игнорируйте это — обновление появится в F-Droid через несколько дней. Установлено из GitHub? Используйте кнопку GitHub, чтобы открыть страницу релизов и обновиться напрямую.</string>
+    <!-- Relative "time ago" labels for record cards. -->
+    <string name="time_ago_just_now">только что</string>
+    <plurals name="time_ago_minutes">
+        <item quantity="one">1 мин назад</item>
+        <item quantity="other">%d мин назад</item>
+    </plurals>
+    <plurals name="time_ago_hours">
+        <item quantity="one">1 ч назад</item>
+        <item quantity="other">%d ч назад</item>
+    </plurals>
+    <plurals name="time_ago_days">
+        <item quantity="one">1 день назад</item>
+        <item quantity="other">%d дн. назад</item>
+    </plurals>
+    <plurals name="time_ago_weeks">
+        <item quantity="one">1 нед. назад</item>
+        <item quantity="other">%d нед. назад</item>
+    </plurals>
+    <plurals name="time_ago_months">
+        <item quantity="one">1 мес. назад</item>
+        <item quantity="other">%d мес. назад</item>
+    </plurals>
+    <plurals name="time_ago_years">
+        <item quantity="one">1 год назад</item>
+        <item quantity="other">%d г. назад</item>
+    </plurals>
+    <string name="lite_promo_header">Младший брат FadCam</string>
+    <string name="lite_promo_title">FadCam Lite</string>
+    <string name="lite_promo_subtitle">Уменьшенный FadCam для повседневной записи. Бесплатно, без рекламы.</string>
 </resources>

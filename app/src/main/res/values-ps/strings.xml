@@ -301,7 +301,7 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="note_onboarding">Faal ka che pa raatluky karazan ke da FadCam da app pezhandana aw ejazat larshowuna wuwiny.</string>
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">Pa Sho Ke Automatic Update Check</string>
-    <string name="note_auto_update_check">Ke faal wi, FadCam ba har kala che ta app kholé update check kawi. Da automatic update check band kolo lapara dé ghair faal ka.\n(Default: On)</string>
+    <string name="note_auto_update_check">Kala aktifada, FadCam pa GitHub katala che nawi release razi. Haga yawaz kala che tase app pranazhe, pa yaw sa\'a ke zyada na kawi — pa background ke hich kala na kawi.\n\nDa katal da da app da awmiz releases feed ta yaw sada GET request da. Sta pa hage hich na legegi: na account, na identifier, na analytics. Tap kawa che aw feed winay che app lwali:\n[github.com/anonfaded/%1$s/releases.atom](https://github.com/anonfaded/%1$s/releases.atom)\n\nHagha request GitHub ta zi, no pa haghwe GitHub privacy policy apply kegi — da FadCam na.\n(Default: On)</string>
     <!-- Storage Location Settings -->
     <string name="storage_location_title">Da Zakhira Zai</string>
     <string name="storage_location_description">Ka zakhira kawal chi videos cherta sakli.</string>
@@ -1974,7 +1974,7 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="stream_no_clients">No clients connected</string>
     <string name="stream_no_save">Segments auto-deleted after streaming</string>
     <string name="stream_notes_android14_screen">⚠️ Android 14+: System restriction prevents recording when screen is off. Workarounds: (1) Faal Ka "Black Screen Mode" in Tanzimaat → Amniyat, or (2) Ghair Faal Ka screen lock (no PIN/password/fingerprint). Both allow seamless remote recording</string>
-    <string name="stream_notes_cellular">⚠️ Sirf WiFi: Cellular networks nari wasaluna block kai. Da har network na seamless streaming dapara (WiFi, LTE, cherta), FadCam Pro+ ta upgrade ka. Da har network na private link sara stream ka — no port forwarding, no router changes, no network restrictions.</string>
+    <string name="stream_notes_cellular">⚠️ Yawaz WiFi had: cellular network da rasi link bband kawi, no streaming yawaz kala kar kawi che sta phone aw viewer yaw WiFi network ke wi.\n\nFadCam Pro+ yaw jila tier de aw haan wroz nishta. Da ba pa hara jagah stream kawi — WiFi ya cellular — da FadCam da e2e encrypted relay server pa wasila, no port forwarding ya router tabdeeli.</string>
     <string name="stream_notes_quality">• Stream quality (LOW/MEDIUM/HIGH/ULTRA) FPS cap aw bitrate control kai che network problems na shi</string>
     <string name="stream_notes_resolution">• Stream orientation aw resolution sta normal recording settings na akhestali shi (Video Settings → Resolution &amp; Orientation). Che ta stream dimensions badal kol gware nu adjust ka</string>
     <string name="stream_notes_title">Notes</string>
@@ -3020,10 +3020,10 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="pro_screen_direct_support">Da developer support</string>
     <string name="pro_screen_direct_support_desc">Pa Discord ke la developer mrasta wakhla.</string>
         <string name="pro_screen_support_title">Da support nor lare</string>
-    <string name="pro_screen_support_body">Pro ta alaqa nasta? Taso FadCam la Patreon ya crypto donation pa wasila support kawali shi. Hara contribution pa mrasta bia ziyat free, open-source software جوړوو.</string>
+    <string name="pro_screen_support_body">Pro ta alaqa nasta? Taso FadCam la Patreon ya cryptocurrency donation pa wasila support kawali shi. Hara contribution pa mrasta bia ziyat free, open-source software جوړوو.</string>
     <string name="pro_screen_patreon_title">Patreon</string>
     <string name="pro_screen_patreon_desc">Yaw wari donation ya miashtani membership.</string>
-    <string name="pro_screen_crypto_title">Crypto donation</string>
+    <string name="pro_screen_crypto_title">Cryptocurrency donation</string>
     <string name="pro_screen_crypto_desc">La mung sara pa Discord ya email ke pa yaw tab ke osa.</string>
     <string name="pro_screen_stay_connected_title">Pa yaw tab ke osa</string>
     <string name="pro_screen_stay_connected_body">Pawsto, feedback ya yawazi salaam? Mung ba khwara khe da taso pa khwa poha kawu.</string>
@@ -3231,4 +3231,33 @@ Da tase da hamisha paara.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">یوازې د سکرین ثبت لپاره دی. په دې ټب کې هر بدلون یوازې د سکرین ثبت اغېز کوي.</string>
     <string name="update_fdroid_note">Pa F-Droid install karay? Da la na kara — update ba pa chand wro sa F-Droid ta rasi. Pa GitHub install karay? GitHub button istemal ka che release page pranazhe aw pa makhzam update kara.</string>
+    <!-- Relative "time ago" labels for record cards. -->
+    <string name="time_ago_just_now">همدا اوس</string>
+    <plurals name="time_ago_minutes">
+        <item quantity="one">۱ دقیقه دمخه</item>
+        <item quantity="other">%d دقیقې دمخه</item>
+    </plurals>
+    <plurals name="time_ago_hours">
+        <item quantity="one">۱ ساعت دمخه</item>
+        <item quantity="other">%d ساعته دمخه</item>
+    </plurals>
+    <plurals name="time_ago_days">
+        <item quantity="one">۱ ورځ دمخه</item>
+        <item quantity="other">%d ورځې دمخه</item>
+    </plurals>
+    <plurals name="time_ago_weeks">
+        <item quantity="one">۱ اونۍ دمخه</item>
+        <item quantity="other">%d اونۍ دمخه</item>
+    </plurals>
+    <plurals name="time_ago_months">
+        <item quantity="one">۱ میاشت دمخه</item>
+        <item quantity="other">%d میاشتې دمخه</item>
+    </plurals>
+    <plurals name="time_ago_years">
+        <item quantity="one">۱ کال دمخه</item>
+        <item quantity="other">%d کاله دمخه</item>
+    </plurals>
+    <string name="lite_promo_header">Da FadCam kuchni wror</string>
+    <string name="lite_promo_title">FadCam Lite</string>
+    <string name="lite_promo_subtitle">Da FadCam las kuchni version pa hara wraz recording. Wazol, no ads.</string>
 </resources>

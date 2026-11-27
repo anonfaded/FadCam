@@ -15,6 +15,7 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit; // Required for time conversions
 import java.text.ParseException; // Add this import
 
+import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import android.net.Uri;
 import java.io.File;
@@ -166,7 +167,28 @@ public class Utils {
      * @param timeMillis The timestamp in milliseconds since the epoch.
      * @return A relative time string (e.g., "Just now", "5m ago", "2h ago", "3d ago", "1w ago", "2mo ago", "1yr ago").
      */
+    /**
+     * Human-readable "time ago" label, localised via {@link #formatTimeAgo(Context, long)}.
+     *
+     * <p>Kept for callers without a Context; English-only. Prefer the Context overload so the
+     * label follows the app language.</p>
+     */
     public static String formatTimeAgo(long timeMillis) {
+        return buildTimeAgo(timeMillis, null);
+    }
+
+    /**
+     * Human-readable "time ago" label in the app's current language.
+     *
+     * <p>The units live in {@code plurals} resources, so each locale supplies its own wording
+     * and its own plural rules. Previously every unit was a hardcoded English abbreviation
+     * ("m ago", "d ago"), which is why Arabic and every other locale still read English.</p>
+     */
+    public static String formatTimeAgo(@Nullable Context context, long timeMillis) {
+        return buildTimeAgo(timeMillis, context);
+    }
+
+    private static String buildTimeAgo(long timeMillis, @Nullable Context context) {
         if (timeMillis <= 0) return ""; // Handle invalid timestamp
 
         long currentTime = System.currentTimeMillis();
@@ -174,14 +196,9 @@ public class Utils {
 
         // Ensure the timestamp is not in the future (though unlikely for lastModified)
         if (diff < 0) {
-            // Option 1: Return specific text
-            // return "In the future";
-            // Option 2: Treat as "Just now" for practical purposes
             diff = 0;
         }
 
-        // Convert diff to various units
-        long seconds = TimeUnit.MILLISECONDS.toSeconds(diff);
         long minutes = TimeUnit.MILLISECONDS.toMinutes(diff);
         long hours = TimeUnit.MILLISECONDS.toHours(diff);
         long days = TimeUnit.MILLISECONDS.toDays(diff);
@@ -189,23 +206,28 @@ public class Utils {
         long months = days / 30; // Approximate months
         long years = days / 365; // Approximate years
 
-        if (years > 0) {
-            return years + (years == 1 ? "yr ago" : "yrs ago");
-        } else if (months > 0) {
-            return months + (months == 1 ? "mo ago" : "mos ago");
-        } else if (weeks > 0) {
-            return weeks + (weeks == 1 ? "wk ago" : "wks ago");
-        } else if (days > 0) {
-            return days + (days == 1 ? "d ago" : "d ago"); // Keep 'd' consistent
-        } else if (hours > 0) {
-            return hours + (hours == 1 ? "h ago" : "h ago"); // Keep 'h' consistent
-        } else if (minutes > 0) {
-            return minutes + (minutes == 1 ? "m ago" : "m ago"); // Keep 'm' consistent
-        } else {
-            // Less than a minute
-            // Optionally show seconds: return seconds + (seconds <= 1 ? "s ago" : "s ago");
+        if (context == null) {
+            // No Context: fall back to the English form so behaviour is unchanged.
+            if (years > 0) return years + (years == 1 ? " yr ago" : " yrs ago");
+            if (months > 0) return months + (months == 1 ? " mo ago" : " mos ago");
+            if (weeks > 0) return weeks + (weeks == 1 ? " wk ago" : " wks ago");
+            if (days > 0) return days + " d ago";
+            if (hours > 0) return hours + " h ago";
+            if (minutes > 0) return minutes + " m ago";
             return "Just now";
         }
+
+        if (years > 0) return plural(context, R.plurals.time_ago_years, years);
+        if (months > 0) return plural(context, R.plurals.time_ago_months, months);
+        if (weeks > 0) return plural(context, R.plurals.time_ago_weeks, weeks);
+        if (days > 0) return plural(context, R.plurals.time_ago_days, days);
+        if (hours > 0) return plural(context, R.plurals.time_ago_hours, hours);
+        if (minutes > 0) return plural(context, R.plurals.time_ago_minutes, minutes);
+        return context.getString(R.string.time_ago_just_now);
+    }
+
+    private static String plural(Context context, int resId, long count) {
+        return context.getResources().getQuantityString(resId, (int) count, (int) count);
     }
 
     /**

@@ -1492,7 +1492,7 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="app_icon_preview">Rakenduse ikooni eelvaade</string>
     <string name="changelog_label">Mis on uut</string>
     <string name="setting_auto_update_check_title">Automaatne uuenduste kontroll</string>
-    <string name="note_auto_update_check">Kui lubatud, kontrollib FadCam uuendusi iga kord, kui rakenduse avad. Lülita välja, et keelata automaatne uuenduste kontrollimisel käivitamisel.\n(vaikimisi: sees)</string>
+    <string name="note_auto_update_check">Kui see on lubatud, kontrollib FadCam GitHubist uuemat versiooni. See töötab ainult rakenduse avamisel, kõige rohkem kord tunnis — mitte kunagi taustal.\n\nKontroll on lihtne GET-päring selle rakenduse avalikku väljaannete voogu. Sinu kohta ei saadeta midagi: ei kontot, ei identifikaatorit, ei analüütikat. Puuduta, et näha sama voogu, mida rakendus loeb:\n[github.com/anonfaded/%1$s/releases.atom](https://github.com/anonfaded/%1$s/releases.atom)\n\nSee päring läheb GitHubile, seega kehtib selle kohta GitHubi privaatsuspoliitika, mitte FadCami oma.\n(Vaikeväärtus: Sees)</string>
     <string name="storage_location_title">Salvestusasukoht</string>
     <string name="storage_location_description">Vali, kuhu salvestised salvestatakse.</string>
     <string name="general">Üldine</string>
@@ -1956,7 +1956,7 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="stream_notes_wifi">• Kliendid peavad olema samas WiFi võrgus, et voogu pääseda</string>
     <string name="stream_notes_quality">• Voo kvaliteet (MADAL/KESKMINE/KÕRGE/ULTRA) kontrollib FPS piiri ja bitikiirust võrguprobleemide vältimiseks</string>
     <string name="stream_notes_resolution">• Voo suund ja eraldusvõime võetakse sinu tavalistest salvestusseadetest (Video seaded → Eraldusvõime ja suund). Kohanda neid, kui soovid muuta voo mõõtmeid</string>
-    <string name="stream_notes_cellular">⚠️ Ainult WiFi piirang: Mobiilivõrgud blokeerivad sissetulevad ühendused. Sujuvaks voogedastuseks mis tahes võrgust (WiFi, LTE, kõikjal), uuenda FadCam Pro+-le. Voogedasta üle maailma privaadse genereeritud lingiga — ilma pordi suunamiseta, ilma ruuteri muudatusteta, ilma võrgupiiranguteta</string>
+    <string name="stream_notes_cellular">⚠️ Ainult WiFi piirang: mobiilivõrgud blokeerivad sissetulevad ühendused, seega voogedastus töötab ainult siis, kui sinu telefon ja vaataja on samas WiFi-võrgus.\n\nFadCam Pro+ on eraldi tase ja pole veel saadaval. See võimaldab voogedastust kõikjalt — WiFi või mobiilside — FadCami otsast-otsani krüpteeritud relay-serveri kaudu, ilma portide suunamise või ruuteri muudatusteta.</string>
     <string name="stream_notes_android14_screen">⚠️ Android 14+: Süsteemi piirang takistab salvestamist, kui ekraan on välja lülitatud. Töölahendused: (1) Luba \"Musta ekraani režiim\" seadetes → Turvalisus, või (2) Keela ekraani lukustus (ilma PIN/parool/sõrmejäljeta). Mõlemad võimaldavad sujuvat kaugsalvestamist</string>
     <string name="cloud_account_button_desc">FadSec Cloud</string>
     <string name="cloud_button_label">FadSec Cloud</string>
@@ -3190,4 +3190,33 @@ Igavesti sinu.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Kehtib ainult ekraanisalvestuste kohta. Sellel vahekaardil tehtud muudatused mõjutavad ainult ekraanisalvestusi.</string>
     <string name="update_fdroid_note">Paigaldasid F-Droidist? Eira seda — uuendus jõuab F-Droidi mõne päeva jooksul. Paigaldasid GitHubist? Kasuta GitHubi nuppu, et avada väljaannete leht ja uuendada otse.</string>
+    <!-- Relative "time ago" labels for record cards. -->
+    <string name="time_ago_just_now">just praegu</string>
+    <plurals name="time_ago_minutes">
+        <item quantity="one">1 min tagasi</item>
+        <item quantity="other">%d min tagasi</item>
+    </plurals>
+    <plurals name="time_ago_hours">
+        <item quantity="one">1 t tagasi</item>
+        <item quantity="other">%d t tagasi</item>
+    </plurals>
+    <plurals name="time_ago_days">
+        <item quantity="one">1 päev tagasi</item>
+        <item quantity="other">%d päeva tagasi</item>
+    </plurals>
+    <plurals name="time_ago_weeks">
+        <item quantity="one">1 näd tagasi</item>
+        <item quantity="other">%d näd tagasi</item>
+    </plurals>
+    <plurals name="time_ago_months">
+        <item quantity="one">1 kuu tagasi</item>
+        <item quantity="other">%d kuud tagasi</item>
+    </plurals>
+    <plurals name="time_ago_years">
+        <item quantity="one">1 aasta tagasi</item>
+        <item quantity="other">%d aastat tagasi</item>
+    </plurals>
+    <string name="lite_promo_header">FadCami väike vend</string>
+    <string name="lite_promo_title">FadCam Lite</string>
+    <string name="lite_promo_subtitle">Väiksem FadCam igapäevaseks salvestamiseks. Tasuta, ilma reklaamideta.</string>
 </resources>

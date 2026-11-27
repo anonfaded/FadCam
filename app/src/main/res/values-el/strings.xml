@@ -1519,8 +1519,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="changelog_label">Τι Νέο</string>
     <!-- Fix Start: Add auto update check toggle strings -->
     <string name="setting_auto_update_check_title">Αυτόματος Έλεγχος Ενημερώσεων</string>
-    <string name="note_auto_update_check">Αν ενεργοποιημένο, το FadCam θα ελέγχει για ενημερώσεις.
-(Προεπιλογή: Ενεργό)</string>
+    <string name="note_auto_update_check">Όταν είναι ενεργό, το FadCam ελέγχει το GitHub για νεότερη έκδοση. Εκτελείται μόνο όταν ανοίγεις την εφαρμογή, το πολύ μία φορά την ώρα — ποτέ στο παρασκήνιο.\n\nΟ έλεγχος είναι ένα απλό αίτημα GET στη δημόσια ροή εκδόσεων αυτής της εφαρμογής. Δεν αποστέλλεται τίποτα για εσένα: κανένας λογαριασμός, κανένα αναγνωριστικό, κανένα analytics. Πάτησε για να δεις την ίδια ροή που διαβάζει η εφαρμογή:\n[github.com/anonfaded/%1$s/releases.atom](https://github.com/anonfaded/%1$s/releases.atom)\n\nΑυτό το αίτημα πηγαίνει στο GitHub, οπότε ισχύει η πολιτική απορρήτου του GitHub — όχι του FadCam.\n(Προεπιλογή: Ενεργό)</string>
     <!-- Fix End: Add auto update check toggle strings -->
 
     <!-- Storage Location Settings -->
@@ -2018,7 +2017,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="stream_notes_wifi">• Οι πελάτες πρέπει να βρίσκονται στο ίδιο δίκτυο WiFi για πρόσβαση στη ροή</string>
     <string name="stream_notes_quality">• Η ποιότητα ροής (LOW/MEDIUM/HIGH/ULTRA) ελέγχει το ανώτατο όριο FPS και τον ρυθμό μετάδοσης</string>
     <string name="stream_notes_resolution">• Ο προσανατολισμός και η ανάλυση ροής λαμβάνονται από τις κανονικές ρυθμίσεις εγγραφής</string>
-    <string name="stream_notes_cellular">⚠️ Περιορισμός μόνο WiFi: Τα δίκτυα κινητής τηλεφωνίας αποκλείουν τις εισερχόμενες συνδέσεις.</string>
+    <string name="stream_notes_cellular">⚠️ Περιορισμός μόνο WiFi: τα δίκτυα κινητής τηλεφωνίας αποκλείουν τις εισερχόμενες συνδέσεις, οπότε η ροή λειτουργεί μόνο όταν το τηλέφωνό σου και ο θεατής είναι στο ίδιο δίκτυο WiFi.\n\nΤο FadCam Pro+ είναι ξεχωριστή βαθμίδα και δεν είναι ακόμη διαθέσιμο. Θα επιτρέπει ροή από οπουδήποτε — WiFi ή κινητό — μέσω του κρυπτογραφημένου από άκρο σε άκρο relay server του FadCam, χωρίς προώθηση θυρών ή αλλαγές στο router.</string>
     <string name="stream_notes_android14_screen">⚠️ Android 14+: Περιορισμός συστήματος αποτρέπει την εγγραφή όταν η οθόνη είναι κλειστή.</string>
     <!-- FadSec Cloud / Remote Streaming -->
     <string name="cloud_account_button_desc">FadSec Cloud</string>
@@ -3286,4 +3285,33 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Ισχύει μόνο για εγγραφές οθόνης. Οτιδήποτε αλλάξετε σε αυτή την καρτέλα επηρεάζει μόνο τις εγγραφές οθόνης.</string>
     <string name="update_fdroid_note">Εγκατάσταση από F-Droid; Αγνόησέ το — η ενημέρωση θα φτάσει στο F-Droid σε λίγες ημέρες. Εγκατάσταση από GitHub; Χρησιμοποίησε το κουμπί GitHub για να ανοίξεις τη σελίδα εκδόσεων και να ενημερώσεις απευθείας.</string>
+    <!-- Relative "time ago" labels for record cards. -->
+    <string name="time_ago_just_now">μόλις τώρα</string>
+    <plurals name="time_ago_minutes">
+        <item quantity="one">πριν από 1 λεπτό</item>
+        <item quantity="other">πριν από %d λεπτά</item>
+    </plurals>
+    <plurals name="time_ago_hours">
+        <item quantity="one">πριν από 1 ώρα</item>
+        <item quantity="other">πριν από %d ώρες</item>
+    </plurals>
+    <plurals name="time_ago_days">
+        <item quantity="one">πριν από 1 ημέρα</item>
+        <item quantity="other">πριν από %d ημέρες</item>
+    </plurals>
+    <plurals name="time_ago_weeks">
+        <item quantity="one">πριν από 1 εβδ.</item>
+        <item quantity="other">πριν από %d εβδ.</item>
+    </plurals>
+    <plurals name="time_ago_months">
+        <item quantity="one">πριν από 1 μήνα</item>
+        <item quantity="other">πριν από %d μήνες</item>
+    </plurals>
+    <plurals name="time_ago_years">
+        <item quantity="one">πριν από 1 έτος</item>
+        <item quantity="other">πριν από %d έτη</item>
+    </plurals>
+    <string name="lite_promo_header">Ο μικρός αδερφός του FadCam</string>
+    <string name="lite_promo_title">FadCam Lite</string>
+    <string name="lite_promo_subtitle">Ένα μικρότερο FadCam για καθημερινή εγγραφή. Δωρεάν, χωρίς διαφημίσεις.</string>
 </resources>

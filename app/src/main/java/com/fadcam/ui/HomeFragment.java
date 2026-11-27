@@ -1215,26 +1215,37 @@ public class HomeFragment extends BaseFragment {
             tvPreviewHint.bringToFront();
             boolean quickVisible = btnQuickMuteAudio != null
                     && btnQuickMuteAudio.getVisibility() == View.VISIBLE;
-            if (isLandscapeMode()) {
-                // Landscape preview is short: the hint lives BELOW the avatar at the
-                // bottom (6dp). When the quick actions occupy the bottom strip, raise
-                // it just above them. NEVER touch visibility here — that's owned by
-                // setHintVisibilityAnimated() (forcing it hid the hint permanently
-                // when quick actions were "always visible").
-                android.view.ViewGroup.MarginLayoutParams lp =
-                        (android.view.ViewGroup.MarginLayoutParams) tvPreviewHint.getLayoutParams();
-                int targetDp = quickVisible ? 72 : 6;
-                int target = Math.round(targetDp * getResources().getDisplayMetrics().density);
-                if (lp != null && lp.bottomMargin != target) {
-                    lp.bottomMargin = target;
-                    tvPreviewHint.setLayoutParams(lp);
-                }
+
+            // Derive the hint's position from the avatar's ACTUAL measured bounds rather than a
+            // fixed bottom margin. The avatar is centred in the preview card, so its position
+            // shifts with the card's height — and that height changes per locale because a
+            // script whose font falls back to a taller line box makes the cards above grow.
+            // A hardcoded margin therefore collided with the avatar in Arabic while looking
+            // right in English.
+            View parent = (View) tvPreviewHint.getParent();
+            if (parent == null || ivPreviewAvatar == null || parent.getHeight() == 0) {
                 return;
             }
+
+            int[] avatarLoc = new int[2];
+            int[] parentLoc = new int[2];
+            ivPreviewAvatar.getLocationInWindow(avatarLoc);
+            parent.getLocationInWindow(parentLoc);
+            int avatarBottomInParent = avatarLoc[1] + ivPreviewAvatar.getHeight() - parentLoc[1];
+
+            int gapPx = dpToPxInt(8);
+            int hintHeight = tvPreviewHint.getHeight() > 0
+                    ? tvPreviewHint.getHeight()
+                    : dpToPxInt(18);
+            int desired = parent.getHeight() - avatarBottomInParent - gapPx - hintHeight;
+
+            // Keep the hint inside the card and clear of the quick-action row when it shows.
+            int minMargin = dpToPxInt(4);
+            int maxMargin = dpToPxInt(quickVisible ? 76 : 48);
+            int target = Math.max(minMargin, Math.min(desired, maxMargin));
+
             android.view.ViewGroup.MarginLayoutParams lp =
                     (android.view.ViewGroup.MarginLayoutParams) tvPreviewHint.getLayoutParams();
-            int targetDp = quickVisible ? 76 : 48;
-            int target = Math.round(targetDp * getResources().getDisplayMetrics().density);
             if (lp != null && lp.bottomMargin != target) {
                 lp.bottomMargin = target;
                 tvPreviewHint.setLayoutParams(lp);
@@ -14357,7 +14368,11 @@ public class HomeFragment extends BaseFragment {
         int startInset = startAligned ? dpToPxInt(18) : 0;
 
         layoutElapsedContent.setGravity(startAligned ? Gravity.START : Gravity.CENTER_HORIZONTAL);
-        layoutElapsedContent.setPadding(startInset, 0, 0, 0);
+        // Only the horizontal inset is owned by the alignment preference. The vertical padding
+        // belongs to the card and must keep the value declared in fragment_home.xml — zeroing it
+        // here placed the content flush against the card edge and clipped the first line.
+        int contentPadV = getResources().getDimensionPixelSize(R.dimen.home_hero_padding_v);
+        layoutElapsedContent.setPaddingRelative(startInset, contentPadV, 0, contentPadV);
 
         if (layoutElapsedMetaRow != null) {
             layoutElapsedMetaRow.setGravity(startAligned
@@ -14493,9 +14508,8 @@ public class HomeFragment extends BaseFragment {
                 Constants.PREF_HOME_ELAPSED_SHOW_FLAG,
                 true);
         ivElapsedAccent.setVisibility(showFlag ? View.VISIBLE : View.GONE);
-        if (cardElapsedHero != null) {
-            cardElapsedHero.setMinimumHeight(dpToPxInt(isLandscapeMode() ? 46 : 48));
-        }
+        // Minimum height is owned by the card's XML/dimen (see updateElapsedHeroAppearance),
+        // not by the flag preference. Setting it here duplicated that rule.
     }
 
     private void applyStorageIndicatorStylePreference() {
@@ -14790,4 +14804,5 @@ public class HomeFragment extends BaseFragment {
         // Pass other keys to parent
         return false;
     }
+
 }

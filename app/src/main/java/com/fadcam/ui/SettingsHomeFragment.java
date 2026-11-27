@@ -57,18 +57,7 @@ public class SettingsHomeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_settings_home, container, false);
         configureLiteHides(root);
-        android.view.View fullPromo = root.findViewById(R.id.group_full_promo);
-        if (fullPromo != null) {
-            fullPromo.setOnClickListener(v -> {
-                try {
-                    android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_VIEW,
-                            android.net.Uri.parse("https://github.com/anonfaded/FadCam"));
-                    startActivity(i);
-                } catch (Exception e) {
-                    FLog.w("SettingsHome", "Failed to open GitHub link", e);
-                }
-            });
-        }
+        bindCrossPromo(root);
 
         setupModeSelector(root);
         setupRowHandlers(root);
@@ -613,6 +602,57 @@ public class SettingsHomeFragment extends Fragment {
     }
 
     /** Hides Full-only settings surfaces in the Lite edition. */
+    /**
+     * Points the promo card at the OTHER edition.
+     *
+     * <p>The card previously advertised the full app inside the full app, and the Lite build
+     * inherited that same copy and the full app's icon. Each edition now advertises the other:
+     * the full build points at FadCam Lite, and Lite points at the full app.</p>
+     */
+    private void bindCrossPromo(View root) {
+        final boolean lite = com.fadcam.BuildConfig.LITE_EDITION;
+
+        View card = root.findViewById(R.id.group_full_promo);
+        if (card != null) {
+            final String url = lite
+                    ? "https://github.com/anonfaded/FadCam"
+                    : "https://github.com/anonfaded/FadCam-Lite";
+            card.setOnClickListener(v -> {
+                try {
+                    android.content.Intent i = new android.content.Intent(
+                            android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url));
+                    startActivity(i);
+                } catch (Exception e) {
+                    FLog.w("SettingsHome", "Failed to open cross-promo link", e);
+                }
+            });
+        }
+
+        android.widget.TextView header = root.findViewById(R.id.tv_full_promo_header);
+        if (header != null) {
+            header.setText(lite ? R.string.fadcam_full_title : R.string.lite_promo_header);
+        }
+        android.widget.TextView title = root.findViewById(R.id.tv_full_promo_title);
+        if (title != null) {
+            title.setText(lite ? R.string.fadcam_card_title : R.string.lite_promo_title);
+        }
+        android.widget.TextView subtitle = root.findViewById(R.id.tv_full_promo_subtitle);
+        if (subtitle != null) {
+            subtitle.setText(lite ? R.string.fadcam_full_subtitle : R.string.lite_promo_subtitle);
+        }
+
+        // Each edition advertises the OTHER app, using that app's launcher icon.
+        android.widget.ImageView icon = root.findViewById(R.id.iv_full_promo_icon);
+        if (icon != null) {
+            // Lite build -> advertise Full (mipmap/ic_launcher is flavour-overridden, so it is
+            // already the Full artwork there). Full build -> advertise Lite, using the Lite
+            // app icon from design-assets (the only Lite launcher art visible to a Full build).
+            icon.setImageResource(lite
+                    ? com.fadcam.R.mipmap.ic_launcher
+                    : R.drawable.ic_lite_app_icon);
+        }
+    }
+
     private void configureLiteHides(View root) {
         if (!com.fadcam.BuildConfig.LITE_EDITION) return;
         // The screen-recording row can be re-shown by the settings-mode animation later
@@ -872,7 +912,10 @@ public class SettingsHomeFragment extends Fragment {
                 refreshAppInlineValues(requireView());
             }
         });
-        String helper = getString(R.string.note_auto_update_check);
+        // Name the exact repo this build reads, so the link in the note is the real feed
+        // rather than a hardcoded guess that could drift from BuildConfig.
+        String helper = getString(R.string.note_auto_update_check,
+                com.fadcam.BuildConfig.UPDATE_REPO);
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
                 getString(R.string.setting_auto_update_check_title), new java.util.ArrayList<>(), null, resultKey, helper,
                 getString(R.string.setting_auto_update_check_title), enabled);

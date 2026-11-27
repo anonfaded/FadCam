@@ -1450,7 +1450,7 @@
     <string name="app_icon_preview">Anteprima icona app</string>
     <string name="changelog_label">Novità</string>
     <string name="setting_auto_update_check_title">Controllo aggiornamenti automatico</string>
-    <string name="note_auto_update_check">Se abilitato, FadCam controllerà gli aggiornamenti ogni volta che apri l’app.</string>
+    <string name="note_auto_update_check">Se attivo, FadCam controlla su GitHub se esiste una versione più recente. Viene eseguito solo all\'apertura dell\'app, al massimo una volta all\'ora — mai in background.\n\nIl controllo è una semplice richiesta GET al feed pubblico delle release di questa app. Non viene inviato nulla su di te: nessun account, nessun identificatore, nessuna analitica. Tocca per vedere lo stesso feed che legge l\'app:\n[github.com/anonfaded/%1$s/releases.atom](https://github.com/anonfaded/%1$s/releases.atom)\n\nQuella richiesta va a GitHub, quindi vale l\'informativa sulla privacy di GitHub, non quella di FadCam.\n(Predefinito: Attivo)</string>
     <string name="storage_location_title">Posizione archiviazione</string>
     <string name="storage_location_description">Scegli dove vengono salvate le registrazioni.</string>
     <string name="general">Generale</string>
@@ -1913,7 +1913,7 @@
     <string name="stream_notes_wifi">Richiede WiFi stabile.</string>
     <string name="stream_notes_quality">Qualità dipende dalla rete.</string>
     <string name="stream_notes_resolution">Risoluzione più alta = bitrate maggiore.</string>
-    <string name="stream_notes_cellular">Usa WiFi su cellulare.</string>
+    <string name="stream_notes_cellular">⚠️ Limitazione solo WiFi: le reti cellulari bloccano le connessioni in entrata, quindi lo streaming funziona solo quando il telefono e lo spettatore sono sulla stessa rete WiFi.\n\nFadCam Pro+ è un livello separato e non è ancora disponibile. Permetterà di trasmettere da ovunque — WiFi o rete cellulare — tramite il server relay cifrato end-to-end di FadCam, senza port forwarding né modifiche al router.</string>
     <string name="stream_notes_android14_screen">Android 14+: serve autorizzazione.</string>
     <string name="cloud_account_button_desc">Account cloud</string>
     <string name="cloud_button_label">Cloud FadDrive</string>
@@ -3181,4 +3181,33 @@ Tue per sempre.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Si applica solo alle registrazioni dello schermo. Qualsiasi modifica in questa scheda influisce solo sulle registrazioni dello schermo.</string>
     <string name="update_fdroid_note">Installato da F-Droid? Ignora questo — l\'aggiornamento arriverà su F-Droid tra qualche giorno. Installato da GitHub? Usa il pulsante GitHub per aprire la pagina delle release e aggiornare direttamente.</string>
+    <!-- Relative "time ago" labels for record cards. -->
+    <string name="time_ago_just_now">adesso</string>
+    <plurals name="time_ago_minutes">
+        <item quantity="one">1 min fa</item>
+        <item quantity="other">%d min fa</item>
+    </plurals>
+    <plurals name="time_ago_hours">
+        <item quantity="one">1 h fa</item>
+        <item quantity="other">%d h fa</item>
+    </plurals>
+    <plurals name="time_ago_days">
+        <item quantity="one">1 giorno fa</item>
+        <item quantity="other">%d giorni fa</item>
+    </plurals>
+    <plurals name="time_ago_weeks">
+        <item quantity="one">1 sett. fa</item>
+        <item quantity="other">%d sett. fa</item>
+    </plurals>
+    <plurals name="time_ago_months">
+        <item quantity="one">1 mese fa</item>
+        <item quantity="other">%d mesi fa</item>
+    </plurals>
+    <plurals name="time_ago_years">
+        <item quantity="one">1 anno fa</item>
+        <item quantity="other">%d anni fa</item>
+    </plurals>
+    <string name="lite_promo_header">Il fratellino di FadCam</string>
+    <string name="lite_promo_title">FadCam Lite</string>
+    <string name="lite_promo_subtitle">Un FadCam più leggero per registrare ogni giorno. Gratuito, senza pubblicità.</string>
 </resources>

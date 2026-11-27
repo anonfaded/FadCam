@@ -309,7 +309,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="note_onboarding">Activez pour voir la présentation de l\'application et le guide des permissions la prochaine fois que vous ouvrirez FadCam.</string>
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">Mise à jour auto</string>
-    <string name="note_auto_update_check">Si activé, FadCam vérifiera les mises à jour à chaque ouverture de l\'application. Désactivez pour désactiver les vérifications automatiques des mises à jour au lancement.\n(Par défaut: Activé)</string>
+    <string name="note_auto_update_check">Si activé, FadCam vérifie sur GitHub si une version plus récente existe. Cela ne s\'exécute qu\'à l\'ouverture de l\'application, au maximum une fois par heure — jamais en arrière-plan.\n\nLa vérification est une simple requête GET vers le flux public des versions de cette application. Rien sur vous n\'est envoyé : aucun compte, aucun identifiant, aucune analyse. Touchez pour voir le flux exact que lit l\'application :\n[github.com/anonfaded/%1$s/releases.atom](https://github.com/anonfaded/%1$s/releases.atom)\n\nCette requête va vers GitHub : c\'est donc la politique de confidentialité de GitHub qui s\'applique, pas celle de FadCam.\n(Par défaut : Activé)</string>
     <!-- Storage Location Settings -->
     <string name="storage_location_title">Emplacement de Stockage</string>
     <string name="storage_location_description">Choisissez où enregistrer les vidéos.</string>
@@ -3280,7 +3280,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="stream_notes_resolution">• Stream orientation and resolution are taken from your normal recording settings (Video Settings → Resolution &amp; Orientation). Adjust those if you want to change stream dimensions</string>
 
-<string name="stream_notes_cellular">⚠️ WiFi-only limitation: Cellular networks block incoming connections. For seamless streaming from any network (WiFi, LTE, anywhere), upgrade to FadCam Pro+. Stream from anywhere globally with a private generated link—no port forwarding, no router changes, no network restrictions</string>
+    <string name="stream_notes_cellular">⚠️ Limitation WiFi uniquement : les réseaux mobiles bloquent les connexions entrantes, le streaming ne fonctionne donc que lorsque votre téléphone et le spectateur sont sur le même réseau WiFi.\n\nFadCam Pro+ est un palier distinct et n\'est pas encore disponible. Il permettra de diffuser depuis n\'importe où — WiFi ou réseau mobile — via le serveur relais chiffré de bout en bout de FadCam, sans redirection de ports ni modification du routeur.</string>
 
 <string name="stream_notes_android14_screen">⚠️ Android 14+: System restriction prevents recording when screen is off. Workarounds: (1) Enable "Black Screen Mode" in Settings → Security, or (2) Disable screen lock (no PIN/password/fingerprint). Both allow seamless remote recording</string>
 
@@ -4844,4 +4844,33 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">S\'applique uniquement aux enregistrements d\'écran. Toute modification dans cet onglet n\'affecte que les enregistrements d\'écran.</string>
     <string name="update_fdroid_note">Installé depuis F-Droid ? Ignorez ceci — la mise à jour arrivera sur F-Droid dans quelques jours. Installé depuis GitHub ? Utilisez le bouton GitHub pour ouvrir la page des versions et mettre à jour directement.</string>
+    <!-- Relative "time ago" labels for record cards. -->
+    <string name="time_ago_just_now">à l\'instant</string>
+    <plurals name="time_ago_minutes">
+        <item quantity="one">il y a 1 min</item>
+        <item quantity="other">il y a %d min</item>
+    </plurals>
+    <plurals name="time_ago_hours">
+        <item quantity="one">il y a 1 h</item>
+        <item quantity="other">il y a %d h</item>
+    </plurals>
+    <plurals name="time_ago_days">
+        <item quantity="one">il y a 1 jour</item>
+        <item quantity="other">il y a %d jours</item>
+    </plurals>
+    <plurals name="time_ago_weeks">
+        <item quantity="one">il y a 1 sem.</item>
+        <item quantity="other">il y a %d sem.</item>
+    </plurals>
+    <plurals name="time_ago_months">
+        <item quantity="one">il y a 1 mois</item>
+        <item quantity="other">il y a %d mois</item>
+    </plurals>
+    <plurals name="time_ago_years">
+        <item quantity="one">il y a 1 an</item>
+        <item quantity="other">il y a %d ans</item>
+    </plurals>
+    <string name="lite_promo_header">Le petit frère de FadCam</string>
+    <string name="lite_promo_title">FadCam Lite</string>
+    <string name="lite_promo_subtitle">Un FadCam plus léger pour enregistrer au quotidien. Gratuit, sans publicité.</string>
 </resources>

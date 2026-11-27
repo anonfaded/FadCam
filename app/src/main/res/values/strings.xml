@@ -419,6 +419,32 @@
     <string name="records_title">Recordings</string>
     <string name="records_filter_all">All</string>
     <string name="mode_all">All</string>
+    <!-- Relative "time ago" labels for record cards. -->
+    <string name="time_ago_just_now">Just now</string>
+    <plurals name="time_ago_minutes">
+        <item quantity="one">%d min ago</item>
+        <item quantity="other">%d min ago</item>
+    </plurals>
+    <plurals name="time_ago_hours">
+        <item quantity="one">%d hr ago</item>
+        <item quantity="other">%d hr ago</item>
+    </plurals>
+    <plurals name="time_ago_days">
+        <item quantity="one">%d day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
+    <plurals name="time_ago_weeks">
+        <item quantity="one">%d wk ago</item>
+        <item quantity="other">%d wks ago</item>
+    </plurals>
+    <plurals name="time_ago_months">
+        <item quantity="one">%d mo ago</item>
+        <item quantity="other">%d mos ago</item>
+    </plurals>
+    <plurals name="time_ago_years">
+        <item quantity="one">%d yr ago</item>
+        <item quantity="other">%d yrs ago</item>
+    </plurals>
     <string name="records_filter_camera">FadCam</string>
     <string name="records_filter_dual">Dual</string>
     <string name="records_filter_screen">FadRec</string>
@@ -1679,7 +1705,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <!-- Fix Start: Add auto update check toggle strings -->
     <string name="setting_auto_update_check_title">Auto Update Check</string>
-    <string name="note_auto_update_check">If enabled, FadCam will check for updates every time you open the app. Turn off to disable automatic update checks on launch.\n(Default: On)</string>
+    <string name="note_auto_update_check">When on, FadCam checks GitHub for a newer release. It only runs when you open the app, at most once an hour — never in the background.\n\nThe check is a plain GET request to this app\'s public release feed. Nothing about you is sent: no account, no identifier, no analytics. Tap to see the exact feed the app reads:\n[github.com/anonfaded/%1$s/releases.atom](https://github.com/anonfaded/%1$s/releases.atom)\n\nThat request goes to GitHub, so GitHub\'s privacy policy applies to it — not FadCam\'s.\n(Default: On)</string>
     <!-- Fix End: Add auto update check toggle strings -->
 
     <!-- Storage Location Settings -->
@@ -2305,7 +2331,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="stream_notes_wifi">• Clients must be on the same WiFi network to access the stream</string>
     <string name="stream_notes_quality">• Stream quality (LOW/MEDIUM/HIGH/ULTRA) controls FPS cap and bitrate to prevent network issues</string>
     <string name="stream_notes_resolution">• Stream orientation and resolution are taken from your normal recording settings (Video Settings → Resolution &amp; Orientation). Adjust those if you want to change stream dimensions</string>
-    <string name="stream_notes_cellular">⚠️ WiFi-only limitation: Cellular networks block incoming connections. For seamless streaming from any network (WiFi, LTE, anywhere), upgrade to FadCam Pro+. Stream from anywhere globally with a private generated link—no port forwarding, no router changes, no network restrictions</string>
+    <string name="stream_notes_cellular">⚠️ WiFi-only limitation: cellular networks block incoming connections, so streaming only works while your phone and the viewer are on the same WiFi network.\n\nFadCam Pro+ is a separate tier, and is not available yet. It will stream from anywhere — WiFi or cellular — through FadCam\'s end-to-end encrypted relay server, so no port forwarding or router changes are needed.</string>
     <string name="stream_notes_android14_screen">⚠️ Android 14+: System restriction prevents recording when screen is off. Workarounds: (1) Enable "Black Screen Mode" in Settings → Security, or (2) Disable screen lock (no PIN/password/fingerprint). Both allow seamless remote recording</string>
     
     <!-- FadSec Cloud / Remote Streaming -->
@@ -3259,6 +3285,12 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="toast_failed_create_file">Failed to create file for writing</string>
     <string name="fadcam_full_title">FadCam Power User</string>
     <string name="fadcam_full_subtitle">Remote control, motion recording, forensics and more. Try the full version.</string>
+
+    <!-- Cross-promotion between the two editions. Each build advertises the OTHER one:
+         the full app points at Lite, and Lite points at the full app. -->
+    <string name="lite_promo_header">FadCam\'s little brother</string>
+    <string name="lite_promo_title">FadCam Lite</string>
+    <string name="lite_promo_subtitle">A smaller FadCam for everyday recording. Free, no ads.</string>
     <string name="github_badge_text">GitHub</string>
     <string name="github_get_on">Get it on</string>
     <string name="fadcam_card_title">FadCam</string>
@@ -3422,10 +3454,10 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="pro_screen_why_pro_title">Then why Pro?</string>
     <string name="pro_screen_why_pro_body">FadCam Free already includes features that many other apps charge for. We believe useful software shouldn\'t come at the cost of your privacy.\n\nIf you find FadCam valuable and want to support our work, Pro is a way to give back while getting even more in return: three standalone private apps, early updates, and other extras, on top of everything FadCam Free already offers.\n\nYour support also helps us continue building open-source, privacy-first apps and solutions at FadSec Lab.</string>
     <string name="pro_screen_support_title">Other ways to support</string>
-    <string name="pro_screen_support_body">Not interested in Pro? You can still support FadCam through Patreon or crypto donations. Every contribution helps us build more free, open-source software.</string>
+    <string name="pro_screen_support_body">Not interested in Pro? You can still support FadCam through Patreon or cryptocurrency donations. Every contribution helps us build more free, open-source software.</string>
     <string name="pro_screen_patreon_title">Patreon</string>
     <string name="pro_screen_patreon_desc">One-time donations or monthly memberships.</string>
-    <string name="pro_screen_crypto_title">Crypto donations</string>
+    <string name="pro_screen_crypto_title">Cryptocurrency donations</string>
     <string name="pro_screen_crypto_desc">Contact us through Discord or email.</string>
     <string name="pro_screen_stay_connected_title">Stay connected</string>
     <string name="pro_screen_stay_connected_body">Questions, feedback, or just want to say hi? We\'d love to hear from you.</string>

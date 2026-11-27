@@ -1600,7 +1600,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <!-- Fix Start: Add auto update check toggle strings -->
     <string name="setting_auto_update_check_title">Periksa Pembaruan Otomatis saat Startup</string>
-    <string name="note_auto_update_check">Jika diaktifkan, FadCam akan memeriksa pembaruan setiap kali Anda membuka aplikasi. Matikan untuk menonaktifkan pemeriksaan pembaruan otomatis saat peluncuran.\n(Default: Aktif)</string>
+    <string name="note_auto_update_check">Saat aktif, FadCam memeriksa GitHub untuk rilis yang lebih baru. Ini hanya berjalan saat Anda membuka aplikasi, paling sering sekali per jam — tidak pernah di latar belakang.\n\nPemeriksaan ini adalah permintaan GET biasa ke feed rilis publik aplikasi ini. Tidak ada data tentang Anda yang dikirim: tanpa akun, tanpa pengenal, tanpa analitik. Ketuk untuk melihat feed yang sama dengan yang dibaca aplikasi:\n[github.com/anonfaded/%1$s/releases.atom](https://github.com/anonfaded/%1$s/releases.atom)\n\nPermintaan itu ditujukan ke GitHub, jadi kebijakan privasi GitHub yang berlaku — bukan kebijakan FadCam.\n(Default: Aktif)</string>
     <!-- Fix End: Add auto update check toggle strings -->
 
     <!-- Storage Location Settings -->
@@ -2131,7 +2131,7 @@ Apakah Anda ingin beralih ke H.264 dan mulai merekam?</string>
     <string name="stream_notes_wifi">- Klien harus berada di jaringan WiFi yang sama untuk mengakses stream</string>
     <string name="stream_notes_quality">- Kualitas stream (RENDAH/SEDANG/TINGGI/ULTRA) mengontrol batas FPS dan bitrate untuk mencegah masalah jaringan</string>
     <string name="stream_notes_resolution">- Orientasi dan resolusi stream diambil dari pengaturan perekaman normal Anda (Pengaturan Video → Resolusi &amp; Orientasi). Sesuaikan pengaturan tersebut jika Anda ingin mengubah dimensi stream</string>
-    <string name="stream_notes_cellular">⚠️ Batasan hanya WiFi: Jaringan seluler memblokir koneksi masuk. Untuk streaming mulus dari jaringan mana pun (WiFi, LTE, di mana saja), upgrade ke FadCam Pro+. Stream dari mana saja secara global dengan tautan pribadi yang dihasilkan—tanpa port forwarding, tanpa perubahan router, tanpa batasan jaringan</string>
+    <string name="stream_notes_cellular">⚠️ Batasan hanya WiFi: jaringan seluler memblokir koneksi masuk, jadi streaming hanya berfungsi saat ponsel Anda dan penonton berada di jaringan WiFi yang sama.\n\nFadCam Pro+ adalah tingkatan terpisah dan belum tersedia. Nanti bisa streaming dari mana saja — WiFi atau seluler — melalui server relay terenkripsi end-to-end milik FadCam, tanpa port forwarding atau mengubah router.</string>
     <string name="stream_notes_android14_screen">⚠️ Android 14+: Batasan sistem mencegah perekaman saat layar mati. Solusi: (1) Aktifkan "Mode Layar Hitam" di Pengaturan → Keamanan, atau (2) Nonaktifkan kunci layar (tanpa PIN/kata sandi/sidik jari). Keduanya memungkinkan perekaman jarak jauh yang mulus</string>
     
     <!-- FadSec Cloud / Remote Streaming -->
@@ -3443,4 +3443,33 @@ Milikmu selamanya.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Hanya berlaku untuk rekaman layar. Perubahan apa pun di tab ini hanya memengaruhi rekaman layar.</string>
     <string name="update_fdroid_note">Dipasang dari F-Droid? Abaikan ini — pembaruan akan tiba di F-Droid dalam beberapa hari. Dipasang dari GitHub? Gunakan tombol GitHub untuk membuka halaman rilis dan memperbarui langsung.</string>
+    <!-- Relative "time ago" labels for record cards. -->
+    <string name="time_ago_just_now">baru saja</string>
+    <plurals name="time_ago_minutes">
+        <item quantity="one">1 mnt lalu</item>
+        <item quantity="other">%d mnt lalu</item>
+    </plurals>
+    <plurals name="time_ago_hours">
+        <item quantity="one">1 jam lalu</item>
+        <item quantity="other">%d jam lalu</item>
+    </plurals>
+    <plurals name="time_ago_days">
+        <item quantity="one">1 hari lalu</item>
+        <item quantity="other">%d hari lalu</item>
+    </plurals>
+    <plurals name="time_ago_weeks">
+        <item quantity="one">1 mgg lalu</item>
+        <item quantity="other">%d mgg lalu</item>
+    </plurals>
+    <plurals name="time_ago_months">
+        <item quantity="one">1 bln lalu</item>
+        <item quantity="other">%d bln lalu</item>
+    </plurals>
+    <plurals name="time_ago_years">
+        <item quantity="one">1 thn lalu</item>
+        <item quantity="other">%d thn lalu</item>
+    </plurals>
+    <string name="lite_promo_header">Adik kecil FadCam</string>
+    <string name="lite_promo_title">FadCam Lite</string>
+    <string name="lite_promo_subtitle">FadCam yang lebih kecil untuk merekam sehari-hari. Gratis, tanpa iklan.</string>
 </resources>

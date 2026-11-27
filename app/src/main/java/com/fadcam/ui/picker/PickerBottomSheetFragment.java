@@ -1318,7 +1318,28 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         }
         // Only show helper if the caller explicitly provided one
         if (helperView != null && helperText != null && !helperText.isEmpty()) {
-            helperView.setText(helperText);
+            // Helpers may embed [label](url) links (e.g. the auto-update note linking the very
+            // feed the app reads). Split into paragraphs so line breaks survive, and let
+            // LinkText style the links with the theme's accent colour.
+            android.util.TypedValue accent = new android.util.TypedValue();
+            int linkColor = 0xFFE8C77B; // Pro gold fallback, matches the app's accent
+            if (requireContext().getTheme().resolveAttribute(
+                    R.attr.homeRailAccent, accent, true)) {
+                linkColor = accent.data;
+            }
+            android.text.SpannableStringBuilder text = new android.text.SpannableStringBuilder();
+            String[] paragraphs = helperText.split("\n", -1);
+            for (int i = 0; i < paragraphs.length; i++) {
+                if (i > 0) text.append('\n');
+                text.append(com.fadcam.utils.LinkText.parse(paragraphs[i], linkColor));
+            }
+            helperView.setText(text);
+            if (com.fadcam.utils.LinkText.hasLink(helperText)) {
+                helperView.setMovementMethod(
+                        android.text.method.LinkMovementMethod.getInstance());
+                helperView.setLinksClickable(true);
+                helperView.setHighlightColor(android.graphics.Color.TRANSPARENT);
+            }
             helperView.setVisibility(View.VISIBLE);
         }
         // Apply initial dependent disable state

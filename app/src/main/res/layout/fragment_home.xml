@@ -244,7 +244,7 @@
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardElapsedHero"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginTop="0dp"
             android:layout_marginBottom="2dp"
@@ -414,15 +414,15 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Recording controls card: small horizontal tiles row placed below Stats -->
-            <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="@dimen/home_rail_card_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="1dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
+            <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginTop="@dimen/home_rail_card_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="1dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
 
-                <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical" android:padding="@dimen/home_card_padding" android:clipChildren="false" android:clipToPadding="false">
+                <com.fadcam.ui.widgets.FillRemainingLinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical" android:padding="@dimen/home_card_padding" android:clipChildren="false" android:clipToPadding="false">
 
-                    <TextView android:id="@+id/tv_recording_controls_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/recording_controls_title" android:textSize="@dimen/home_text_rail_section_title" android:textStyle="bold" android:textColor="?attr/sectionHeaderColor" android:gravity="center" android:paddingStart="4dp" android:paddingEnd="4dp" android:paddingTop="0dp" android:paddingBottom="@dimen/home_controls_title_pad_b" android:includeFontPadding="false" />
+                    <TextView android:id="@+id/tv_recording_controls_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/recording_controls_title" android:textSize="@dimen/home_text_rail_section_title" android:textStyle="bold" android:textColor="?attr/sectionHeaderColor" android:gravity="center" android:paddingStart="4dp" android:paddingEnd="4dp" android:paddingTop="0dp" android:paddingBottom="@dimen/home_controls_title_pad_b" />
 
                     <include android:id="@+id/includeRecordingTiles" layout="@layout/home_recording_tiles_row" android:layout_width="match_parent" android:layout_height="wrap_content" />
 
-                </LinearLayout>
+                </com.fadcam.ui.widgets.FillRemainingLinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
@@ -664,7 +664,7 @@
             <TextView android:id="@+id/tvPreviewPlaceholder" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="@string/ui_preview_area" android:textColor="?attr/homeRailTextPrimary" android:textSize="24sp" android:visibility="gone" />
 
             <!-- Hint text for long press to enable preview (shown when recording with preview disabled) -->
-            <TextView android:id="@+id/tvPreviewHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center|bottom" android:layout_marginBottom="@dimen/home_preview_hint_margin_bottom" android:text="@string/preview_enable_hint" android:textColor="?attr/colorHeading" android:textSize="@dimen/home_preview_hint_text" android:alpha="0.75" android:letterSpacing="0.05" android:visibility="gone" />
+            <TextView android:id="@+id/tvPreviewHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center|bottom" android:layout_marginBottom="@dimen/home_preview_hint_margin_bottom" android:text="@string/preview_enable_hint" android:textColor="?attr/colorHeading" android:textSize="@dimen/home_preview_hint_text" android:alpha="0.75" android:letterSpacing="0.05" android:includeFontPadding="false" android:visibility="gone" />
 
             <LinearLayout
                 android:id="@+id/containerPreviewZoomHud"

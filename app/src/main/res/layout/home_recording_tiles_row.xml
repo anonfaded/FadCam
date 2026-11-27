@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- The row is stretched to fill the controls card on narrow screens, so it hands its
+     resolved height down to every tile (the glass pill is on the inner TextView, not
+     the FrameLayout — a wrap_content FrameLayout would leave it short). -->
+<com.fadcam.ui.widgets.EqualHeightRowLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:minHeight="@dimen/home_tile_height"
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:paddingTop="2dp"
@@ -52,9 +56,10 @@
     <!-- Exposure (single tile opens slider picker) — value label bottom-right -->
     <FrameLayout
         android:layout_width="0dp"
-        android:layout_height="@dimen/home_tile_height"
+        android:layout_height="match_parent"
         android:layout_weight="1"
-        android:layout_marginEnd="@dimen/home_tile_gap">
+        android:layout_marginEnd="@dimen/home_tile_gap"
+        android:minHeight="@dimen/home_tile_height">
 
         <TextView
             android:id="@+id/tile_exp"
@@ -81,7 +86,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
-            android:layoutDirection="ltr"
             android:textDirection="ltr"
             android:layout_marginBottom="@dimen/home_tile_label_margin_bottom"
             android:layout_marginEnd="@dimen/home_tile_label_margin_end"
@@ -97,8 +101,9 @@
     <!-- Zoom ratio (quick access to zoom settings) — level label bottom-right -->
     <FrameLayout
         android:layout_width="0dp"
-        android:layout_height="@dimen/home_tile_height"
-        android:layout_weight="1">
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:minHeight="@dimen/home_tile_height">
 
         <TextView
             android:id="@+id/tile_zoom"
@@ -125,7 +130,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
-            android:layoutDirection="ltr"
             android:textDirection="ltr"
             android:layout_marginBottom="@dimen/home_tile_label_margin_bottom"
             android:layout_marginEnd="@dimen/home_tile_label_margin_end"
@@ -138,4 +142,4 @@
             android:includeFontPadding="false" />
     </FrameLayout>
 
-</LinearLayout>
+</com.fadcam.ui.widgets.EqualHeightRowLayout>

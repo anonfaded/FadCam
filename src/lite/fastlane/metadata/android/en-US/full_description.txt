@@ -16,7 +16,7 @@
 <p>Recordings use Hybrid MP4: they stay playable even after a crash, dead battery or forced shutdown, and become a normal seekable MP4 when you stop recording.</p>
 
 <p><b>Lite vs the full app</b></p>
-<p>FadCam Lite leaves out the heavy modules: the video editor, screen recording, mini apps, remote streaming, motion detection and on-device AI. That keeps the app small and fast. Everything needed for reliable recording is still here.</p>
+<p>FadCam Lite leaves out the heavy modules: the video editor, screen recording, mini apps, remote streaming, motion detection and on-device AI. That keeps the app small — around 14 MB instead of around 186 MB. Everything needed for reliable recording is still here.</p>
 
 <p><b>Network use</b></p>
 <p>FadCam Lite has no ads, no analytics and no trackers. It does not collect or upload your recordings. The app only contacts GitHub when it checks for updates on launch; you can turn that off in Settings.</p>

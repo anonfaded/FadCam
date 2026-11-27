@@ -157,7 +157,16 @@ public class PrefsBackupBottomSheetFragment extends BottomSheetDialogFragment {
         text.setLayoutParams(textLp);
         TextView primary = new TextView(requireContext());
         primary.setText(label);
-        primary.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.colorHeading));
+        // Resolve the theme attribute instead of the raw @color/colorHeading resource:
+        // that resource is the day-mode lavender (#cfbafd) and made every row label look
+        // purple regardless of the selected theme.
+        android.util.TypedValue heading = new android.util.TypedValue();
+        if (requireContext().getTheme().resolveAttribute(R.attr.colorHeading, heading, true)) {
+            primary.setTextColor(heading.data);
+        } else {
+            primary.setTextColor(androidx.core.content.ContextCompat.getColor(
+                    requireContext(), R.color.colorHeading));
+        }
         primary.setTypeface(primary.getTypeface(), android.graphics.Typeface.BOLD);
         primary.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15);
         TextView secondary = new TextView(requireContext());

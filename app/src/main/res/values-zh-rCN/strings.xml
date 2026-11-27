@@ -284,7 +284,7 @@
     <string name="note_onboarding">启用后，下次打开FadCam时将看到应用介绍和权限指南。</string>
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">启动时自动检查更新</string>
-    <string name="note_auto_update_check">如果启用，FadCam将在您每次打开应用时检查更新。关闭以禁用启动时自动检查更新。\n(默认: 开)</string>
+    <string name="note_auto_update_check">启用后，FadCam 会向 GitHub 检查是否有更新的版本。它只在你打开应用时运行，最多每小时一次——绝不在后台运行。\n\n该检查是向本应用的公开发布订阅源发送的普通 GET 请求。不会发送任何关于你的信息：没有账号、没有标识符、没有统计分析。点按可查看应用读取的同一个订阅源：\n[github.com/anonfaded/%1$s/releases.atom](https://github.com/anonfaded/%1$s/releases.atom)\n\n该请求发往 GitHub，因此适用 GitHub 的隐私政策，而不是 FadCam 的。\n（默认：开启）</string>
     <!-- Storage Location Settings -->
     <string name="storage_location_title">存储位置</string>
     <string name="storage_location_description">选择保存录像的位置。</string>
@@ -3884,7 +3884,7 @@
 <string name="stream_notes_android14_screen">⚠️ Android 14+：系统限制阻止了屏幕关闭时的录制。解决方法：（1）在设置→安全中启用"黑屏模式"，或（2）禁用屏幕锁定（无PIN码/密码/指纹）。两者均可实现无缝远程录制。</string>
 
 <!-- stream_notes_cellular -->
-<string name="stream_notes_cellular">⚠️ 仅WiFi限制：蜂窝网络阻止传入连接。要从此应用停止运行的位置继续无缝直播，请升级至FadCam Pro+。从任何网络（WiFi、LTE、任何地方）进行直播。</string>
+    <string name="stream_notes_cellular">⚠️ 仅限 WiFi：蜂窝网络会阻止传入连接，因此只有当手机和观看者处于同一 WiFi 网络时才能直播。\n\nFadCam Pro+ 是单独的层级，目前尚不可用。它将通过 FadCam 端到端加密的中继服务器，实现从任何位置（WiFi 或蜂窝网络）直播，无需端口转发或更改路由器。</string>
 
 <!-- stream_only_desc -->
 <string name="stream_only_desc">直播但不保存到存储</string>
@@ -5106,4 +5106,33 @@
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">仅适用于屏幕录制。在此标签页上的任何更改仅影响屏幕录制。</string>
     <string name="update_fdroid_note">从 F-Droid 安装？请忽略此项 — 更新将在几天内到达 F-Droid。从 GitHub 安装？使用 GitHub 按钮打开发布页面并直接更新。</string>
+    <!-- Relative "time ago" labels for record cards. -->
+    <string name="time_ago_just_now">刚刚</string>
+    <plurals name="time_ago_minutes">
+        <item quantity="one">1 分钟前</item>
+        <item quantity="other">%d 分钟前</item>
+    </plurals>
+    <plurals name="time_ago_hours">
+        <item quantity="one">1 小时前</item>
+        <item quantity="other">%d 小时前</item>
+    </plurals>
+    <plurals name="time_ago_days">
+        <item quantity="one">1 天前</item>
+        <item quantity="other">%d 天前</item>
+    </plurals>
+    <plurals name="time_ago_weeks">
+        <item quantity="one">1 周前</item>
+        <item quantity="other">%d 周前</item>
+    </plurals>
+    <plurals name="time_ago_months">
+        <item quantity="one">1 个月前</item>
+        <item quantity="other">%d 个月前</item>
+    </plurals>
+    <plurals name="time_ago_years">
+        <item quantity="one">1 年前</item>
+        <item quantity="other">%d 年前</item>
+    </plurals>
+    <string name="lite_promo_header">FadCam 的小兄弟</string>
+    <string name="lite_promo_title">FadCam Lite</string>
+    <string name="lite_promo_subtitle">更小巧的 FadCam，适合日常录制。免费，无广告。</string>
 </resources>

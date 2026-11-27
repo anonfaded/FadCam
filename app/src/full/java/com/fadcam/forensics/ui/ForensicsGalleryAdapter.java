@@ -390,7 +390,7 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
             sourceLabel = mediaMissing ? "Snapshot" : "Video linked";
         }
         String sizeLabel = Formatter.formatShortFileSize(holder.itemView.getContext(), Math.max(0L, resolveImageSizeCached(row.imageUri)));
-        String timeAgo = Utils.formatTimeAgo(row.capturedEpochMs);
+        String timeAgo = Utils.formatTimeAgo(holder.itemView.getContext(), row.capturedEpochMs);
         holder.metaTime.setText((timeAgo == null || timeAgo.trim().isEmpty()) ? "Just now" : timeAgo);
         holder.metaConfidence.setText(String.format(Locale.US, currentGridSpan >= 3 ? "%.1f" : "%.2f", row.confidence));
         holder.metaSource.setText(sourceLabel);

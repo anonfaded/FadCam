@@ -116,6 +116,26 @@
         <item name="colorOnSecondary">@android:color/white</item>
         <item name="colorSurface">?attr/colorDialog</item>
         <item name="colorOnSurface">@android:color/white</item>
+        <!-- Container / variant / outline / error roles. Sheets are their own windows, so
+             without these the M3 components inside them resolve the Light baseline and
+             paint lavender containers and near-white panels over the dark sheet. -->
+        <item name="colorPrimaryContainer">?attr/colorDialog</item>
+        <item name="colorOnPrimaryContainer">@android:color/white</item>
+        <item name="colorSecondaryContainer">?attr/colorDialog</item>
+        <item name="colorOnSecondaryContainer">@android:color/white</item>
+        <item name="colorTertiary">?attr/colorHeading</item>
+        <item name="colorOnTertiary">@android:color/white</item>
+        <item name="colorSurfaceVariant">?attr/colorDialog</item>
+        <item name="colorOnSurfaceVariant">@android:color/white</item>
+        <item name="colorSurfaceContainer">?attr/colorDialog</item>
+        <item name="colorSurfaceContainerHigh">?attr/colorDialog</item>
+        <item name="colorSurfaceContainerHighest">?attr/colorDialog</item>
+        <item name="colorOutline">#33FFFFFF</item>
+        <item name="colorOutlineVariant">#22FFFFFF</item>
+        <item name="colorError">@color/amoled_error</item>
+        <item name="colorOnError">@android:color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
         <item name="android:textColorPrimary">@android:color/white</item>
         <item name="android:textColorSecondary">@android:color/darker_gray</item>
         <item name="colorControlActivated">?attr/colorHeading</item>
@@ -141,6 +161,25 @@
         <item name="android:colorAccent">?attr/colorHeading</item>
         <item name="colorOnPrimary">@android:color/white</item>
         <item name="colorOnSecondary">@android:color/white</item>
+        <!-- Same gap as the bottom sheet: the side sheet is its own window, so the
+             container / variant / outline / error roles must be pinned here too. -->
+        <item name="colorPrimaryContainer">?attr/colorDialog</item>
+        <item name="colorOnPrimaryContainer">@android:color/white</item>
+        <item name="colorSecondaryContainer">?attr/colorDialog</item>
+        <item name="colorOnSecondaryContainer">@android:color/white</item>
+        <item name="colorTertiary">?attr/colorHeading</item>
+        <item name="colorOnTertiary">@android:color/white</item>
+        <item name="colorSurfaceVariant">?attr/colorDialog</item>
+        <item name="colorOnSurfaceVariant">@android:color/white</item>
+        <item name="colorSurfaceContainer">?attr/colorDialog</item>
+        <item name="colorSurfaceContainerHigh">?attr/colorDialog</item>
+        <item name="colorSurfaceContainerHighest">?attr/colorDialog</item>
+        <item name="colorOutline">#33FFFFFF</item>
+        <item name="colorOutlineVariant">#22FFFFFF</item>
+        <item name="colorError">@color/amoled_error</item>
+        <item name="colorOnError">@android:color/white</item>
+        <item name="colorErrorContainer">#8C1D18</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
         <item name="enableEdgeToEdge">true</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightNavigationBar">false</item>

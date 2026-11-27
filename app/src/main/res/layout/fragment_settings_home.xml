@@ -107,16 +107,14 @@ app:layout_constraintTop_toTopOf="parent"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|end"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:paddingTop="1dp"
-                android:paddingBottom="1dp"
-                android:text="SOON"
-                android:textColor="?attr/colorHeading"
-                android:textSize="6sp"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:text="@string/mini_app_coming_soon"
+                android:textColor="@android:color/white"
+                android:textSize="9sp"
                 android:textStyle="bold"
-                android:letterSpacing="0.08"
-                android:background="@drawable/badge_bg_neutral"/>
+                android:textAllCaps="true"
+                android:background="@drawable/bg_coming_soon_badge"/>
         </FrameLayout>
     </com.fadcam.ui.widgets.TabHeaderLayout>
 
@@ -1359,7 +1357,7 @@ app:layout_constraintTop_toTopOf="parent"
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:src="@drawable/ic_arrow_right"
+                    android:src="@drawable/ic_open_in_new"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
 
@@ -1398,7 +1396,7 @@ app:layout_constraintTop_toTopOf="parent"
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:src="@drawable/ic_arrow_right"
+                    android:src="@drawable/ic_open_in_new"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
 
@@ -1437,7 +1435,7 @@ app:layout_constraintTop_toTopOf="parent"
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:src="@drawable/ic_arrow_right"
+                    android:src="@drawable/ic_open_in_new"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
 
@@ -1475,7 +1473,7 @@ app:layout_constraintTop_toTopOf="parent"
                 <ImageView
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:src="@drawable/ic_arrow_right"
+                    android:src="@drawable/ic_open_in_new"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
 
@@ -1986,6 +1984,7 @@ app:layout_constraintTop_toTopOf="parent"
                     android:orientation="horizontal">
 
                     <ImageView
+                        android:id="@+id/iv_ios_promo_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:src="@drawable/ic_launcher_playstore"
@@ -2044,6 +2043,7 @@ app:layout_constraintTop_toTopOf="parent"
             </LinearLayout>
         </androidx.cardview.widget.CardView>
         <TextView
+            android:id="@+id/tv_full_promo_header"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -2080,6 +2080,7 @@ app:layout_constraintTop_toTopOf="parent"
                     android:orientation="horizontal">
 
                     <ImageView
+                        android:id="@+id/iv_full_promo_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:src="@drawable/ic_launcher_playstore"
@@ -2095,6 +2096,7 @@ app:layout_constraintTop_toTopOf="parent"
                         android:orientation="vertical">
 
                         <TextView
+                            android:id="@+id/tv_full_promo_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/fadcam_card_title"
@@ -2103,6 +2105,7 @@ app:layout_constraintTop_toTopOf="parent"
                             android:textSize="16sp"/>
 
                         <TextView
+                            android:id="@+id/tv_full_promo_subtitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"

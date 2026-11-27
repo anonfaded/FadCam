@@ -374,7 +374,7 @@
     <string name="note_onboarding">FadCam\'i bir sonraki açışınızda uygulama tanıtımını ve izin kılavuzunu görmek için etkinleştirin.</string>
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">Başlangıçta Otomatik Güncelleme Kontrolü</string>
-    <string name="note_auto_update_check">Etkinleştirilirse, FadCam uygulamayı her açtığınızda güncellemeleri kontrol eder. Başlangıçta otomatik güncelleme kontrollerini devre dışı bırakmak için kapatın.\n(Varsayılan: Açık)</string>
+    <string name="note_auto_update_check">Açıkken FadCam, GitHub\'da daha yeni bir sürüm olup olmadığını kontrol eder. Yalnızca uygulamayı açtığınızda çalışır, en fazla saatte bir — asla arka planda çalışmaz.\n\nKontrol, bu uygulamanın genel sürüm akışına yapılan basit bir GET isteğidir. Hakkınızda hiçbir şey gönderilmez: hesap yok, tanımlayıcı yok, analitik yok. Uygulamanın okuduğu akışın aynısını görmek için dokunun:\n[github.com/anonfaded/%1$s/releases.atom](https://github.com/anonfaded/%1$s/releases.atom)\n\nBu istek GitHub\'a gider, dolayısıyla FadCam\'in değil GitHub\'ın gizlilik politikası geçerlidir.\n(Varsayılan: Açık)</string>
     <!-- Storage Location Settings -->
     <string name="storage_location_title">Depolama Konumu</string>
     <string name="storage_location_description">Kayıtların nereye kaydedileceğini seçin.</string>
@@ -866,7 +866,7 @@
     <string name="stream_notes_wifi">• İstemciler yayına erişmek için aynı WiFi ağında olmalıdır</string>
     <string name="stream_notes_quality">• Yayın kalitesi (DÜŞÜK/ORTA/YÜKSEK/ULTRA), ağ sorunlarını önlemek için FPS sınırını ve bit hızını kontrol eder</string>
     <string name="stream_notes_resolution">• Yayın yönü ve çözünürlüğü normal kayıt ayarlarınızdan alınır (Video Ayarları → Çözünürlük ve Yön). Yayın boyutlarını değiştirmek için bunları ayarlayın</string>
-    <string name="stream_notes_cellular">⚠️ Yalnızca WiFi sınırlaması: Hücresel ağlar gelen bağlantıları engeller. Herhangi bir ağdan (WiFi, LTE, her yerden) kesintisiz yayın için FadCam Pro+\'a yükseltin. Özel oluşturulmuş bağlantıyla dünyanın her yerinden yayın yapın—port yönlendirme yok, yönlendirici değişikliği yok, ağ kısıtlaması yok</string>
+    <string name="stream_notes_cellular">⚠️ Yalnızca WiFi sınırlaması: hücresel ağlar gelen bağlantıları engeller, bu yüzden yayın yalnızca telefonunuz ve izleyici aynı WiFi ağındayken çalışır.\n\nFadCam Pro+ ayrı bir kademedir ve henüz mevcut değil. Her yerden — WiFi veya hücresel — FadCam\'in uçtan uca şifreli relay sunucusu üzerinden yayın yapmayı sağlayacak; port yönlendirme veya yönlendirici değişikliği gerekmez.</string>
     <string name="cloud_account_button_desc">FadSec Cloud</string>
     <string name="cloud_button_label">FadSec Cloud</string>
     <string name="cloud_button_title">FadSec Cloud</string>
@@ -3086,4 +3086,33 @@ Sonsuza dek senin.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Yalnızca ekran kayıtları için geçerlidir. Bu sekmede yaptığınız değişiklikler yalnızca ekran kayıtlarını etkiler.</string>
     <string name="update_fdroid_note">F-Droid\'den mi yüklediniz? Bunu yok sayın — güncelleme birkaç gün içinde F-Droid\'e ulaşacak. GitHub\'dan mı yüklediniz? Doğrudan güncellemek için GitHub düğmesiyle sürümler sayfasını açın.</string>
+    <!-- Relative "time ago" labels for record cards. -->
+    <string name="time_ago_just_now">az önce</string>
+    <plurals name="time_ago_minutes">
+        <item quantity="one">1 dk önce</item>
+        <item quantity="other">%d dk önce</item>
+    </plurals>
+    <plurals name="time_ago_hours">
+        <item quantity="one">1 sa önce</item>
+        <item quantity="other">%d sa önce</item>
+    </plurals>
+    <plurals name="time_ago_days">
+        <item quantity="one">1 gün önce</item>
+        <item quantity="other">%d gün önce</item>
+    </plurals>
+    <plurals name="time_ago_weeks">
+        <item quantity="one">1 hf önce</item>
+        <item quantity="other">%d hf önce</item>
+    </plurals>
+    <plurals name="time_ago_months">
+        <item quantity="one">1 ay önce</item>
+        <item quantity="other">%d ay önce</item>
+    </plurals>
+    <plurals name="time_ago_years">
+        <item quantity="one">1 yıl önce</item>
+        <item quantity="other">%d yıl önce</item>
+    </plurals>
+    <string name="lite_promo_header">FadCam\'in küçük kardeşi</string>
+    <string name="lite_promo_title">FadCam Lite</string>
+    <string name="lite_promo_subtitle">Günlük kayıt için daha küçük bir FadCam. Ücretsiz, reklamsız.</string>
 </resources>

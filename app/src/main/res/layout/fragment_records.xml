@@ -720,7 +720,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:checked="true"
-                    android:text="All" />
+                    android:text="@string/records_filter_miniapps_all" />
 
                 <com.fadcam.ui.utils.AnimatedChip
                     android:id="@+id/chip_miniapps_qr"

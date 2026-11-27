@@ -43,6 +43,17 @@
         android:focusable="true"
         android:nextFocusDown="@+id/rowMedium">
 
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:fontFamily="@font/materialicons"
+            android:text="signal_cellular_alt_1_bar"
+            android:textColor="?attr/colorHeading"
+            android:textSize="20sp"
+            android:gravity="center"
+            android:layout_marginEnd="14dp"
+            android:importantForAccessibility="no" />
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"

@@ -583,7 +583,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
 
         if (holder.textViewTimeAgo != null)
-            holder.textViewTimeAgo.setText(Utils.formatTimeAgo(videoItem.lastModified));
+            holder.textViewTimeAgo.setText(Utils.formatTimeAgo(holder.itemView.getContext(), videoItem.lastModified));
 
         // Only set the thumbnail if holder view is visible (important optimization)
         if (holder.imageViewThumbnail != null && holder.itemView.getVisibility() == View.VISIBLE) {
