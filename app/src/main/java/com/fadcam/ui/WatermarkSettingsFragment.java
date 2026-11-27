@@ -1115,13 +1115,35 @@ public class WatermarkSettingsFragment extends Fragment {
         private CharSequence fadcamContent = "";
         private CharSequence fadrecContent = "";
 
+        /**
+         * Text views currently bound to a page, keyed by adapter position.
+         *
+         * <p>ViewPager2's inner RecyclerView does not reliably honour
+         * {@code notifyItemChanged()} for a plain adapter: the first bind happens because the
+         * initial layout follows, but later notifications are dropped, so the preview kept
+         * showing the previous watermark style until the screen was recreated (closing and
+         * reopening the app "fixed" it). Writing to the bound view directly makes the update
+         * immediate and independent of that behaviour; the notify calls are kept so the
+         * pages are still rebuilt correctly if they are ever off-screen.</p>
+         */
+        private final java.util.Map<Integer, TextView> boundViews = new java.util.HashMap<>();
+
         void setContent(String fadcamText, String fadrecRaw,
                         @Nullable Drawable fadcamIconDrawable,
                         @Nullable Drawable fadrecIconDrawable) {
             fadcamContent = buildSpannable(fadcamText, "[FADCAM_ICON]", fadcamIconDrawable, "FadCam");
             fadrecContent = buildSpannable(fadrecRaw, "[ICON]", fadrecIconDrawable, "FadRec");
+            applyToBoundViews();
             notifyItemChanged(0);
             notifyItemChanged(1);
+        }
+
+        /** Pushes the current content into whichever pages are currently on screen. */
+        private void applyToBoundViews() {
+            for (java.util.Map.Entry<Integer, TextView> entry : boundViews.entrySet()) {
+                int position = entry.getKey();
+                entry.getValue().setText(position == 0 ? fadcamContent : fadrecContent);
+            }
         }
 
         private CharSequence buildSpannable(String raw, String token,
@@ -1150,7 +1172,21 @@ public class WatermarkSettingsFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull VH holder, int position) {
+            boundViews.put(position, holder.text);
             holder.text.setText(position == 0 ? fadcamContent : fadrecContent);
+        }
+
+        @Override
+        public void onViewRecycled(@NonNull VH holder) {
+            // Drop the reference when a page is destroyed so a stale TextView cannot be
+            // written to (and the adapter holds no view longer than the view itself lives).
+            for (java.util.Iterator<java.util.Map.Entry<Integer, TextView>> it =
+                    boundViews.entrySet().iterator(); it.hasNext(); ) {
+                if (it.next().getValue() == holder.text) {
+                    it.remove();
+                }
+            }
+            super.onViewRecycled(holder);
         }
 
         @Override
