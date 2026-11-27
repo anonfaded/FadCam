@@ -138,10 +138,21 @@ public class ScreenRecordingSettingsFragment extends Fragment {
 
         if (valueOrientation != null) {
             String orient = prefs.getScreenRecordingOrientation();
-            boolean isLandscape = SharedPreferencesManager.ORIENTATION_LANDSCAPE.equals(orient);
-            valueOrientation.setText(isLandscape
-                    ? getString(R.string.screen_rec_orientation_landscape)
-                    : getString(R.string.screen_rec_orientation_portrait));
+            if (SharedPreferencesManager.ORIENTATION_AUTO.equalsIgnoreCase(orient)) {
+                // Show what Auto will do for the phone's current position, so the row is not
+                // just the word "Auto" with no indication of the result.
+                boolean sideways = SharedPreferencesManager.isDisplaySideways(requireContext());
+                valueOrientation.setText(getString(R.string.screen_rec_orientation_auto_value,
+                        getString(sideways
+                                ? R.string.screen_rec_orientation_landscape
+                                : R.string.screen_rec_orientation_portrait)));
+            } else {
+                boolean isLandscape =
+                        SharedPreferencesManager.ORIENTATION_LANDSCAPE.equals(orient);
+                valueOrientation.setText(isLandscape
+                        ? getString(R.string.screen_rec_orientation_landscape)
+                        : getString(R.string.screen_rec_orientation_portrait));
+            }
         }
 
         if (valueAudioSource != null) {
@@ -357,10 +368,16 @@ public class ScreenRecordingSettingsFragment extends Fragment {
         String current = prefs.getScreenRecordingOrientation();
 
         ArrayList<OptionItem> items = new ArrayList<>();
+        // Leading Material icon ligatures, matching the pickers used elsewhere.
         items.add(new OptionItem(SharedPreferencesManager.ORIENTATION_PORTRAIT,
-                getString(R.string.screen_rec_orientation_portrait)));
+                getString(R.string.screen_rec_orientation_portrait),
+                null, null, null, null, null, null, "stay_current_portrait", null, null, null));
         items.add(new OptionItem(SharedPreferencesManager.ORIENTATION_LANDSCAPE,
-                getString(R.string.screen_rec_orientation_landscape)));
+                getString(R.string.screen_rec_orientation_landscape),
+                null, null, null, null, null, null, "stay_current_landscape", null, null, null));
+        items.add(new OptionItem(SharedPreferencesManager.ORIENTATION_AUTO,
+                getString(R.string.screen_rec_orientation_auto),
+                null, null, null, null, null, null, "screen_rotation", null, null, null));
 
         final String resultKey = "picker_result_screen_orientation";
         getParentFragmentManager().setFragmentResultListener(resultKey, getViewLifecycleOwner(), (key, bundle) -> {

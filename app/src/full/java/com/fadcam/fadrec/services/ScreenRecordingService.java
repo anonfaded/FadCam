@@ -513,7 +513,13 @@ public class ScreenRecordingService extends Service {
         // Calculate bitrate based on resolution
         int fps = sharedPreferencesManager.getScreenRecordingFrameRate();
         String screenOrientation = sharedPreferencesManager.getScreenRecordingOrientation();
-        boolean isLandscape = SharedPreferencesManager.ORIENTATION_LANDSCAPE.equals(screenOrientation);
+        // Auto resolves to a concrete shape here, once, at capture start: the encoder's
+        // dimensions cannot change mid-file. Screen recording has no inverted options, so the
+        // resolution is simply portrait or landscape.
+        String resolvedScreenOrientation =
+                SharedPreferencesManager.resolveShape(screenOrientation, this);
+        boolean isLandscape =
+                SharedPreferencesManager.ORIENTATION_LANDSCAPE.equals(resolvedScreenOrientation);
 
         // Apply orientation to dimensions: swap W/H for landscape, keep as-is for portrait
         int videoWidth = isLandscape ? Math.max(screenWidth, screenHeight) : Math.min(screenWidth, screenHeight);
@@ -557,7 +563,11 @@ public class ScreenRecordingService extends Service {
                 .setAudioSource(audioSource)
                 .setMediaProjection(mediaProjection)
                 .setVideoCodec(sharedPreferencesManager.getScreenRecordingCodec())
-                .setWatermarkInfoProvider(watermarkManager);
+                .setWatermarkInfoProvider(watermarkManager)
+                // Tells the renderer which orientation the encoder frame actually is, so it
+                // letterboxes and maps the screen frame correctly instead of guessing from the
+                // camera preference.
+                .setOrientation(resolvedScreenOrientation);
 
             // Use FileDescriptor for SAF mode, file path for internal storage
             if (safRecordingPfd != null) {

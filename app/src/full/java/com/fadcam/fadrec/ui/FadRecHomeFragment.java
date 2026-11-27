@@ -858,11 +858,6 @@ public class FadRecHomeFragment extends HomeFragment {
             }
             
             if (tvCameraTitle != null) {
-                // Read configured resolution/FPS from SharedPreferences
-                com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
-                android.util.Size res = prefs.getScreenRecordingResolution();
-                int fps = prefs.getScreenRecordingFrameRate();
-
                 // Update title to show screen recording info
                 if (tvCameraTitle instanceof AnimatedTextView) {
                     ((AnimatedTextView) tvCameraTitle).animateSlotFull(getString(R.string.screen_recording_title), 400);
@@ -871,9 +866,9 @@ public class FadRecHomeFragment extends HomeFragment {
                 }
                 FLog.d(TAG, "Card title updated to " + getString(R.string.screen_recording_title));
 
-                // Update subtitle with configured resolution and fps
+                // Update subtitle with configured resolution, fps and orientation
                 if (tvCameraSubtitle != null) {
-                    String subtitle = res.getWidth() + "x" + res.getHeight() + " \u2022 " + fps + "fps";
+                    String subtitle = buildScreenRecordingSubtitle();
                     if (tvCameraSubtitle instanceof AnimatedTextView) {
                         ((AnimatedTextView) tvCameraSubtitle).animateSlotFull(subtitle, 400);
                     } else {
@@ -883,6 +878,36 @@ public class FadRecHomeFragment extends HomeFragment {
                 }
             }
         });
+    }
+
+    /**
+     * Builds the camera-row subtitle for screen recording: resolution, frame rate and the
+     * orientation that will actually be recorded, matching the format the FadCam row uses.
+     *
+     * <p>Auto shows what it resolves to right now, so the row never just says "Auto" with no
+     * indication of the resulting shape.</p>
+     */
+    private String buildScreenRecordingSubtitle() {
+        com.fadcam.SharedPreferencesManager prefs =
+                com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+        android.util.Size res = prefs.getScreenRecordingResolution();
+        int fps = prefs.getScreenRecordingFrameRate();
+
+        String orientationText;
+        String stored = prefs.getScreenRecordingOrientation();
+        String resolved = com.fadcam.SharedPreferencesManager.resolveShape(stored, requireContext());
+        String resolvedLabel = com.fadcam.SharedPreferencesManager.ORIENTATION_LANDSCAPE
+                .equals(resolved)
+                ? getString(R.string.screen_rec_orientation_landscape)
+                : getString(R.string.screen_rec_orientation_portrait);
+        if (com.fadcam.SharedPreferencesManager.ORIENTATION_AUTO.equals(stored)) {
+            orientationText = getString(R.string.screen_rec_orientation_auto_value, resolvedLabel);
+        } else {
+            orientationText = resolvedLabel;
+        }
+
+        return res.getWidth() + "x" + res.getHeight() + " \u2022 " + fps + "fps"
+                + " \u2022 " + orientationText;
     }
 
     /**
@@ -909,11 +934,8 @@ public class FadRecHomeFragment extends HomeFragment {
             }
             
             if (tvCameraSubtitle != null) {
-                // Read configured resolution/FPS from SharedPreferences
-                com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
-                android.util.Size res = prefs.getScreenRecordingResolution();
-                int fps = prefs.getScreenRecordingFrameRate();
-                String subtitle = res.getWidth() + "x" + res.getHeight() + " \u2022 " + fps + "fps";
+                // Read configured resolution/FPS/orientation from SharedPreferences
+                String subtitle = buildScreenRecordingSubtitle();
                 if (animate && tvCameraSubtitle instanceof AnimatedTextView) {
                     ((AnimatedTextView) tvCameraSubtitle).animateSlotFull(subtitle, 400);
                 } else {

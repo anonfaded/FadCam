@@ -769,13 +769,19 @@ public class GLWatermarkRenderer {
             // picture comes out squeezed. So landscape samples the buffer directly (with the
             // vertical flip GL needs to read it right-side-up), and portrait keeps the camera
             // matrix. Both are the correct geometric mapping for their own frame shape.
+            //
+            // Screen recording is different again: the VirtualDisplay writes frames that are
+            // already in the encoder's shape and orientation, and its SurfaceTexture supplies
+            // the matching transform. Applying the camera rules to it is what stretched the
+            // screen recording, so here the matrix is always used exactly as delivered.
             float[] encoderTexMatrix;
-            if (SharedPreferencesManager.isLandscapeOrientation(userOrientationSetting)) {
-                encoderTexMatrix = rawBufferTexMatrix();
-            } else {
+            if (isScreenRecording || !SharedPreferencesManager.isLandscapeOrientation(userOrientationSetting)) {
                 encoderTexMatrix = texMatrix;
+            } else {
+                encoderTexMatrix = rawBufferTexMatrix();
             }
-            if (SharedPreferencesManager.shouldInvertOutput(userOrientationSetting)) {
+            if (!isScreenRecording
+                    && SharedPreferencesManager.shouldInvertOutput(userOrientationSetting)) {
                 encoderTexMatrix = applyInvertedTexMatrix(encoderTexMatrix);
             }
             float[] encoderCameraMvp = recordingMvpMatrix;
@@ -933,9 +939,18 @@ public class GLWatermarkRenderer {
                 // built, so the preview has to resize to the orientation in force at this moment.
                 // The texture matrix below reads the same helper, so box and content always
                 // agree — that agreement is what keeps the picture undistorted.
-                boolean previewLandscape = previewShapeIsLandscape();
-                int contentW = previewLandscape ? videoWidth : videoHeight;
-                int contentH = previewLandscape ? videoHeight : videoWidth;
+                int contentW;
+                int contentH;
+                if (isScreenRecording) {
+                    // The screen frame already carries its own final shape, so use it directly
+                    // instead of deriving it from the camera orientation.
+                    contentW = videoWidth;
+                    contentH = videoHeight;
+                } else {
+                    boolean previewLandscape = previewShapeIsLandscape();
+                    contentW = previewLandscape ? videoWidth : videoHeight;
+                    contentH = previewLandscape ? videoHeight : videoWidth;
+                }
                 if (contentW <= 0 || contentH <= 0) {
                     contentW = encoderWidth > 0 ? encoderWidth : videoWidth;
                     contentH = encoderHeight > 0 ? encoderHeight : videoHeight;
@@ -1013,12 +1028,17 @@ public class GLWatermarkRenderer {
             // changes both the shape of the box above and the mapping here, and the two always
             // agree because both call previewShapeIsLandscape(). Portrait keeps the camera's own
             // turn; landscape samples the buffer directly (see rawBufferTexMatrix).
+            //
+            // Screen recording takes its SurfaceTexture transform as-is: the VirtualDisplay
+            // already delivers frames in the encoder's shape, so the camera's buffer rules do
+            // not apply and applying them is what stretched the screen preview.
             boolean previewLandscapeNow = previewShapeIsLandscape();
             float[] previewTexMatrix =
-                    previewLandscapeNow ? rawBufferTexMatrix() : texMatrix;
+                    (isScreenRecording || !previewLandscapeNow) ? texMatrix : rawBufferTexMatrix();
             // The inverted option rotates the frame, so it applies here too: what the user sees
             // is exactly what the file will contain.
-            if (SharedPreferencesManager.shouldInvertOutput(userOrientationSetting)) {
+            if (!isScreenRecording
+                    && SharedPreferencesManager.shouldInvertOutput(userOrientationSetting)) {
                 previewTexMatrix = applyInvertedTexMatrix(previewTexMatrix);
             }
             float[] previewCameraMvp = previewMvpMatrix;
@@ -2790,6 +2810,13 @@ public class GLWatermarkRenderer {
      * shape behind.</p>
      */
     private boolean previewShapeIsLandscape() {
+        // Screen recording has its own orientation setting and its own frame source: the
+        // VirtualDisplay already delivers frames in the shape the encoder expects, so none of
+        // the camera orientation logic applies. Reading the camera preference here is what made
+        // screen recordings come out stretched.
+        if (isScreenRecording) {
+            return SharedPreferencesManager.isLandscapeOrientation(userOrientationSetting);
+        }
         if (recordingPipeline != null && recordingPipeline.isRecording()) {
             // Frozen at capture start — the value the renderer was built with.
             return SharedPreferencesManager.isLandscapeOrientation(userOrientationSetting);

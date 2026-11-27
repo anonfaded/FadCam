@@ -23,6 +23,7 @@ import com.fadcam.opengl.GLWatermarkRenderer;
 import androidx.annotation.Nullable;
 
 import com.fadcam.Constants;
+import com.fadcam.SharedPreferencesManager;
 import com.fadcam.VideoCodec;
 import com.fadcam.media.FragmentedMp4MuxerWrapper;
 import com.fadcam.opengl.WatermarkInfoProvider;
@@ -72,6 +73,9 @@ public class ScreenRecordingPipeline {
     // Screen dimensions (actual device screen - used for VirtualDisplay)
     private final int displayWidth;
     private final int displayHeight;
+
+    /** Orientation the encoder frame is recorded in, resolved at session start. */
+    private final String orientation;
     
     // Encoder dimensions (optimized for codec - may differ from display)
     private int screenWidth;
@@ -225,6 +229,7 @@ public class ScreenRecordingPipeline {
         private int screenDensity;
         private int videoFramerate = Constants.DEFAULT_SCREEN_RECORDING_FPS;
         private int videoBitrate;
+        private String orientation = SharedPreferencesManager.ORIENTATION_PORTRAIT;
         private boolean enableAudio = false;
         private String audioSource = Constants.AUDIO_SOURCE_MIC;
         private String outputFilePath;
@@ -256,6 +261,16 @@ public class ScreenRecordingPipeline {
             this.screenWidth = width;
             this.screenHeight = height;
             this.screenDensity = density;
+            return this;
+        }
+
+        /**
+         * Orientation the encoder frame is recorded in. Resolved before the session starts,
+         * because the encoder dimensions are fixed for the life of the file.
+         */
+        public Builder setOrientation(String orientation) {
+            this.orientation = orientation != null
+                    ? orientation : SharedPreferencesManager.ORIENTATION_PORTRAIT;
             return this;
         }
         
@@ -327,6 +342,7 @@ public class ScreenRecordingPipeline {
         // Store original screen dimensions for VirtualDisplay (to avoid black bars)
         this.displayWidth = builder.screenWidth;
         this.displayHeight = builder.screenHeight;
+        this.orientation = builder.orientation;
         
         // Start with a same-as-screen-aspect encoder size; actual size may be adjusted
         // during encoder initialization based on codec capabilities.
@@ -595,13 +611,12 @@ public class ScreenRecordingPipeline {
 
         glRenderHandler.post(() -> {
             try {
-                // orientation="portrait", sensorOrientation=0:
-                // For screen capture the VirtualDisplay SurfaceTexture already provides the
-                // correct coordinate transform via getTransformMatrix().  The "portrait" path
-                // in GLWatermarkRenderer uses that texMatrix as-is, which is exactly what we
-                // need — no extra rotation or flip should be applied to screen content.
+                // The orientation passed here is the one the encoder frame is actually recorded
+                // in. GLWatermarkRenderer needs it to size the preview viewport correctly; the
+                // SurfaceTexture transform is still used as-is, because VirtualDisplay already
+                // delivers frames in the right shape and orientation.
                 glWatermarkRenderer = new GLWatermarkRenderer(
-                        context, encoderInputSurface, "portrait", 0, screenWidth, screenHeight, true);
+                        context, encoderInputSurface, orientation, 0, screenWidth, screenHeight, true);
 
                 glWatermarkRenderer.initializeEGL();
 
