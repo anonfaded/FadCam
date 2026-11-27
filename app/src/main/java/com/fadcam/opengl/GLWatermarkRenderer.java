@@ -319,22 +319,6 @@ public class GLWatermarkRenderer {
     private static final int WATERMARK_MAX_BITMAP_WIDTH = 2048;
     private static final int WATERMARK_MAX_BITMAP_HEIGHT = 1024;
     private int watermarkLineCount = 1; // Fixed small height for dashcam style
-    /**
-     * Landscape or portrait shape for the live preview, resolved from the setting in force now.
-     *
-     * <p>There is exactly one orientation choice in the app; the preview must read the same one
-     * the encoder will. Auto follows the current window orientation so turning the phone updates
-     * the preview, while a fixed Portrait/Landscape stays fixed.</p>
-     */
-    private boolean previewShapeIsLandscape() {
-        String stored = SharedPreferencesManager.getInstance(context).getVideoOrientation();
-        if (!SharedPreferencesManager.ORIENTATION_AUTO.equalsIgnoreCase(stored)) {
-            return SharedPreferencesManager.isLandscapeOrientation(stored);
-        }
-        return context.getResources().getConfiguration().orientation
-                == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
-    }
-
     private int lastWatermarkVpW = -1;
 
     private int lastWatermarkVpH = -1;
@@ -784,16 +768,18 @@ public class GLWatermarkRenderer {
                 isLandscape = (deviceOrientation == 1 || deviceOrientation == 3);
             }
 
+            // The camera buffer arrives at videoWidth x videoHeight, so for a landscape
+            // recording it is already the same shape as the encoder frame. The matrix from
+            // SurfaceTexture.getTransformMatrix() maps that buffer into the device's NATURAL
+            // orientation, which is a quarter turn to portrait — correct for a portrait file,
+            // but wrong for a landscape one: it turns tall content into a wide frame and the
+            // picture comes out squeezed. So landscape samples the buffer directly (with the
+            // vertical flip GL needs to read it right-side-up), and portrait keeps the camera
+            // matrix. Both are the correct geometric mapping for their own frame shape.
             float[] encoderTexMatrix;
-            if (isLandscape) {
-                // Apply vertical flip for landscape only
-                float[] fixedTexMatrix = new float[16];
-                Matrix.setIdentityM(fixedTexMatrix, 0);
-                Matrix.scaleM(fixedTexMatrix, 0, 1f, -1f, 1f);
-                Matrix.translateM(fixedTexMatrix, 0, 0f, -1f, 0f);
-                encoderTexMatrix = fixedTexMatrix;
+            if (SharedPreferencesManager.isLandscapeOrientation(userOrientationSetting)) {
+                encoderTexMatrix = rawBufferTexMatrix();
             } else {
-                // Portrait: use original texMatrix
                 encoderTexMatrix = texMatrix;
             }
             if (SharedPreferencesManager.shouldInvertOutput(userOrientationSetting)) {
@@ -943,17 +929,17 @@ public class GLWatermarkRenderer {
             // Viewport variables — accessible to the draw calls below
             int vpX = 0, vpY = 0, vpW = pvW[0], vpH = pvH[0];
             boolean needsLetterbox = false;
+            // Whether the dimmed zoom-fill backdrop is drawn behind the fitted frame. Kept
+            // separate from needsLetterbox: the frame can be letterboxed while the backdrop is
+            // deliberately skipped because filling the card would magnify the picture too far.
+            boolean drawZoomFillBackdrop = false;
 
             if (pvW[0] > 0 && pvH[0] > 0) {
-                // Content dimensions = encoder output, swapped live to match the shape being
-                // recorded. Both this and the texture matrix below read previewShapeIsLandscape(),
-                // so the box and the drawn content always agree — the mismatch is what stretched
-                // the picture.
-                boolean appWantsPortrait = !previewShapeIsLandscape();
-                boolean isSensorPortrait = videoHeight > videoWidth;
-                boolean needsSwap = appWantsPortrait != isSensorPortrait;
-                int contentW = needsSwap ? videoHeight : videoWidth;
-                int contentH = needsSwap ? videoWidth : videoHeight;
+                // Content dimensions = encoder output. The encoded frame is the only thing whose
+                // shape is guaranteed to match what is actually drawn, so the preview keeps the
+                // recorded aspect and letterboxes inside whatever space the card gives it.
+                int contentW = encoderWidth > 0 ? encoderWidth : videoWidth;
+                int contentH = encoderHeight > 0 ? encoderHeight : videoHeight;
 
                 float contentAR = (float) contentW / contentH;
                 float surfaceAR = (float) pvW[0] / pvH[0];
@@ -1005,6 +991,7 @@ public class GLWatermarkRenderer {
                         fillVpY = 0;
                     }
                     GLES20.glViewport(fillVpX, fillVpY, fillVpW, fillVpH);
+                    drawZoomFillBackdrop = true;
                 } else {
                     // No letterbox — set fit viewport directly
                     GLES20.glViewport(vpX, vpY, vpW, vpH);
@@ -1022,27 +1009,14 @@ public class GLWatermarkRenderer {
                 return;
             }
 
-            // Apply the same landscape orientation fix as in renderToEncoder.
-            // Reads the LIVE shape so the preview follows the phone: the widget label already
-            // resolves Auto live, and previously the renderer kept the shape it started with,
-            // so turning the phone moved the label but never the picture.
-            boolean isLandscape = previewShapeIsLandscape();
-
-            float[] previewTexMatrix;
-            if (isLandscape) {
-                // Apply vertical flip for landscape only (same as encoder)
-                float[] fixedTexMatrix = new float[16];
-                Matrix.setIdentityM(fixedTexMatrix, 0);
-                Matrix.scaleM(fixedTexMatrix, 0, 1f, -1f, 1f);
-                Matrix.translateM(fixedTexMatrix, 0, 0f, -1f, 0f);
-                previewTexMatrix = fixedTexMatrix;
-            } else {
-                // Portrait: use original texMatrix
-                previewTexMatrix = texMatrix;
-            }
-            // The inverted option compensates an upside-down mount, so it applies here too:
-            // the preview shows the scene upright while the phone is physically inverted,
-            // which is what the user needs in order to frame the shot at all.
+            // Same matrix as the encoder path, so the preview always shows what is recorded:
+            // landscape samples the buffer directly, portrait uses the camera's own turn.
+            float[] previewTexMatrix =
+                    SharedPreferencesManager.isLandscapeOrientation(userOrientationSetting)
+                            ? rawBufferTexMatrix()
+                            : texMatrix;
+            // The inverted option rotates the frame, so it applies here too: what the user sees
+            // is exactly what the file will contain.
             if (SharedPreferencesManager.shouldInvertOutput(userOrientationSetting)) {
                 previewTexMatrix = applyInvertedTexMatrix(previewTexMatrix);
             }
@@ -1059,7 +1033,7 @@ public class GLWatermarkRenderer {
             }
 
             // Pass 1: Zoom-fill background (drawn at the fill-crop viewport set above)
-            if (needsLetterbox) {
+            if (drawZoomFillBackdrop) {
                 drawOESTexture(previewCameraMvp, previewTexMatrix);
                 // Dim the background so the sharp foreground visually pops
                 drawDimOverlay(0.75f);
@@ -2668,24 +2642,12 @@ public class GLWatermarkRenderer {
             Matrix.setIdentityM(currentPipTexMatrix, 0);
         }
 
-        // Apply the same orientation fix as the primary camera for the PiP texture
-        boolean isLandscape;
-        if (userOrientationSetting != null) {
-            isLandscape = SharedPreferencesManager.isLandscapeOrientation(userOrientationSetting);
-        } else {
-            isLandscape = (deviceOrientation == 1 || deviceOrientation == 3);
-        }
-
-        float[] pipEncoderTexMatrix;
-        if (isLandscape) {
-            float[] fixedTexMatrix = new float[16];
-            Matrix.setIdentityM(fixedTexMatrix, 0);
-            Matrix.scaleM(fixedTexMatrix, 0, 1f, -1f, 1f);
-            Matrix.translateM(fixedTexMatrix, 0, 0f, -1f, 0f);
-            pipEncoderTexMatrix = fixedTexMatrix;
-        } else {
-            pipEncoderTexMatrix = currentPipTexMatrix;
-        }
+        // Same treatment as the primary camera: landscape samples the buffer directly, portrait
+        // keeps the camera's own turn, then the user's rotation choice is applied.
+        float[] pipEncoderTexMatrix =
+                SharedPreferencesManager.isLandscapeOrientation(userOrientationSetting)
+                        ? rawBufferTexMatrix()
+                        : currentPipTexMatrix;
         if (SharedPreferencesManager.shouldInvertOutput(userOrientationSetting)) {
             pipEncoderTexMatrix = applyInvertedTexMatrix(pipEncoderTexMatrix);
         }
@@ -3119,6 +3081,22 @@ public class GLWatermarkRenderer {
             // Fall through to legacy heuristic if prefs are temporarily unavailable.
         }
         return sensorOrientation == 270;
+    }
+
+    /**
+     * Texture matrix for a landscape recording: samples the camera buffer as it arrives.
+     *
+     * <p>The buffer is already {@code videoWidth x videoHeight}, the same shape as the encoder
+     * frame, so no quarter turn is wanted. A vertical flip is applied because GL's texture
+     * origin is bottom-left while the buffer's rows arrive top-first; without it the frame is
+     * stored upside down.</p>
+     */
+    private float[] rawBufferTexMatrix() {
+        float[] m = new float[16];
+        Matrix.setIdentityM(m, 0);
+        Matrix.translateM(m, 0, 0f, 1f, 0f);
+        Matrix.scaleM(m, 0, 1f, -1f, 1f);
+        return m;
     }
 
     /**

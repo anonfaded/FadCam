@@ -89,6 +89,12 @@ public class PrivacyConvergenceView extends View {
 
         // Everything below is expressed in shield heights: one scale for the whole mark.
         shieldHeight = Math.min(h - pad * 2f, 65f * getResources().getDisplayMetrics().density);
+        // A view laid out shorter than its padding leaves no room for the mark. Without this
+        // guard shieldHeight goes to zero or negative, and the radial glow below throws
+        // "ending radius must be > 0" — a real crash, not just a drawing glitch.
+        if (shieldHeight <= 0f) {
+            return;
+        }
         float shieldW = shieldHeight * 0.82f;
         float cx = w * 0.5f;
         float cy = h * 0.5f;

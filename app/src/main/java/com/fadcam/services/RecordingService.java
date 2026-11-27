@@ -1716,6 +1716,20 @@ public class RecordingService extends Service {
             }
             return START_STICKY;
         }
+        if (Constants.INTENT_ACTION_REFRESH_PREVIEW_SHAPE.equals(action)) {
+            // A shape-changing setting (video orientation) changed while the preview is up.
+            // The pipeline froze its shape when it was built, so it has to be rebuilt for the
+            // preview and the card to agree with the new setting.
+            if (previewOnlyActive && recordingState == RecordingState.NONE) {
+                FLog.d(TAG, "Preview shape refresh requested");
+                restartPreviewOnlyForOrientationChange();
+            } else if (!isWorkingInProgress()) {
+                // Nothing is previewing or recording: this start would otherwise leave an idle
+                // sticky service alive for no reason.
+                stopSelf();
+            }
+            return START_STICKY;
+        }
         if (Constants.INTENT_ACTION_START_PREVIEW_ONLY.equals(action)) {
             CameraType selectedType = sharedPreferencesManager.getCameraSelection();
             if (selectedType != null && selectedType.isDual()) {
@@ -7758,16 +7772,88 @@ public class RecordingService extends Service {
         }
     }
 
+    private boolean samePreviewShape(String a, String b) {
+        // Shape and rotation are what the pipeline bakes in; "auto" resolves to a concrete
+        // shape before it reaches here, so this only has to compare the resolved values.
+        return SharedPreferencesManager.isLandscapeOrientation(a)
+                == SharedPreferencesManager.isLandscapeOrientation(b)
+                && SharedPreferencesManager.isInvertedOrientation(a)
+                == SharedPreferencesManager.isInvertedOrientation(b);
+    }
+
+    /**
+     * Closes the camera session bound to the current preview pipeline so a rebuild can open a
+     * new one. This deliberately does NOT go through {@link #stopPreviewOnlyMode()}: that path
+     * calls {@code stopSelf()} once preview is marked inactive, which would tear the service
+     * down while it is in the middle of restarting the preview.
+     */
+    private void closeCameraSessionForPreviewRestart() {
+        try {
+            if (captureSession != null) {
+                try {
+                    captureSession.stopRepeating();
+                } catch (Exception ignore) {
+                }
+                captureSession.close();
+                captureSession = null;
+            }
+            if (cameraDevice != null) {
+                cameraDevice.close();
+                cameraDevice = null;
+            }
+            isCameraOpen = false;
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to close camera session for preview restart", e);
+        }
+    }
+
+    /**
+     * Rebuilds the preview pipeline so it matches the orientation setting in force now.
+     *
+     * <p>The pipeline bakes its shape in when it is constructed (encoder dimensions, renderer
+     * matrix), so a running preview cannot follow a changed setting on its own. Only call this
+     * while nothing is being recorded: a recording keeps the shape its file started with,
+     * because an encoder cannot change dimensions mid-file.</p>
+     */
+    private void restartPreviewOnlyForOrientationChange() {
+        if (recordingState != RecordingState.NONE) {
+            FLog.d(TAG, "Recording in progress; keeping the shape the file started with");
+            return;
+        }
+        releasePreviewOnlyGlPipeline();
+        closeCameraSessionForPreviewRestart();
+        if (previewSurface != null && previewSurface.isValid()) {
+            ensurePreviewOnlyGlPipeline();
+            openCamera();
+            broadcastOnPreviewOnlyStarted();
+        } else {
+            pendingPreviewOnlyStart = true;
+        }
+    }
+
     private void ensurePreviewOnlyGlPipeline() {
         try {
             ensureWatermarkInfoProvider();
             if (glRecordingPipeline != null) {
-                if (previewSurface != null && previewSurface.isValid()) {
-                    glRecordingPipeline.setPreviewSurfaceImmediate(previewSurface);
+                // The pipeline freezes the shape it was built with, so a reused one keeps the
+                // old aspect on screen even after the setting changed — the card and the
+                // picture then disagree, which is what made the preview look stretched. Drop it
+                // and fall through to build one that matches the setting in force now.
+                String wanted = SharedPreferencesManager.resolveShape(
+                        sharedPreferencesManager.getVideoOrientation(), this);
+                if (!samePreviewShape(wanted, glRecordingPipeline.getOrientation())) {
+                    FLog.d(TAG, "Preview orientation changed (" + glRecordingPipeline.getOrientation()
+                            + " -> " + wanted + "); rebuilding preview pipeline");
+                    releasePreviewOnlyGlPipeline();
+                    closeCameraSessionForPreviewRestart();
+                } else {
+                    if (previewSurface != null && previewSurface.isValid()) {
+                        glRecordingPipeline.setPreviewSurfaceImmediate(previewSurface);
+                    }
+                    glRecordingPipeline.startPreviewOnlyRendering();
+                    glRecordingPipeline.updateWatermark();
+                    return;
                 }
-                glRecordingPipeline.startPreviewOnlyRendering();
-                glRecordingPipeline.updateWatermark();
-                return;
             }
 
             Size resolution = sharedPreferencesManager.getCameraResolution();

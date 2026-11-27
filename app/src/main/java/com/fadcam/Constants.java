@@ -263,6 +263,13 @@ public abstract class Constants {
         "com.fadcam.ACTION_SET_AUDIO_MUTED";
     public static final String INTENT_ACTION_START_PREVIEW_ONLY =
         "com.fadcam.ACTION_START_PREVIEW_ONLY";
+    /**
+     * Asks the recording service to rebuild its preview pipeline because a setting that changes
+     * the frame shape (video orientation) changed. The pipeline bakes its shape in at
+     * construction, so an already-running preview cannot pick up the new one by itself.
+     */
+    public static final String INTENT_ACTION_REFRESH_PREVIEW_SHAPE =
+        "com.fadcam.ACTION_REFRESH_PREVIEW_SHAPE";
     public static final String INTENT_ACTION_STOP_PREVIEW_ONLY =
         "com.fadcam.ACTION_STOP_PREVIEW_ONLY";
 

@@ -744,6 +744,18 @@ public class VideoSettingsFragment extends Fragment {
             if (sel != null && !sel.equals(current)) {
                 prefs.setVideoOrientation(sel);
                 refreshAllValues();
+                // The live preview keeps the shape its pipeline was built with, so tell the
+                // service to rebuild. Without this the card updated while a preview built for
+                // the old orientation kept drawing, which is what looked stretched.
+                try {
+                    android.content.Intent refresh =
+                            new android.content.Intent(requireContext(),
+                                    com.fadcam.services.RecordingService.class);
+                    refresh.setAction(Constants.INTENT_ACTION_REFRESH_PREVIEW_SHAPE);
+                    requireContext().startService(refresh);
+                } catch (Exception e) {
+                    FLog.w(TAG, "Could not notify preview of orientation change", e);
+                }
             }
         });
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment

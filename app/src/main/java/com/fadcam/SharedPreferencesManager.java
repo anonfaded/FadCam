@@ -1815,10 +1815,10 @@ public class SharedPreferencesManager {
     /**
      * True when the frame must be rotated 180°.
      *
-     * <p>This is a static, install-time choice, exactly like the "Rotate video 180°" option on
-     * BlackVue, VIOFO and Mobius dashcams: it exists for a camera that is physically mounted
-     * upside down. No sensor is involved, so selecting it takes effect immediately and costs no
-     * battery. The preview and the file both rotate, so what you see is what gets recorded.</p>
+     * <p>This is a static, install-time choice, the same idea as the "rotate video 180°" option
+     * camera apps offer: it exists for a device that is physically mounted upside down. No sensor
+     * is involved, so selecting it takes effect immediately and costs no battery. The preview and
+     * the file both rotate, so what you see is what gets recorded.</p>
      */
     public static boolean shouldInvertOutput(@Nullable String orientation) {
         return isInvertedOrientation(orientation);
@@ -1827,10 +1827,15 @@ public class SharedPreferencesManager {
     /**
      * Resolves the stored preference to the concrete shape to record.
      *
-     * <p>Auto asks the posture <b>once</b>, at capture start, and the caller keeps that value for
-     * the whole session — the encoder shape cannot change mid-recording anyway. One short sensor
-     * read rather than a listener, so there is no battery drain while the preview idles.
-     * Never returns {@link #ORIENTATION_AUTO}.</p>
+     * <p>Auto uses the orientation the platform already knows. Android reports the physical
+     * rotation through {@code Display#getRotation()}, which the display and window manager keep
+     * up to date from the device's own sensors — so there is nothing to read separately here.
+     * Spinning up the accelerometer just to answer "is the phone sideways?" burns power for
+     * information the framework is already maintaining, and on a device with rotation locked
+     * the sensor would actively disagree with what the user sees on screen.</p>
+     *
+     * <p>The choice is made once, at capture start, because the encoder shape cannot change
+     * mid-file. Never returns {@link #ORIENTATION_AUTO}.</p>
      */
     public static String resolveShape(@Nullable String orientation, @Nullable Context context) {
         if (!ORIENTATION_AUTO.equalsIgnoreCase(orientation)) {
@@ -1839,15 +1844,45 @@ public class SharedPreferencesManager {
         if (context == null) {
             return ORIENTATION_PORTRAIT;
         }
-        Boolean landscape = com.fadcam.watermark.DevicePosture.get(context)
-                .readLandscapeNow(context);
-        if (landscape == null) {
-            // No usable reading: fall back to the layout the app is currently in.
-            return context.getResources().getConfiguration().orientation
-                    == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-                    ? ORIENTATION_LANDSCAPE : ORIENTATION_PORTRAIT;
+        return isDisplaySideways(context) ? ORIENTATION_LANDSCAPE : ORIENTATION_PORTRAIT;
+    }
+
+    /**
+     * True when the display is currently rotated to a landscape position.
+     *
+     * <p>{@code Display#getRotation()} is the physical rotation of the screen, maintained by the
+     * platform from the device's own sensors. It is 0/90/180/270 where 90 and 270 are the two
+     * landscape positions. When the user has locked rotation, this keeps reporting the locked
+     * position, which is exactly the orientation the preview and the recorded file should
+     * match.</p>
+     */
+    public static boolean isDisplaySideways(@Nullable Context context) {
+        if (context == null) {
+            return false;
         }
-        return landscape ? ORIENTATION_LANDSCAPE : ORIENTATION_PORTRAIT;
+        try {
+            android.view.Display display = context.getDisplay();
+            if (display == null) {
+                // A Service has no display of its own; ask the system for the default one.
+                android.hardware.display.DisplayManager dm =
+                        (android.hardware.display.DisplayManager) context.getSystemService(
+                                android.content.Context.DISPLAY_SERVICE);
+                if (dm == null) {
+                    return false;
+                }
+                display = dm.getDisplay(android.view.Display.DEFAULT_DISPLAY);
+            }
+            if (display == null) {
+                return false;
+            }
+            int rotation = display.getRotation();
+            return rotation == android.view.Surface.ROTATION_90
+                    || rotation == android.view.Surface.ROTATION_270;
+        } catch (Throwable ignored) {
+            // Fall back to the resource configuration: it follows the current screen shape.
+            return context.getResources().getConfiguration().orientation
+                    == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+        }
     }
 
     /**
