@@ -198,6 +198,20 @@
                     android:paddingStart="0dp"
                     android:paddingEnd="0dp" />
             </LinearLayout>
+
+            <!-- F-Droid hint: plain text, sits under the GitHub button -->
+            <TextView
+                android:id="@+id/tvFdroidNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:text="@string/update_fdroid_note"
+                android:textColor="#9E9E9E"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:lineSpacingExtra="2dp" />
         </LinearLayout>
     </ScrollView>
 
