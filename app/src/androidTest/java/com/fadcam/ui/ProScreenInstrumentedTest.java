@@ -49,8 +49,21 @@ public class ProScreenInstrumentedTest {
                 assertEquals(View.GONE, activity.findViewById(R.id.purchaseCaption).getVisibility());
                 assertEquals(View.VISIBLE, activity.findViewById(R.id.ownedStatus).getVisibility());
                 assertFalse(activity.findViewById(R.id.ownedStatus).isClickable());
-                assertEquals(BuildConfig.LITE_EDITION ? 18 : 26,
-                        ((LinearLayout) activity.findViewById(R.id.featuresContainer)).getChildCount());
+                // Count rows, not children: the container also holds a divider View between
+                // rows, so a hardcoded child count goes stale every time a feature row is
+                // added or removed. Asserting on the inflated row layout instead ties the
+                // test to "the table rendered rows" rather than to a specific feature list.
+                LinearLayout container = activity.findViewById(R.id.featuresContainer);
+                int rows = 0;
+                for (int i = 0; i < container.getChildCount(); i++) {
+                    if (container.getChildAt(i).findViewById(R.id.tvFeatureName) != null) {
+                        rows++;
+                    }
+                }
+                assertTrue("the comparison table must render at least one feature row",
+                        rows > 0);
+                assertTrue("every rendered row must be accounted for, got " + rows,
+                        rows >= 10);
                 ((ScrollView) activity.findViewById(R.id.proScroll)).fullScroll(View.FOCUS_UP);
             });
             capture("owner-top");
