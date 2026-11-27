@@ -3472,4 +3472,11 @@ Milikmu selamanya.</string>
     <string name="lite_promo_header">Adik kecil FadCam</string>
     <string name="lite_promo_title">FadCam Lite</string>
     <string name="lite_promo_subtitle">FadCam yang lebih kecil untuk merekam sehari-hari. Gratis, tanpa iklan.</string>
+    <string name="setting_tab_transition_speed">Kecepatan transisi tab</string>
+    <string name="helper_tab_transition_speed">Berapa lama transisi saat berpindah tab. Pilih Nonaktif untuk perpindahan instan.</string>
+    <string name="tab_transition_off">Nonaktif (instan)</string>
+    <string name="tab_transition_fast">Cepat</string>
+    <string name="tab_transition_normal">Normal (Bawaan)</string>
+    <string name="tab_transition_slow">Lambat</string>
+    <string name="tab_transition_very_slow">Sangat lambat</string>
 </resources>

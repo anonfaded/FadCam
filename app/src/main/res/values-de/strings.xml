@@ -3160,4 +3160,11 @@ Für immer dein.</string>
     <string name="lite_promo_header">FadCams kleiner Bruder</string>
     <string name="lite_promo_title">FadCam Lite</string>
     <string name="lite_promo_subtitle">Ein kleineres FadCam für den Alltag. Kostenlos, keine Werbung.</string>
+    <string name="setting_tab_transition_speed">Tab-Übergangsgeschwindigkeit</string>
+    <string name="helper_tab_transition_speed">Wie lange die Überblendung beim Tabwechsel dauert. Wähle Aus für sofortiges Wechseln.</string>
+    <string name="tab_transition_off">Aus (sofort)</string>
+    <string name="tab_transition_fast">Schnell</string>
+    <string name="tab_transition_normal">Normal (Standard)</string>
+    <string name="tab_transition_slow">Langsam</string>
+    <string name="tab_transition_very_slow">Sehr langsam</string>
 </resources>

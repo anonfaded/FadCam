@@ -64,6 +64,7 @@ public class AppearanceSettingsFragment extends Fragment {
         setupLanguageRow(view);
         setupAppIconRow(view);
         setupSplashScreenRow(view);
+        setupTabTransitionRow(view);
         setupEyeColorRow(view);
         setupLogoRow(view);
         View backBtn = view.findViewById(R.id.back_button);
@@ -631,8 +632,78 @@ public class AppearanceSettingsFragment extends Fragment {
         );
     }
 
-    private void updateAppIcon(String iconKey) {
-        PackageManager pm = requireContext().getPackageManager();
+    // ── Tab transition speed ─────────────────────────────────────────
+    // Offered as named presets rather than a raw millisecond value: the presets map onto
+    // durations that feel distinct, and they translate cleanly.
+
+    private static final long[] TAB_TRANSITION_VALUES_MS = { 0L, 90L, 150L, 300L, 600L };
+
+    private void setupTabTransitionRow(View root) {
+        View row = root.findViewById(R.id.row_tab_transition);
+        TextView value = root.findViewById(R.id.value_tab_transition);
+        if (row == null || value == null) return;
+        setTabTransitionText(value, sharedPreferencesManager.getTabTransitionDurationMs());
+        row.setOnClickListener(v -> showTabTransitionPicker(value));
+    }
+
+    private void setTabTransitionText(TextView value, long durationMs) {
+        value.setText(getString(
+            durationMs <= 0L ? R.string.tab_transition_off
+            : durationMs <= 90L ? R.string.tab_transition_fast
+            : durationMs <= 150L ? R.string.tab_transition_normal
+            : durationMs <= 300L ? R.string.tab_transition_slow
+            : R.string.tab_transition_very_slow));
+    }
+
+    private void showTabTransitionPicker(TextView valueView) {
+        final String resultKey = "picker_result_tab_transition";
+        getParentFragmentManager().setFragmentResultListener(
+                resultKey,
+                this,
+                (k, b) -> {
+                    String id = b.getString(
+                        com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID
+                    );
+                    if (id != null) {
+                        long ms;
+                        try {
+                            ms = Long.parseLong(id);
+                        } catch (NumberFormatException e) {
+                            return;
+                        }
+                        sharedPreferencesManager.setTabTransitionDurationMs(ms);
+                        setTabTransitionText(valueView, ms);
+                    }
+                }
+            );
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items =
+            new java.util.ArrayList<>();
+        int[] labels = {
+            R.string.tab_transition_off,
+            R.string.tab_transition_fast,
+            R.string.tab_transition_normal,
+            R.string.tab_transition_slow,
+            R.string.tab_transition_very_slow
+        };
+        for (int i = 0; i < TAB_TRANSITION_VALUES_MS.length; i++) {
+            items.add(new com.fadcam.ui.picker.OptionItem(
+                String.valueOf(TAB_TRANSITION_VALUES_MS[i]),
+                getString(labels[i]),
+                (String) null
+            ));
+        }
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+            com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                getString(R.string.setting_tab_transition_speed),
+                items,
+                String.valueOf(sharedPreferencesManager.getTabTransitionDurationMs()),
+                resultKey,
+                getString(R.string.helper_tab_transition_speed)
+            );
+        sheet.show(getParentFragmentManager(), "tab_transition_picker_sheet");
+    }
+
+    private void updateAppIcon(String iconKey) {        PackageManager pm = requireContext().getPackageManager();
         ComponentName defaultIcon = new ComponentName(
             requireContext(),
             "com.fadcam.MainActivity.DefaultIcon"

@@ -19,6 +19,46 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
  * including handling of back button press consistently.
  */
 public abstract class BaseFragment extends Fragment {
+
+    /**
+     * Applies the user's tab-switch fade length to the animations the activity attaches to
+     * this fragment's transactions.
+     *
+     * <p>{@link androidx.fragment.app.FragmentTransaction#setCustomAnimations} only accepts
+     * resource IDs, so the duration baked into {@code fade_in.xml}/{@code fade_out.xml} could
+     * not be tuned at runtime. Overriding {@code onCreateAnimation} lets us load that same
+     * resource and then set the duration from the preference, which is the only supported way
+     * to change a fragment animation's speed without duplicating a resource per speed.</p>
+     *
+     * <p>A duration of 0 returns no animation at all, so tab switches become instant.</p>
+     */
+    @Override
+    public android.view.animation.Animation onCreateAnimation(
+            int transit, boolean enter, int nextAnim) {
+        if (nextAnim == 0) {
+            return super.onCreateAnimation(transit, enter, nextAnim);
+        }
+        try {
+            com.fadcam.SharedPreferencesManager prefs =
+                    com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+            long durationMs = prefs.getTabTransitionDurationMs();
+            android.view.animation.Animation anim =
+                    android.view.animation.AnimationUtils.loadAnimation(requireContext(), nextAnim);
+            if (anim == null) {
+                return super.onCreateAnimation(transit, enter, nextAnim);
+            }
+            // Returning null here would NOT disable the animation: FragmentManager treats a
+            // null result as "use the default animation", so the fade still ran at its XML
+            // duration. A zero-length animation is the only way to actually switch instantly.
+            anim.setDuration(durationMs);
+            anim.setStartOffset(0L);
+            return anim;
+        } catch (Exception e) {
+            // A preference read must never break a tab switch — fall back to the XML default.
+            FLog.w("BaseFragment", "onCreateAnimation fallback: " + e.getMessage());
+            return super.onCreateAnimation(transit, enter, nextAnim);
+        }
+    }
     
     /**
      * Override this method to handle back presses in your fragment.
@@ -31,7 +71,6 @@ public abstract class BaseFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        
         // Add a callback for handling back presses
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), 
                 new OnBackPressedCallback(true) {

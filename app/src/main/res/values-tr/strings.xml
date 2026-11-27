@@ -3115,4 +3115,11 @@ Sonsuza dek senin.</string>
     <string name="lite_promo_header">FadCam\'in küçük kardeşi</string>
     <string name="lite_promo_title">FadCam Lite</string>
     <string name="lite_promo_subtitle">Günlük kayıt için daha küçük bir FadCam. Ücretsiz, reklamsız.</string>
+    <string name="setting_tab_transition_speed">Sekme geçiş hızı</string>
+    <string name="helper_tab_transition_speed">Sekme değiştirirken kararmanın süresi. Anında geçiş için Kapalı seçin.</string>
+    <string name="tab_transition_off">Kapalı (anında)</string>
+    <string name="tab_transition_fast">Hızlı</string>
+    <string name="tab_transition_normal">Normal (Varsayılan)</string>
+    <string name="tab_transition_slow">Yavaş</string>
+    <string name="tab_transition_very_slow">Çok yavaş</string>
 </resources>

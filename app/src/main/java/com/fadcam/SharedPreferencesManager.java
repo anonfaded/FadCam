@@ -1335,6 +1335,33 @@ public class SharedPreferencesManager {
         );
     }
 
+    /** Default tab-switch fade length, matching the previous hardcoded 120ms. */
+    public static final long DEFAULT_TAB_TRANSITION_DURATION_MS = 120L;
+    public static final long MIN_TAB_TRANSITION_DURATION_MS = 0L;
+    public static final long MAX_TAB_TRANSITION_DURATION_MS = 1000L;
+
+    /**
+     * Tab-switch fade length in milliseconds. 0 means the tabs switch instantly.
+     * Clamped to the supported range so a corrupted preference can never produce an
+     * animation that appears frozen or one that feels like a system hang.
+     */
+    public long getTabTransitionDurationMs() {
+        long value = safeGetLong(
+            Constants.PREF_TAB_TRANSITION_DURATION,
+            DEFAULT_TAB_TRANSITION_DURATION_MS
+        );
+        return Math.max(MIN_TAB_TRANSITION_DURATION_MS,
+            Math.min(MAX_TAB_TRANSITION_DURATION_MS, value));
+    }
+
+    public void setTabTransitionDurationMs(long durationMs) {
+        sharedPreferences.edit()
+            .putLong(Constants.PREF_TAB_TRANSITION_DURATION,
+                Math.max(MIN_TAB_TRANSITION_DURATION_MS,
+                    Math.min(MAX_TAB_TRANSITION_DURATION_MS, durationMs)))
+            .apply();
+    }
+
     /**
      * Get custom watermark text.
      * @return Custom watermark text or empty string if not set

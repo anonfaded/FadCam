@@ -3007,6 +3007,13 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="setting_language">Language</string>
     <string name="setting_app_icon">App Icon</string>
     <string name="setting_splash_screen">Splash Screen</string>
+    <string name="setting_tab_transition_speed">Tab Transition Speed</string>
+    <string name="helper_tab_transition_speed">How long the fade lasts when you switch tabs. Choose Off for instant switching.</string>
+    <string name="tab_transition_off">Off (instant)</string>
+    <string name="tab_transition_fast">Fast</string>
+    <string name="tab_transition_normal">Normal (Default)</string>
+    <string name="tab_transition_slow">Slow</string>
+    <string name="tab_transition_very_slow">Very slow</string>
     <string name="splash_screen_dialog_title">Choose Splash Screen</string>
     <string name="splash_screen_helper">Choose what FadCam shows when it starts.</string>
     <string name="splash_style_avatar">Fadex</string>

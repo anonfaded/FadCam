@@ -3314,4 +3314,11 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="lite_promo_header">Ο μικρός αδερφός του FadCam</string>
     <string name="lite_promo_title">FadCam Lite</string>
     <string name="lite_promo_subtitle">Ένα μικρότερο FadCam για καθημερινή εγγραφή. Δωρεάν, χωρίς διαφημίσεις.</string>
+    <string name="setting_tab_transition_speed">Ταχύτητα μετάβασης καρτελών</string>
+    <string name="helper_tab_transition_speed">Πόσο διαρκεί η μετάβαση όταν αλλάζετε καρτέλα. Επιλέξτε Ανενεργό για άμεση αλλαγή.</string>
+    <string name="tab_transition_off">Ανενεργό (άμεσο)</string>
+    <string name="tab_transition_fast">Γρήγορο</string>
+    <string name="tab_transition_normal">Κανονικό (Προεπιλογή)</string>
+    <string name="tab_transition_slow">Αργό</string>
+    <string name="tab_transition_very_slow">Πολύ αργό</string>
 </resources>

@@ -3318,4 +3318,11 @@ Tuyas para siempre.</string>
     <string name="lite_promo_header">El hermano pequeño de FadCam</string>
     <string name="lite_promo_title">FadCam Lite</string>
     <string name="lite_promo_subtitle">Un FadCam más pequeño para grabar a diario. Gratis, sin anuncios.</string>
+    <string name="setting_tab_transition_speed">Velocidad de transición de pestañas</string>
+    <string name="helper_tab_transition_speed">Cuánto dura el fundido al cambiar de pestaña. Elige Desactivado para cambio instantáneo.</string>
+    <string name="tab_transition_off">Desactivado (instantáneo)</string>
+    <string name="tab_transition_fast">Rápido</string>
+    <string name="tab_transition_normal">Normal (Predeterminado)</string>
+    <string name="tab_transition_slow">Lento</string>
+    <string name="tab_transition_very_slow">Muy lento</string>
 </resources>

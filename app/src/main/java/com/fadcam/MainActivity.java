@@ -3193,8 +3193,8 @@ public class MainActivity extends AppCompatActivity {
         // Set custom fade animations
         if (animate) {
             transaction.setCustomAnimations(
-                R.anim.fade_in,  // Fast 120ms fade in
-                R.anim.fade_out  // Fast 100ms fade out
+                R.anim.fade_in,  // Duration is overridden per-fragment from the user preference
+                R.anim.fade_out
             );
         }
         

@@ -3219,4 +3219,11 @@ Igavesti sinu.</string>
     <string name="lite_promo_header">FadCami väike vend</string>
     <string name="lite_promo_title">FadCam Lite</string>
     <string name="lite_promo_subtitle">Väiksem FadCam igapäevaseks salvestamiseks. Tasuta, ilma reklaamideta.</string>
+    <string name="setting_tab_transition_speed">Vahekaartide ülemineku kiirus</string>
+    <string name="helper_tab_transition_speed">Kui kaua vahekaardi vahetuse hämardumine kestab. Vali Väljas koheseks vahetuseks.</string>
+    <string name="tab_transition_off">Väljas (kohene)</string>
+    <string name="tab_transition_fast">Kiire</string>
+    <string name="tab_transition_normal">Tavaline (Vaikimisi)</string>
+    <string name="tab_transition_slow">Aeglane</string>
+    <string name="tab_transition_very_slow">Väga aeglane</string>
 </resources>

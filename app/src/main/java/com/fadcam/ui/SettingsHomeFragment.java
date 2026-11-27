@@ -30,7 +30,7 @@ import com.fadcam.FLog;
  * Shows grouped navigation rows with a mode selector popup to filter
  * settings between FadCam, FadRec (Screen Recording), FadMic, or All.
  */
-public class SettingsHomeFragment extends Fragment {
+public class SettingsHomeFragment extends BaseFragment {
 
     /** Set by the home sidebar "See all mini apps" row; consumed on next show to scroll to the Mini Apps section. */
     public static volatile boolean sScrollToMiniApps = false;

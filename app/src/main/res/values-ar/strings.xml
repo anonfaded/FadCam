@@ -4947,4 +4947,11 @@
     <string name="lite_promo_header">الأخ الصغير لـ FadCam</string>
     <string name="lite_promo_title">FadCam Lite</string>
     <string name="lite_promo_subtitle">نسخة أصغر من FadCam للتسجيل اليومي. مجانية، بلا إعلانات.</string>
+    <string name="setting_tab_transition_speed">سرعة انتقال التبويبات</string>
+    <string name="helper_tab_transition_speed">مدة التلاشي عند تبديل التبويبات. اختر إيقاف للتبديل الفوري.</string>
+    <string name="tab_transition_off">إيقاف (فوري)</string>
+    <string name="tab_transition_fast">سريع</string>
+    <string name="tab_transition_normal">عادي (افتراضي)</string>
+    <string name="tab_transition_slow">بطيء</string>
+    <string name="tab_transition_very_slow">بطيء جدًا</string>
 </resources>

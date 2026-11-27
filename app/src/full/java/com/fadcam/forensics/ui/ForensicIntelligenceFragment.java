@@ -17,7 +17,7 @@ import com.fadcam.ui.picker.PickerBottomSheetFragment;
 
 import java.util.ArrayList;
 
-public class ForensicIntelligenceFragment extends Fragment {
+public class ForensicIntelligenceFragment extends com.fadcam.ui.BaseFragment {
 
     private static final String RESULT_KEY = "lab_sidebar_result";
     private static final String RESULT_KEY_CLIP_STYLE = "lab_clip_style_picker";

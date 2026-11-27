@@ -3260,4 +3260,11 @@ Da tase da hamisha paara.</string>
     <string name="lite_promo_header">Da FadCam kuchni wror</string>
     <string name="lite_promo_title">FadCam Lite</string>
     <string name="lite_promo_subtitle">Da FadCam las kuchni version pa hara wraz recording. Wazol, no ads.</string>
+    <string name="setting_tab_transition_speed">د ټبونو د بدلون سرعت</string>
+    <string name="helper_tab_transition_speed">د ټب د بدلولو پر مهال د فیډ موده. سمدلاسه بدلون لپاره بند غوره کړئ.</string>
+    <string name="tab_transition_off">بند (سمدلاسه)</string>
+    <string name="tab_transition_fast">چټک</string>
+    <string name="tab_transition_normal">عادي (په اصل کې)</string>
+    <string name="tab_transition_slow">ورو</string>
+    <string name="tab_transition_very_slow">ډېر ورو</string>
 </resources>

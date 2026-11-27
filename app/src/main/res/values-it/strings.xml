@@ -3210,4 +3210,11 @@ Tue per sempre.</string>
     <string name="lite_promo_header">Il fratellino di FadCam</string>
     <string name="lite_promo_title">FadCam Lite</string>
     <string name="lite_promo_subtitle">Un FadCam più leggero per registrare ogni giorno. Gratuito, senza pubblicità.</string>
+    <string name="setting_tab_transition_speed">Velocità transizione schede</string>
+    <string name="helper_tab_transition_speed">Durata della dissolvenza quando cambi scheda. Scegli Disattivato per un cambio istantaneo.</string>
+    <string name="tab_transition_off">Disattivato (istantaneo)</string>
+    <string name="tab_transition_fast">Veloce</string>
+    <string name="tab_transition_normal">Normale (Predefinito)</string>
+    <string name="tab_transition_slow">Lento</string>
+    <string name="tab_transition_very_slow">Molto lento</string>
 </resources>

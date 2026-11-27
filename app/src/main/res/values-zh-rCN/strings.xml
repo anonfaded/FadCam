@@ -5135,4 +5135,11 @@
     <string name="lite_promo_header">FadCam 的小兄弟</string>
     <string name="lite_promo_title">FadCam Lite</string>
     <string name="lite_promo_subtitle">更小巧的 FadCam，适合日常录制。免费，无广告。</string>
+    <string name="setting_tab_transition_speed">标签页切换速度</string>
+    <string name="helper_tab_transition_speed">切换标签页时淡入淡出的持续时间。选择关闭可立即切换。</string>
+    <string name="tab_transition_off">关闭（立即）</string>
+    <string name="tab_transition_fast">快</string>
+    <string name="tab_transition_normal">正常（默认）</string>
+    <string name="tab_transition_slow">慢</string>
+    <string name="tab_transition_very_slow">很慢</string>
 </resources>

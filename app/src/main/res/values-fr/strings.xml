@@ -4873,4 +4873,11 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="lite_promo_header">Le petit frère de FadCam</string>
     <string name="lite_promo_title">FadCam Lite</string>
     <string name="lite_promo_subtitle">Un FadCam plus léger pour enregistrer au quotidien. Gratuit, sans publicité.</string>
+    <string name="setting_tab_transition_speed">Vitesse de transition des onglets</string>
+    <string name="helper_tab_transition_speed">Durée du fondu lors du changement d\'onglet. Choisissez Désactivé pour un changement instantané.</string>
+    <string name="tab_transition_off">Désactivé (instantané)</string>
+    <string name="tab_transition_fast">Rapide</string>
+    <string name="tab_transition_normal">Normal (Par défaut)</string>
+    <string name="tab_transition_slow">Lent</string>
+    <string name="tab_transition_very_slow">Très lent</string>
 </resources>

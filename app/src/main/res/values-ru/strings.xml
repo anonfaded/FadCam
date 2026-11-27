@@ -3884,4 +3884,11 @@
     <string name="lite_promo_header">Младший брат FadCam</string>
     <string name="lite_promo_title">FadCam Lite</string>
     <string name="lite_promo_subtitle">Уменьшенный FadCam для повседневной записи. Бесплатно, без рекламы.</string>
+    <string name="setting_tab_transition_speed">Скорость переключения вкладок</string>
+    <string name="helper_tab_transition_speed">Длительность затухания при переключении вкладок. Выберите Выкл для мгновенного переключения.</string>
+    <string name="tab_transition_off">Выкл (мгновенно)</string>
+    <string name="tab_transition_fast">Быстро</string>
+    <string name="tab_transition_normal">Обычно (По умолчанию)</string>
+    <string name="tab_transition_slow">Медленно</string>
+    <string name="tab_transition_very_slow">Очень медленно</string>
 </resources>
