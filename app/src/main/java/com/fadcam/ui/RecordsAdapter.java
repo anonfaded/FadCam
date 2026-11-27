@@ -3930,6 +3930,40 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return records == null ? 0 : records.size();
     }
 
+    /**
+     * True when this adapter is already displaying exactly {@code candidate} — same
+     * records in the same order, with the same size and timestamp for each.
+     * <p>
+     * This is the authoritative "did anything change?" check for callers that keep
+     * their own list: the adapter owns the copy actually bound to the screen, so
+     * comparing against it cannot be fooled by in-place edits to the caller's list.
+     * O(n) with no allocation.
+     */
+    public boolean isDisplaying(@NonNull List<VideoItem> candidate) {
+        if (records == null) {
+            return candidate.isEmpty();
+        }
+        if (records.size() != candidate.size()) {
+            return false;
+        }
+        for (int i = 0; i < records.size(); i++) {
+            VideoItem shown = records.get(i);
+            VideoItem next = candidate.get(i);
+            if (shown == null || next == null) {
+                if (shown != next) {
+                    return false;
+                }
+                continue;
+            }
+            if (!Objects.equals(shown.uri, next.uri)
+                    || shown.size != next.size
+                    || shown.lastModified != next.lastModified) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // ── MonthHeaderViewHolder ──
     static class MonthHeaderViewHolder extends RecyclerView.ViewHolder {
         final TextView title;

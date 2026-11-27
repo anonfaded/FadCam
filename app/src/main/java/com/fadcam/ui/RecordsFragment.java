@@ -550,9 +550,13 @@ public class RecordsFragment extends BaseFragment implements
             return;
         }
 
+        // allLoadedItems is the single source of truth for the data set. videoItems is a
+        // DERIVED view (allLoadedItems filtered by the active chip) and is written only by
+        // applyActiveFilterToUi(). Removing from videoItems here as well made that method's
+        // "is this the same list?" check compare the already-pruned list against itself, so
+        // it concluded nothing had changed and skipped recordsAdapter.updateRecords(). The
+        // deleted row then stayed on screen while the file and DB row were already gone.
         allLoadedItems.removeIf(item ->
-                item == null || item.uri == null || deletedUriStrings.contains(item.uri.toString()));
-        videoItems.removeIf(item ->
                 item == null || item.uri == null || deletedUriStrings.contains(item.uri.toString()));
         selectedUris.removeIf(uri -> uri != null && deletedUriStrings.contains(uri.toString()));
 
@@ -1512,17 +1516,15 @@ public class RecordsFragment extends BaseFragment implements
                         if (originalTempSafUriString != null) {
                             Uri originalTempSafUri = Uri.parse(originalTempSafUriString);
                             boolean foundAndRemoved = false;
-                            for (int i = videoItems.size() - 1; i >= 0; i--) {
-                                if (videoItems.get(i).uri.equals(originalTempSafUri)) {
-                                    videoItems.remove(i);
-                                    foundAndRemoved = true;
-                                    FLog.d(TAG, "Removed temporary SAF VideoItem: " + originalTempSafUri);
-                                    break;
-                                }
-                            }
+                            // Only allLoadedItems (the source of truth) is edited here.
+                            // applyActiveFilterToUi() below rebuilds videoItems from it
+                            // and rebinds the adapter, so touching videoItems too would
+                            // only desynchronise the two lists.
                             for (int i = allLoadedItems.size() - 1; i >= 0; i--) {
                                 if (allLoadedItems.get(i).uri.equals(originalTempSafUri)) {
                                     allLoadedItems.remove(i);
+                                    foundAndRemoved = true;
+                                    FLog.d(TAG, "Removed temporary SAF VideoItem: " + originalTempSafUri);
                                     break;
                                 }
                             }
@@ -1537,7 +1539,6 @@ public class RecordsFragment extends BaseFragment implements
                                             finalDocFile.length(),
                                             finalDocFile.lastModified());
                                     newItem.isNew = true;
-                                    videoItems.add(0, newItem); // Add to top, assuming latest
                                     allLoadedItems.add(0, newItem);
                                     FLog.d(TAG, "Added final SAF VideoItem: " + finalUriString);
                                 } else {
@@ -3608,20 +3609,14 @@ public class RecordsFragment extends BaseFragment implements
         }
         // Re-applying the same filter on tab re-entry should not tear down and
         // rebind the whole adapter (with 30k items that is a visible hitch).
-        boolean sameItems = filteredItems.size() == videoItems.size();
-        if (sameItems) {
-            for (int i = 0; i < filteredItems.size(); i++) {
-                VideoItem a = filteredItems.get(i);
-                VideoItem b = videoItems.get(i);
-                if (a == null || b == null
-                        || !Objects.equals(a.uri, b.uri)
-                        || a.size != b.size
-                        || a.lastModified != b.lastModified) {
-                    sameItems = false;
-                    break;
-                }
-            }
-        }
+        // Ask the ADAPTER what it is showing rather than comparing against
+        // videoItems: callers used to prune videoItems before calling this, which
+        // made the two lists agree by construction and silently skipped rebinds
+        // that were genuinely needed (deleted rows lingered on screen).
+        // isDisplaying() is O(n) with no allocation and is the only reliable
+        // source of truth, because the adapter owns the copy bound to the view.
+        boolean sameItems = recordsAdapter != null
+                && recordsAdapter.isDisplaying(filteredItems);
         if (!sameItems) {
             videoItems.clear();
             videoItems.addAll(filteredItems);
@@ -5621,26 +5616,29 @@ public class RecordsFragment extends BaseFragment implements
                     }
                     do {
                         deltaScanPending.set(false);
-                        final int expectedCount = totalItems;
                         try {
                             List<VideoItem> deltaItems = repository.deltaScan(sharedPreferencesManager);
-                            if (deltaItems.size() != expectedCount) {
-                                List<VideoItem> deltaNormalized = normalizeVideoCategories(deltaItems);
-                                sortItems(deltaNormalized, currentSortOption);
-                                totalItems = deltaNormalized.size();
-                                FLog.i(TAG, "Delta scan detected changes: " + deltaNormalized.size() + " items");
-                                com.fadcam.utils.VideoSessionCache.updateSessionCache(deltaNormalized);
-                                new Handler(Looper.getMainLooper()).post(() -> {
-                                    if (!isAdded()) {
-                                        return;
-                                    }
-                                    allLoadedItems.clear();
-                                    allLoadedItems.addAll(deltaNormalized);
-                                    applyActiveFilterToUi();
-                                });
-                            } else {
-                                FLog.d(TAG, "Delta scan: no changes detected");
-                            }
+                            // Always publish the scan result. Detecting change by comparing
+                            // counts is unreliable in both directions: a delete lowers the
+                            // count, but applyDeletedItemsToUi() already lowered totalItems to
+                            // match, so the two agree and the refresh looks like a no-op; and
+                            // one delete plus one add keeps the count identical. The real
+                            // comparison happens in applyActiveFilterToUi(), which walks the
+                            // list once, allocates nothing extra, and skips the adapter rebind
+                            // when the content genuinely matches.
+                            List<VideoItem> deltaNormalized = normalizeVideoCategories(deltaItems);
+                            sortItems(deltaNormalized, currentSortOption);
+                            totalItems = deltaNormalized.size();
+                            FLog.i(TAG, "Delta scan applied: " + deltaNormalized.size() + " items");
+                            com.fadcam.utils.VideoSessionCache.updateSessionCache(deltaNormalized);
+                            new Handler(Looper.getMainLooper()).post(() -> {
+                                if (!isAdded()) {
+                                    return;
+                                }
+                                allLoadedItems.clear();
+                                allLoadedItems.addAll(deltaNormalized);
+                                applyActiveFilterToUi();
+                            });
                         } catch (Exception e) {
                             FLog.w(TAG, "Delta scan failed (non-fatal): " + e.getMessage());
                         }
