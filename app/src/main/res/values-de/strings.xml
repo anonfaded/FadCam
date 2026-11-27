@@ -3120,4 +3120,12 @@ Für immer dein.</string>
     <string name="patreon_content_desc">Unterstütze uns auf Patreon</string>
     <string name="patreon_description">Beschreibung wird im Code festgelegt.</string>
     <string name="patreon_footer_text">Gemacht mit im FadSec Lab in</string>
+    <string name="watermark_info_cd">Wasserzeichen-Info</string>
+    <string name="watermark_info_title">Wasserzeichen</string>
+    <string name="watermark_info_intro_title">Zwei getrennte Wasserzeichen-Einstellungen</string>
+    <string name="watermark_info_intro_body">Die Tabs auf diesem Bildschirm sind nicht nur eine Umschaltung der Vorschau. Jeder Tab hat seine eigenen Wasserzeichen-Einstellungen, und jede gilt nur für diese Art der Aufnahme.</string>
+    <string name="watermark_info_fadcam_title">FadCam</string>
+    <string name="watermark_info_fadcam_body">Gilt für Kamera-Videoaufnahmen und Dual-Kamera-Aufnahmen. Änderungen in diesem Tab betreffen nur Kameraaufnahmen.</string>
+    <string name="watermark_info_fadrec_title">FadRec</string>
+    <string name="watermark_info_fadrec_body">Gilt nur für Bildschirmaufnahmen. Änderungen in diesem Tab betreffen nur Bildschirmaufnahmen.</string>
 </resources>

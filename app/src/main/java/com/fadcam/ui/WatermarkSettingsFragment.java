@@ -53,6 +53,15 @@ public class WatermarkSettingsFragment extends Fragment {
     private TextView valueLocationInterval;
     /** 0 = FadCam page, 1 = FadRec page */
     private int currentPreviewPage = 0;
+    /**
+     * The watermark settings backing the visible page. Camera and screen recording each keep
+     * their own set, so every row below the preview reads and writes the one that is on screen.
+     */
+    private com.fadcam.watermark.WatermarkPrefs activeSettings;
+    /** Kept so the Day row can be refreshed when the visible page changes. */
+    private Runnable dayLabelUpdater;
+    private static final java.text.SimpleDateFormat DAY_LABEL_FORMAT =
+            new java.text.SimpleDateFormat("EEE", java.util.Locale.ENGLISH);
     private ViewPager2 previewPager;
     private PreviewPagerAdapter previewAdapter;
     private View dotFadCam, dotFadRec;
@@ -77,6 +86,7 @@ public class WatermarkSettingsFragment extends Fragment {
         NewFeatureManager.markFeatureAsSeen(requireContext(), "watermark");
         
         prefs = SharedPreferencesManager.getInstance(requireContext());
+        activeSettings = settingsForPage(currentPreviewPage);
         valueLocationWatermark = view.findViewById(R.id.value_location_watermark);
         valueWatermarkStyle = view.findViewById(R.id.value_watermark_style);
         valueCustomText = view.findViewById(R.id.value_custom_text);
@@ -102,13 +112,18 @@ public class WatermarkSettingsFragment extends Fragment {
         if (back != null) {
             back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
         }
+        View info = view.findViewById(R.id.info_button);
+        if (info != null) {
+            info.setOnClickListener(v -> new WatermarkInfoBottomSheet().show(
+                    getParentFragmentManager(), "watermark_info"));
+        }
 
         // Timezone toggle
         com.fadcam.ui.AvatarToggleView switchTimezone = view.findViewById(R.id.switch_timezone);
         if (switchTimezone != null) {
-            switchTimezone.setChecked(prefs.isTimezoneEnabled());
+            switchTimezone.setChecked(activeSettings.isTimezoneEnabled());
             switchTimezone.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                prefs.setTimezoneEnabled(isChecked);
+                activeSettings.setTimezoneEnabled(isChecked);
                 refreshExtendedRowValues();
                 updateTimezoneFormatRowState();
             });
@@ -121,13 +136,11 @@ public class WatermarkSettingsFragment extends Fragment {
         // Day name toggle (default ON) — shows e.g. "Wed, " before the timestamp.
         com.fadcam.ui.AvatarToggleView switchDay = view.findViewById(R.id.switch_day);
         final android.widget.TextView valueDay = view.findViewById(R.id.value_day);
-        final java.text.SimpleDateFormat dayFmt =
-                new java.text.SimpleDateFormat("EEE", java.util.Locale.ENGLISH);
-        final Runnable updateDayValue = () -> {
+        dayLabelUpdater = () -> {
             if (valueDay != null) {
-                if (prefs.isWatermarkDayEnabled()) {
+                if (activeSettings.isDayEnabled()) {
                     // Matches the timezone value pattern: live value in green when on.
-                    valueDay.setText(dayFmt.format(new java.util.Date()));
+                    valueDay.setText(DAY_LABEL_FORMAT.format(new java.util.Date()));
                     valueDay.setTextColor(0xFF16A34A);
                 } else {
                     // Off state mirrors the other rows ("Off" in gray) instead of
@@ -138,10 +151,10 @@ public class WatermarkSettingsFragment extends Fragment {
             }
         };
         if (switchDay != null) {
-            switchDay.setChecked(prefs.isWatermarkDayEnabled());
+            switchDay.setChecked(activeSettings.isDayEnabled());
             switchDay.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                prefs.setWatermarkDayEnabled(isChecked);
-                updateDayValue.run();
+                activeSettings.setDayEnabled(isChecked);
+                if (dayLabelUpdater != null) dayLabelUpdater.run();
                 updatePreview(); // refresh the watermark preview live
             });
         }
@@ -149,7 +162,7 @@ public class WatermarkSettingsFragment extends Fragment {
         if (rowDay != null) rowDay.setOnClickListener(v -> {
             if (switchDay != null) switchDay.performClick();
         });
-        updateDayValue.run();
+        updateDayValueLabel();
 
         // Timezone format picker
         View rowTimezoneFormat = view.findViewById(R.id.row_timezone_format);
@@ -159,9 +172,9 @@ public class WatermarkSettingsFragment extends Fragment {
         // UTM toggle
         com.fadcam.ui.AvatarToggleView switchUtm = view.findViewById(R.id.switch_utm);
         if (switchUtm != null) {
-            switchUtm.setChecked(prefs.isUtmEnabled());
+            switchUtm.setChecked(activeSettings.isUtmEnabled());
             switchUtm.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                prefs.setUtmEnabled(isChecked);
+                activeSettings.setUtmEnabled(isChecked);
                 updateUtmHelperVisibility();
                 refreshExtendedRowValues();
             });
@@ -181,63 +194,63 @@ public class WatermarkSettingsFragment extends Fragment {
         // Extended watermark feature toggles
         com.fadcam.ui.AvatarToggleView switchSpeed = view.findViewById(R.id.switch_speed);
         if (switchSpeed != null) {
-            switchSpeed.setChecked(prefs.isSpeedEnabled());
+            switchSpeed.setChecked(activeSettings.isSpeedEnabled());
             switchSpeed.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                prefs.setSpeedEnabled(isChecked);
+                activeSettings.setSpeedEnabled(isChecked);
                 refreshExtendedRowValues();
             });
         }
         com.fadcam.ui.AvatarToggleView switchAltitude = view.findViewById(R.id.switch_altitude);
         if (switchAltitude != null) {
-            switchAltitude.setChecked(prefs.isAltitudeEnabled());
+            switchAltitude.setChecked(activeSettings.isAltitudeEnabled());
             switchAltitude.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                prefs.setAltitudeEnabled(isChecked);
+                activeSettings.setAltitudeEnabled(isChecked);
                 refreshExtendedRowValues();
             });
         }
         com.fadcam.ui.AvatarToggleView switchAccuracy = view.findViewById(R.id.switch_accuracy);
         if (switchAccuracy != null) {
-            switchAccuracy.setChecked(prefs.isAccuracyEnabled());
+            switchAccuracy.setChecked(activeSettings.isAccuracyEnabled());
             switchAccuracy.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                prefs.setAccuracyEnabled(isChecked);
+                activeSettings.setAccuracyEnabled(isChecked);
                 refreshExtendedRowValues();
             });
         }
         com.fadcam.ui.AvatarToggleView switchCompass = view.findViewById(R.id.switch_compass);
         if (switchCompass != null) {
-            switchCompass.setChecked(prefs.isCompassEnabled());
+            switchCompass.setChecked(activeSettings.isCompassEnabled());
             switchCompass.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                prefs.setCompassEnabled(isChecked);
+                activeSettings.setCompassEnabled(isChecked);
                 refreshExtendedRowValues();
             });
         }
         com.fadcam.ui.AvatarToggleView switchNoise = view.findViewById(R.id.switch_noise);
         if (switchNoise != null) {
-            switchNoise.setChecked(prefs.isNoiseEnabled());
+            switchNoise.setChecked(activeSettings.isNoiseEnabled());
             switchNoise.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (isChecked) {
                     ensureAudioPermissionThen(() -> {
-                        prefs.setNoiseEnabled(true);
+                        activeSettings.setNoiseEnabled(true);
                         refreshExtendedRowValues();
                     });
                 } else {
-                    prefs.setNoiseEnabled(false);
+                    activeSettings.setNoiseEnabled(false);
                     refreshExtendedRowValues();
                 }
             });
         }
         com.fadcam.ui.AvatarToggleView switchWeather = view.findViewById(R.id.switch_weather);
         if (switchWeather != null) {
-            switchWeather.setChecked(prefs.isWeatherEnabled());
+            switchWeather.setChecked(activeSettings.isWeatherEnabled());
             switchWeather.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (isChecked && !prefs.isNetworkWarningShown()) {
                     showNetworkWarningDialog(() -> {
-                        prefs.setWeatherEnabled(true);
+                        activeSettings.setWeatherEnabled(true);
                         prefs.setNetworkWarningShown(true);
                         refreshExtendedRowValues();
                     });
                 } else {
-                    prefs.setWeatherEnabled(isChecked);
+                    activeSettings.setWeatherEnabled(isChecked);
                     refreshExtendedRowValues();
                 }
             });
@@ -302,6 +315,10 @@ public class WatermarkSettingsFragment extends Fragment {
                 @Override
                 public void onPageSelected(int position) {
                     currentPreviewPage = position;
+                    // Every row below the preview follows the visible page, so switching tabs
+                    // shows that mode's own settings instead of one shared set.
+                    activeSettings = settingsForPage(position);
+                    rebindRowsToActiveSettings();
                     updateDots(position);
                     // Sync tab selection without triggering tab listener recursion
                     com.google.android.material.tabs.TabLayout tabs = getView() != null
@@ -342,14 +359,14 @@ public class WatermarkSettingsFragment extends Fragment {
 
     private void refreshLocationValue() {
         if (valueLocationWatermark != null) {
-            valueLocationWatermark.setText(prefs.isLocalisationEnabled() ? getString(R.string.setting_enabled) : getString(R.string.setting_disabled));
+            valueLocationWatermark.setText(activeSettings.isLocationEnabled() ? getString(R.string.setting_enabled) : getString(R.string.setting_disabled));
         }
     }
 
     private void toggleLocationDirect(boolean target){
         if(target){
             ensurePermissionThen(() -> {
-                prefs.setLocationEnabled(true);
+                activeSettings.setLocationEnabled(true);
                 startLocationHelperIfNeeded();
                 refreshLocationValue();
                 updatePreview();
@@ -357,7 +374,7 @@ public class WatermarkSettingsFragment extends Fragment {
                 FLog.d(TAG, "Location watermark enabled via sheet.");
             });
         } else {
-            prefs.setLocationEnabled(false);
+            activeSettings.setLocationEnabled(false);
             stopLocationIfAllDisabled();
             refreshLocationValue();
             updatePreview();
@@ -368,7 +385,7 @@ public class WatermarkSettingsFragment extends Fragment {
 
     private void showLocationWatermarkSheet(){
         final String resultKey = "picker_result_location_watermark";
-        boolean enabled = prefs.isLocalisationEnabled();
+        boolean enabled = activeSettings.isLocationEnabled();
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
             if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
                 boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
@@ -441,7 +458,7 @@ public class WatermarkSettingsFragment extends Fragment {
     }
 
     private void stopLocationIfAllDisabled() {
-        if (!prefs.isLocalisationEnabled() && !prefs.isLocationEmbeddingEnabled()) {
+        if (!activeSettings.isLocationEnabled() && !prefs.isLocationEmbeddingEnabled()) {
             if (locationHelper != null) {
                 locationHelper.stopLocationUpdates();
                 locationHelper = null;
@@ -455,7 +472,7 @@ public class WatermarkSettingsFragment extends Fragment {
             if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
                 String id = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
                 if(id!=null){
-                    prefs.sharedPreferences.edit().putString(Constants.PREF_WATERMARK_OPTION, id).apply();
+                    activeSettings.setWatermarkOption(id);
                     refreshWatermarkStyleValue();
                     updateLocationRowState();
                     updatePreview();
@@ -467,7 +484,7 @@ public class WatermarkSettingsFragment extends Fragment {
     items.add(new com.fadcam.ui.picker.OptionItem("badge_fadcam", getString(R.string.watermark_style_badge_label), (String) null));
     items.add(new com.fadcam.ui.picker.OptionItem("timestamp", getString(R.string.watermark_style_timeonly_label), (String) null));
     items.add(new com.fadcam.ui.picker.OptionItem("no_watermark", getString(R.string.watermark_style_none_label), (String) null));
-        String current = prefs.getWatermarkOption();
+        String current = activeSettings.getWatermarkOption();
     com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
         getString(R.string.watermark_style_row_title), items, current, resultKey, getString(R.string.helper_watermark_option));
         sheet.show(getParentFragmentManager(), "watermark_style_sheet");
@@ -475,7 +492,7 @@ public class WatermarkSettingsFragment extends Fragment {
 
     private void refreshWatermarkStyleValue(){
         if(valueWatermarkStyle==null) return;
-        String v = prefs.getWatermarkOption();
+        String v = activeSettings.getWatermarkOption();
         if("timestamp_fadcam".equals(v)) valueWatermarkStyle.setText(getString(R.string.watermark_style_time_fadcam_label));
         else if("badge_fadcam".equals(v)) valueWatermarkStyle.setText(getString(R.string.watermark_style_badge_label));
         else if("timestamp".equals(v)) valueWatermarkStyle.setText(getString(R.string.watermark_style_timeonly_label));
@@ -489,7 +506,7 @@ public class WatermarkSettingsFragment extends Fragment {
         // switching back to a timestamp style left videos without coordinates or UTM forever.
         // The row is only greyed out while "No Watermark" is selected; the setting itself is
         // preserved and takes effect again as soon as a watermark style is chosen.
-        boolean watermarkNone = "no_watermark".equals(prefs.getWatermarkOption());
+        boolean watermarkNone = "no_watermark".equals(activeSettings.getWatermarkOption());
         if(watermarkNone){
             locationRow.setEnabled(false);
             locationRow.setAlpha(0.4f);
@@ -497,6 +514,55 @@ public class WatermarkSettingsFragment extends Fragment {
             locationRow.setEnabled(true);
             locationRow.setAlpha(1f);
         }
+    }
+
+    /**
+     * The stored settings set for a preview page: 0 is camera recording, 1 is screen recording.
+     */
+    private com.fadcam.watermark.WatermarkPrefs settingsForPage(int page) {
+        return page == 1
+                ? com.fadcam.watermark.WatermarkPrefs.forScreenRecording(prefs)
+                : com.fadcam.watermark.WatermarkPrefs.forCamera(prefs);
+    }
+
+    /** Re-reads every row against {@link #activeSettings} after the visible page changes. */
+    private void rebindRowsToActiveSettings() {
+        View view = getView();
+        if (view == null) return;
+
+        com.fadcam.ui.AvatarToggleView switchTimezone = view.findViewById(R.id.switch_timezone);
+        if (switchTimezone != null) switchTimezone.setChecked(activeSettings.isTimezoneEnabled());
+        com.fadcam.ui.AvatarToggleView switchDay = view.findViewById(R.id.switch_day);
+        if (switchDay != null) switchDay.setChecked(activeSettings.isDayEnabled());
+        com.fadcam.ui.AvatarToggleView switchUtm = view.findViewById(R.id.switch_utm);
+        if (switchUtm != null) switchUtm.setChecked(activeSettings.isUtmEnabled());
+        com.fadcam.ui.AvatarToggleView switchSpeed = view.findViewById(R.id.switch_speed);
+        if (switchSpeed != null) switchSpeed.setChecked(activeSettings.isSpeedEnabled());
+        com.fadcam.ui.AvatarToggleView switchAltitude = view.findViewById(R.id.switch_altitude);
+        if (switchAltitude != null) switchAltitude.setChecked(activeSettings.isAltitudeEnabled());
+        com.fadcam.ui.AvatarToggleView switchAccuracy = view.findViewById(R.id.switch_accuracy);
+        if (switchAccuracy != null) switchAccuracy.setChecked(activeSettings.isAccuracyEnabled());
+        com.fadcam.ui.AvatarToggleView switchCompass = view.findViewById(R.id.switch_compass);
+        if (switchCompass != null) switchCompass.setChecked(activeSettings.isCompassEnabled());
+        com.fadcam.ui.AvatarToggleView switchNoise = view.findViewById(R.id.switch_noise);
+        if (switchNoise != null) switchNoise.setChecked(activeSettings.isNoiseEnabled());
+        com.fadcam.ui.AvatarToggleView switchWeather = view.findViewById(R.id.switch_weather);
+        if (switchWeather != null) switchWeather.setChecked(activeSettings.isWeatherEnabled());
+
+        refreshLocationValue();
+        refreshWatermarkStyleValue();
+        refreshCustomTextValue();
+        refreshLocationFormatValue();
+        refreshLocationIntervalValue();
+        updateLocationRowState();
+        refreshExtendedRowValues();
+        updateDayValueLabel();
+        updatePreview();
+    }
+
+    /** Runs the Day row's label refresh, if the view has been built yet. */
+    private void updateDayValueLabel() {
+        if (dayLabelUpdater != null) dayLabelUpdater.run();
     }
 
     private void updateDots(int page) {
@@ -510,47 +576,29 @@ public class WatermarkSettingsFragment extends Fragment {
     }
 
     private void updatePreview(){
-        String v = prefs.getWatermarkOption();
-        // Static sample (10 Jul 2024 is a Wednesday) — day shown when the toggle is on.
+        // Each page shows what that mode's own settings would produce, so switching tabs
+        // shows the real difference between camera and screen recording instead of the
+        // same preview twice.
+        com.fadcam.watermark.WatermarkPrefs cameraSettings =
+                com.fadcam.watermark.WatermarkPrefs.forCamera(prefs);
+        com.fadcam.watermark.WatermarkPrefs screenSettings =
+                com.fadcam.watermark.WatermarkPrefs.forScreenRecording(prefs);
+
         // Fixed sample instant (10 Jul 2024 is a Wednesday) with the real formatter, so the
         // preview can never show a format the recorder does not produce.
         java.util.Calendar sample = java.util.Calendar.getInstance(java.util.Locale.ENGLISH);
         sample.clear();
         sample.set(2024, java.util.Calendar.JULY, 10, 16, 47, 3);
-        String formatted = com.fadcam.watermark.WatermarkTimestamp.format(
-                sample.getTime(), prefs.isWatermarkDayEnabled());
+        java.util.Date sampleTime = sample.getTime();
 
         // Build FadCam preview text — [FADCAM_ICON] triggers ImageSpan in adapter
-        String fadcamBase = null;
-        if ("timestamp_fadcam".equals(v)) {
-            fadcamBase = "Captured by [FADCAM_ICON] - " + formatted;
-        } else if ("badge_fadcam".equals(v)) {
-            fadcamBase = "Captured by [FADCAM_ICON]";
-        } else if ("timestamp".equals(v)) {
-            fadcamBase = formatted;
-        }
-
+        String fadcamBase = buildPreviewText(cameraSettings, sampleTime, true);
         // Build FadRec preview text — [ICON] triggers ImageSpan in adapter
-        String fadrecBase = null;
-        if ("timestamp_fadcam".equals(v)) {
-            fadrecBase = "Recorded by [ICON] - " + formatted;
-        } else if ("badge_fadcam".equals(v)) {
-            fadrecBase = "Recorded by [ICON]";
-        } else if ("timestamp".equals(v)) {
-            fadrecBase = formatted;
-        }
-
-        // Append timezone after timestamp
-        if (prefs.isTimezoneEnabled()) {
-            java.util.TimeZone tz = java.util.TimeZone.getDefault();
-            String tzLabel = buildTimezoneLabel(tz, prefs.getTimezoneFormat());
-            if (fadcamBase != null) fadcamBase += " " + tzLabel;
-            if (fadrecBase != null) fadrecBase += " " + tzLabel;
-        }
+        String fadrecBase = buildPreviewText(screenSettings, sampleTime, false);
 
         TextView helper = getView() != null ? getView().findViewById(R.id.text_preview_helper) : null;
 
-        if (fadcamBase == null) {
+        if (fadcamBase == null && fadrecBase == null) {
             if (previewAdapter != null) {
                 previewAdapter.setContent(
                         getString(R.string.watermark_preview_funny),
@@ -562,45 +610,81 @@ public class WatermarkSettingsFragment extends Fragment {
         }
         if (helper != null) helper.setText(getString(R.string.helper_watermark_preview));
 
-        // Append location lines if enabled
-        if (prefs.isLocalisationEnabled()) {
-            String format = prefs.getWatermarkLocationFormat();
-            String locationLines = "address".equals(format)
-                    ? "\nLat: 48.XXX, Long: 2.XXX\nMain Street, Sample City, Region, Country"
-                    : "\nLat: 48.XXX, Long: 2.XXX";
-            fadcamBase += locationLines;
-            fadrecBase += locationLines;
-        }
-
-        // Append custom text
-        String customText = prefs.getWatermarkCustomText();
-        if (customText != null && !customText.isEmpty()) {
-            fadcamBase += "\n" + customText;
-            fadrecBase += "\n" + customText;
-        }
-
-        // Append UTM preview
-        if (prefs.isUtmEnabled()) {
-            fadcamBase += "\nUTM Zone 42N - 372,684m E, 3,512,334m N";
-            fadrecBase += "\nUTM Zone 42N - 372,684m E, 3,512,334m N";
-        }
-
-        // Append extended sensor data preview
-        String extendedPreview = "";
-        if (prefs.isSpeedEnabled()) extendedPreview += "\nSpeed: 80km/h";
-        if (prefs.isAltitudeEnabled()) extendedPreview += "\nAlt: 59m";
-        if (prefs.isAccuracyEnabled()) extendedPreview += "\nAccuracy: 12m";
-        if (prefs.isCompassEnabled()) extendedPreview += "\nCompass: 220° SW";
-        if (prefs.isNoiseEnabled()) extendedPreview += "\nNoise: 45dB";
-        if (prefs.isWeatherEnabled()) extendedPreview += "\n25°C Clear\nWind: 15 km/h";
-        fadcamBase += extendedPreview;
-        fadrecBase += extendedPreview;
-
         if (previewAdapter != null) {
-            previewAdapter.setContent(fadcamBase, fadrecBase,
+            previewAdapter.setContent(
+                    fadcamBase != null ? fadcamBase : getString(R.string.watermark_preview_funny),
+                    fadrecBase != null ? fadrecBase : getString(R.string.watermark_preview_funny),
                     buildIconDrawable(R.drawable.menu_icon_unknown),
                     buildIconDrawable(R.drawable.fadrec));
         }
+    }
+
+    /**
+     * Builds the sample watermark text one mode would actually record, using that mode's own
+     * settings. Returns {@code null} when that mode has the watermark turned off.
+     *
+     * @param camera true for the camera wording ("Captured by"), false for screen recording
+     *               ("Recorded by")
+     */
+    @Nullable
+    private String buildPreviewText(com.fadcam.watermark.WatermarkPrefs settings,
+            java.util.Date sampleTime, boolean camera) {
+        String option = settings.getWatermarkOption();
+        if ("no_watermark".equals(option)) return null;
+
+        String formatted = com.fadcam.watermark.WatermarkTimestamp.format(
+                sampleTime, settings.isDayEnabled());
+
+        String text;
+        switch (option) {
+            case "timestamp_fadcam":
+                text = (camera ? "Captured by [FADCAM_ICON]" : "Recorded by [ICON]")
+                        + " - " + formatted;
+                break;
+            case "badge_fadcam":
+                text = camera ? "Captured by [FADCAM_ICON]" : "Recorded by [ICON]";
+                break;
+            case "timestamp":
+                text = formatted;
+                break;
+            default:
+                text = camera ? "Captured by FadCam" : "Recorded by FadRec";
+                break;
+        }
+
+        // Append timezone after timestamp
+        if (settings.isTimezoneEnabled()) {
+            java.util.TimeZone tz = java.util.TimeZone.getDefault();
+            text += " " + buildTimezoneLabel(tz, settings.getTimezoneFormat());
+        }
+
+        // Append location lines if enabled
+        if (settings.isLocationEnabled()) {
+            text += "address".equals(settings.getLocationFormat())
+                    ? "\nLat: 48.XXX, Long: 2.XXX\nMain Street, Sample City, Region, Country"
+                    : "\nLat: 48.XXX, Long: 2.XXX";
+        }
+
+        // Append custom text
+        String customText = settings.getCustomText();
+        if (customText != null && !customText.isEmpty()) {
+            text += "\n" + customText;
+        }
+
+        // Append UTM preview
+        if (settings.isUtmEnabled()) {
+            text += "\nUTM Zone 42N - 372,684m E, 3,512,334m N";
+        }
+
+        // Append extended sensor data preview
+        if (settings.isSpeedEnabled()) text += "\nSpeed: 80km/h";
+        if (settings.isAltitudeEnabled()) text += "\nAlt: 59m";
+        if (settings.isAccuracyEnabled()) text += "\nAccuracy: 12m";
+        if (settings.isCompassEnabled()) text += "\nCompass: 220° SW";
+        if (settings.isNoiseEnabled()) text += "\nNoise: 45dB";
+        if (settings.isWeatherEnabled()) text += "\n25°C Clear\nWind: 15 km/h";
+
+        return text;
     }
 
     /**
@@ -629,7 +713,7 @@ public class WatermarkSettingsFragment extends Fragment {
 
     private void refreshCustomTextValue(){
         if(valueCustomText==null) return;
-        String customText = prefs.getWatermarkCustomText();
+        String customText = activeSettings.getCustomText();
         if(customText == null || customText.isEmpty()){
             valueCustomText.setText(getString(R.string.watermark_custom_text_empty));
         } else {
@@ -638,7 +722,7 @@ public class WatermarkSettingsFragment extends Fragment {
     }
 
     private void showCustomTextBottomSheet(){
-        String currentText = prefs.getWatermarkCustomText();
+        String currentText = activeSettings.getCustomText();
         
         InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newInput(
             getString(R.string.watermark_custom_text_title),
@@ -664,7 +748,7 @@ public class WatermarkSettingsFragment extends Fragment {
             @Override
             public void onInputConfirmed(String input) {
                 if(input != null){
-                    prefs.setWatermarkCustomText(input.trim());
+                    activeSettings.setCustomText(input.trim());
                     refreshCustomTextValue();
                     updatePreview();
                     FLog.d(TAG, "Custom watermark text set: " + input);
@@ -678,7 +762,7 @@ public class WatermarkSettingsFragment extends Fragment {
 
     private void refreshLocationFormatValue(){
         if(valueLocationFormat==null) return;
-        String format = prefs.getWatermarkLocationFormat();
+        String format = activeSettings.getLocationFormat();
         if("address".equals(format)){
             valueLocationFormat.setText(getString(R.string.location_format_address));
         } else {
@@ -688,7 +772,7 @@ public class WatermarkSettingsFragment extends Fragment {
 
     private void refreshLocationIntervalValue(){
         if(valueLocationInterval==null) return;
-        long intervalMs = prefs.getWatermarkUpdateInterval();
+        long intervalMs = activeSettings.getUpdateInterval();
         double seconds = intervalMs / 1000.0;
         valueLocationInterval.setText(String.format("%.1f seconds", seconds));
     }
@@ -716,7 +800,7 @@ public class WatermarkSettingsFragment extends Fragment {
         if (view == null) return;
         View rowFormat = view.findViewById(R.id.row_timezone_format);
         if (rowFormat != null) {
-            boolean enabled = prefs.isTimezoneEnabled();
+            boolean enabled = activeSettings.isTimezoneEnabled();
             rowFormat.setEnabled(enabled);
             rowFormat.setAlpha(enabled ? 1f : 0.4f);
         }
@@ -728,7 +812,7 @@ public class WatermarkSettingsFragment extends Fragment {
         if (view == null) return;
         TextView valueFormat = view.findViewById(R.id.value_timezone_format);
         if (valueFormat != null) {
-            String format = prefs.getTimezoneFormat();
+            String format = activeSettings.getTimezoneFormat();
             if ("gmt_name".equals(format)) {
                 valueFormat.setText(getString(R.string.watermark_timezone_format_gmt_name));
             } else {
@@ -743,7 +827,7 @@ public class WatermarkSettingsFragment extends Fragment {
             if (b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)) {
                 String id = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
                 if (id != null) {
-                    prefs.setTimezoneFormat(id);
+                    activeSettings.setTimezoneFormat(id);
                     refreshTimezoneFormatValue();
                     updatePreview();
                     refreshExtendedRowValues();
@@ -753,7 +837,7 @@ public class WatermarkSettingsFragment extends Fragment {
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
         items.add(new com.fadcam.ui.picker.OptionItem("gmt_only", getString(R.string.watermark_timezone_format_gmt_only), (String) null));
         items.add(new com.fadcam.ui.picker.OptionItem("gmt_name", getString(R.string.watermark_timezone_format_gmt_name), (String) null));
-        String current = prefs.getTimezoneFormat();
+        String current = activeSettings.getTimezoneFormat();
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
             getString(R.string.watermark_timezone_format_title), items, current, resultKey, null);
         sheet.show(getParentFragmentManager(), "timezone_format_sheet");
@@ -764,7 +848,7 @@ public class WatermarkSettingsFragment extends Fragment {
         if (view == null) return;
         View helperRow = view.findViewById(R.id.row_utm_helper);
         if (helperRow != null) {
-            helperRow.setVisibility(prefs.isUtmEnabled() ? View.VISIBLE : View.GONE);
+            helperRow.setVisibility(activeSettings.isUtmEnabled() ? View.VISIBLE : View.GONE);
         }
     }
 
@@ -790,9 +874,9 @@ public class WatermarkSettingsFragment extends Fragment {
         TextView valueTimezone = view.findViewById(R.id.value_timezone);
         AvatarToggleView switchTimezone = view.findViewById(R.id.switch_timezone);
         if (valueTimezone != null) {
-            if (prefs.isTimezoneEnabled()) {
+            if (activeSettings.isTimezoneEnabled()) {
                 java.util.TimeZone tz = java.util.TimeZone.getDefault();
-                String tzLabel = buildTimezoneLabel(tz, prefs.getTimezoneFormat());
+                String tzLabel = buildTimezoneLabel(tz, activeSettings.getTimezoneFormat());
                 valueTimezone.setText(getString(R.string.watermark_timezone_on_gmt) + " — " + tzLabel);
                 valueTimezone.setTextColor(greenColor);
             } else {
@@ -800,15 +884,15 @@ public class WatermarkSettingsFragment extends Fragment {
                 valueTimezone.setTextColor(grayColor);
             }
         }
-        if (switchTimezone != null && switchTimezone.isChecked() != prefs.isTimezoneEnabled()) {
-            switchTimezone.setChecked(prefs.isTimezoneEnabled());
+        if (switchTimezone != null && switchTimezone.isChecked() != activeSettings.isTimezoneEnabled()) {
+            switchTimezone.setChecked(activeSettings.isTimezoneEnabled());
         }
 
         // UTM subtitle
         TextView valueUtm = view.findViewById(R.id.value_utm);
         AvatarToggleView switchUtm = view.findViewById(R.id.switch_utm);
         if (valueUtm != null) {
-            if (prefs.isUtmEnabled()) {
+            if (activeSettings.isUtmEnabled()) {
                 valueUtm.setText(getString(R.string.watermark_utm_on));
                 valueUtm.setTextColor(greenColor);
             } else {
@@ -816,14 +900,14 @@ public class WatermarkSettingsFragment extends Fragment {
                 valueUtm.setTextColor(grayColor);
             }
         }
-        if (switchUtm != null && switchUtm.isChecked() != prefs.isUtmEnabled()) {
-            switchUtm.setChecked(prefs.isUtmEnabled());
+        if (switchUtm != null && switchUtm.isChecked() != activeSettings.isUtmEnabled()) {
+            switchUtm.setChecked(activeSettings.isUtmEnabled());
         }
         updateUtmHelperVisibility();
 
         TextView valueSpeed = view.findViewById(R.id.value_speed);
         if (valueSpeed != null) {
-            if (prefs.isSpeedEnabled()) {
+            if (activeSettings.isSpeedEnabled()) {
                 if (!gpsEnabled) {
                     valueSpeed.setText(getString(R.string.watermark_gps_disabled_warning));
                     valueSpeed.setTextColor(redColor);
@@ -837,13 +921,13 @@ public class WatermarkSettingsFragment extends Fragment {
             }
         }
         AvatarToggleView switchSpeed = view.findViewById(R.id.switch_speed);
-        if (switchSpeed != null && switchSpeed.isChecked() != prefs.isSpeedEnabled()) {
-            switchSpeed.setChecked(prefs.isSpeedEnabled());
+        if (switchSpeed != null && switchSpeed.isChecked() != activeSettings.isSpeedEnabled()) {
+            switchSpeed.setChecked(activeSettings.isSpeedEnabled());
         }
 
         TextView valueAltitude = view.findViewById(R.id.value_altitude);
         if (valueAltitude != null) {
-            if (prefs.isAltitudeEnabled()) {
+            if (activeSettings.isAltitudeEnabled()) {
                 if (!gpsEnabled) {
                     valueAltitude.setText(getString(R.string.watermark_gps_disabled_warning));
                     valueAltitude.setTextColor(redColor);
@@ -857,13 +941,13 @@ public class WatermarkSettingsFragment extends Fragment {
             }
         }
         AvatarToggleView switchAltitude = view.findViewById(R.id.switch_altitude);
-        if (switchAltitude != null && switchAltitude.isChecked() != prefs.isAltitudeEnabled()) {
-            switchAltitude.setChecked(prefs.isAltitudeEnabled());
+        if (switchAltitude != null && switchAltitude.isChecked() != activeSettings.isAltitudeEnabled()) {
+            switchAltitude.setChecked(activeSettings.isAltitudeEnabled());
         }
 
         TextView valueAccuracy = view.findViewById(R.id.value_accuracy);
         if (valueAccuracy != null) {
-            if (prefs.isAccuracyEnabled()) {
+            if (activeSettings.isAccuracyEnabled()) {
                 if (!gpsEnabled) {
                     valueAccuracy.setText(getString(R.string.watermark_gps_disabled_warning));
                     valueAccuracy.setTextColor(redColor);
@@ -877,13 +961,13 @@ public class WatermarkSettingsFragment extends Fragment {
             }
         }
         AvatarToggleView switchAccuracy = view.findViewById(R.id.switch_accuracy);
-        if (switchAccuracy != null && switchAccuracy.isChecked() != prefs.isAccuracyEnabled()) {
-            switchAccuracy.setChecked(prefs.isAccuracyEnabled());
+        if (switchAccuracy != null && switchAccuracy.isChecked() != activeSettings.isAccuracyEnabled()) {
+            switchAccuracy.setChecked(activeSettings.isAccuracyEnabled());
         }
 
         TextView valueCompass = view.findViewById(R.id.value_compass);
         if (valueCompass != null) {
-            if (prefs.isCompassEnabled()) {
+            if (activeSettings.isCompassEnabled()) {
                 if (!gpsEnabled && !hasRotVec && !hasMagnetometer) {
                     valueCompass.setText(getString(R.string.watermark_gps_disabled_warning));
                     valueCompass.setTextColor(redColor);
@@ -900,13 +984,13 @@ public class WatermarkSettingsFragment extends Fragment {
             }
         }
         AvatarToggleView switchCompass = view.findViewById(R.id.switch_compass);
-        if (switchCompass != null && switchCompass.isChecked() != prefs.isCompassEnabled()) {
-            switchCompass.setChecked(prefs.isCompassEnabled());
+        if (switchCompass != null && switchCompass.isChecked() != activeSettings.isCompassEnabled()) {
+            switchCompass.setChecked(activeSettings.isCompassEnabled());
         }
 
         TextView valueNoise = view.findViewById(R.id.value_noise);
         if (valueNoise != null) {
-            if (prefs.isNoiseEnabled()) {
+            if (activeSettings.isNoiseEnabled()) {
                 valueNoise.setText(getString(R.string.watermark_noise_on));
                 valueNoise.setTextColor(greenColor);
             } else {
@@ -915,13 +999,13 @@ public class WatermarkSettingsFragment extends Fragment {
             }
         }
         AvatarToggleView switchNoise = view.findViewById(R.id.switch_noise);
-        if (switchNoise != null && switchNoise.isChecked() != prefs.isNoiseEnabled()) {
-            switchNoise.setChecked(prefs.isNoiseEnabled());
+        if (switchNoise != null && switchNoise.isChecked() != activeSettings.isNoiseEnabled()) {
+            switchNoise.setChecked(activeSettings.isNoiseEnabled());
         }
 
         TextView valueWeather = view.findViewById(R.id.value_weather);
         if (valueWeather != null) {
-            if (prefs.isWeatherEnabled()) {
+            if (activeSettings.isWeatherEnabled()) {
                 if (!gpsEnabled) {
                     valueWeather.setText(getString(R.string.watermark_gps_disabled_warning));
                     valueWeather.setTextColor(redColor);
@@ -935,8 +1019,8 @@ public class WatermarkSettingsFragment extends Fragment {
             }
         }
         AvatarToggleView switchWeather = view.findViewById(R.id.switch_weather);
-        if (switchWeather != null && switchWeather.isChecked() != prefs.isWeatherEnabled()) {
-            switchWeather.setChecked(prefs.isWeatherEnabled());
+        if (switchWeather != null && switchWeather.isChecked() != activeSettings.isWeatherEnabled()) {
+            switchWeather.setChecked(activeSettings.isWeatherEnabled());
         }
 
         updatePreview();
@@ -955,7 +1039,7 @@ public class WatermarkSettingsFragment extends Fragment {
                     if (switchWeather instanceof com.fadcam.ui.AvatarToggleView) {
                         ((com.fadcam.ui.AvatarToggleView) switchWeather).setChecked(false);
                     }
-                    prefs.setWeatherEnabled(false);
+                    activeSettings.setWeatherEnabled(false);
                 })
                 .show();
     }
@@ -966,7 +1050,7 @@ public class WatermarkSettingsFragment extends Fragment {
             if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
                 String id = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
                 if(id!=null){
-                    prefs.setWatermarkLocationFormat(id);
+                    activeSettings.setLocationFormat(id);
                     refreshLocationFormatValue();
                     updatePreview();
                     FLog.d(TAG, "Location format set: " + id);
@@ -976,7 +1060,7 @@ public class WatermarkSettingsFragment extends Fragment {
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
         items.add(new com.fadcam.ui.picker.OptionItem("coordinates", getString(R.string.location_format_coordinates), (String) null));
         items.add(new com.fadcam.ui.picker.OptionItem("address", getString(R.string.location_format_address), (String) null));
-        String current = prefs.getWatermarkLocationFormat();
+        String current = activeSettings.getLocationFormat();
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
             getString(R.string.location_format_title), items, current, resultKey, getString(R.string.helper_location_format));
         sheet.show(getParentFragmentManager(), "location_format_sheet");
@@ -990,7 +1074,7 @@ public class WatermarkSettingsFragment extends Fragment {
                 if(id!=null){
                     try {
                         long intervalMs = Long.parseLong(id);
-                        prefs.setWatermarkUpdateInterval(intervalMs);
+                        activeSettings.setUpdateInterval(intervalMs);
                         refreshLocationIntervalValue();
                         FLog.d(TAG, "Location update interval set: " + intervalMs + "ms");
                     } catch(NumberFormatException e){
@@ -1011,7 +1095,7 @@ public class WatermarkSettingsFragment extends Fragment {
         items.add(new com.fadcam.ui.picker.OptionItem("300000", "5 minutes", (String) null));
         items.add(new com.fadcam.ui.picker.OptionItem("600000", "10 minutes", (String) null));
         items.add(new com.fadcam.ui.picker.OptionItem("3600000", "1 hour", (String) null));
-        String currentMs = String.valueOf(prefs.getWatermarkUpdateInterval());
+        String currentMs = String.valueOf(activeSettings.getUpdateInterval());
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
             getString(R.string.location_update_interval_title), items, currentMs, resultKey, getString(R.string.location_update_interval_helper));
         sheet.show(getParentFragmentManager(), "location_interval_sheet");

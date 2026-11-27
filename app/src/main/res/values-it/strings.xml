@@ -3170,4 +3170,12 @@ Tue per sempre.</string>
     <string name="patreon_content_desc">Supportaci su Patreon</string>
     <string name="patreon_description">Se FadCam ti è utile, considera una donazione per supportare lo sviluppo.</string>
     <string name="patreon_footer_text">Grazie per il tuo supporto!</string>
+    <string name="watermark_info_cd">Informazioni sulla filigrana</string>
+    <string name="watermark_info_title">Filigrana</string>
+    <string name="watermark_info_intro_title">Due impostazioni della filigrana separate</string>
+    <string name="watermark_info_intro_body">Le schede in questa schermata non sono solo un cambio di anteprima. Ogni scheda ha le proprie impostazioni della filigrana e ciascuna si applica solo a quel tipo di registrazione.</string>
+    <string name="watermark_info_fadcam_title">FadCam</string>
+    <string name="watermark_info_fadcam_body">Si applica alle registrazioni video con fotocamera e alle registrazioni con doppia fotocamera. Qualsiasi modifica in questa scheda influisce solo sulle registrazioni con fotocamera.</string>
+    <string name="watermark_info_fadrec_title">FadRec</string>
+    <string name="watermark_info_fadrec_body">Si applica solo alle registrazioni dello schermo. Qualsiasi modifica in questa scheda influisce solo sulle registrazioni dello schermo.</string>
 </resources>

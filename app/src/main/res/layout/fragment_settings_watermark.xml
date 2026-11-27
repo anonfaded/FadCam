@@ -37,6 +37,21 @@
             android:textStyle="bold"
             android:layout_marginStart="12dp"
             android:textColor="@android:color/white"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <ImageView
+            android:id="@+id/info_button"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:contentDescription="@string/watermark_info_cd"
+            android:padding="2dp"
+            android:src="@drawable/ic_info"
+            android:tint="@android:color/white"
+            android:background="?attr/selectableItemBackgroundBorderless" />
     </LinearLayout>
 
     <ScrollView

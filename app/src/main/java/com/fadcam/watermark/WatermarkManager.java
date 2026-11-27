@@ -18,13 +18,13 @@ import org.osmdroid.util.GeoPoint;
 import java.util.Locale;
 
 /**
- * Shared watermark text builder and sensor lifecycle manager used by camera recording,
- * dual-camera recording and FadRec screen recording.
+ * Watermark text builder and sensor lifecycle manager for one recording mode.
  *
- * <p>One settings set drives every recording mode, and every enabled feature always emits a
- * line: a live value, {@code "--"} while waiting for a fix, or {@code "GPS is off"}. A line
- * never silently disappears while the GPS provider is switching on, which is what made the
- * location/UTM rows look broken for a few seconds after enabling GPS.</p>
+ * <p>Camera recording and screen recording each own a {@link WatermarkPrefs} set, so the style
+ * and the enabled lines are independent: changing the watermark for screen recording no longer
+ * rewrites what camera clips get stamped with. Both modes still emit a line for every enabled
+ * feature — a live value, {@code "--"} while waiting for a fix, or {@code "GPS is off"} — so a
+ * line never silently disappears while the GPS provider is switching on.</p>
  *
  * <p>Implements {@link WatermarkInfoProvider} so it can be passed directly to the GL
  * pipelines.</p>
@@ -47,6 +47,12 @@ public class WatermarkManager implements WatermarkInfoProvider {
     public enum Mode { CAMERA, SCREEN_RECORDING }
 
     private final Mode mode;
+
+    /**
+     * Stored watermark settings for this mode. Camera and screen recording each keep their
+     * own set, so a style or sensor line chosen for one does not appear in the other.
+     */
+    private final WatermarkPrefs settings;
 
     // ── Sensor / data providers ──────────────────────────────────────
     private LocationHelper locationHelper;
@@ -75,6 +81,9 @@ public class WatermarkManager implements WatermarkInfoProvider {
         this.context = context.getApplicationContext();
         this.prefs = prefs;
         this.mode = mode == null ? Mode.CAMERA : mode;
+        this.settings = this.mode == Mode.SCREEN_RECORDING
+                ? WatermarkPrefs.forScreenRecording(prefs)
+                : WatermarkPrefs.forCamera(prefs);
     }
 
     // ── Sensor lifecycle ──────────────────────────────────────────────
@@ -96,7 +105,7 @@ public class WatermarkManager implements WatermarkInfoProvider {
         }
 
         refreshGpsProviderState();
-        if (!"no_watermark".equals(prefs.getWatermarkOption())) {
+        if (!"no_watermark".equals(settings.getWatermarkOption())) {
             ensureProviders();
         }
         FLog.d(TAG, "Watermark providers initialised");
@@ -154,7 +163,7 @@ public class WatermarkManager implements WatermarkInfoProvider {
         if (existingLocationHelper != null) {
             updateLocationHelper(existingLocationHelper);
         }
-        if (!"no_watermark".equals(prefs.getWatermarkOption())) {
+        if (!"no_watermark".equals(settings.getWatermarkOption())) {
             ensureProviders();
         }
     }
@@ -164,7 +173,7 @@ public class WatermarkManager implements WatermarkInfoProvider {
     @Override
     public String getWatermarkText() {
         watermarkUpdateSequence++;
-        String watermarkOption = prefs.getWatermarkOption();
+        String watermarkOption = settings.getWatermarkOption();
         if ("no_watermark".equals(watermarkOption)) {
             return "";
         }
@@ -174,9 +183,9 @@ public class WatermarkManager implements WatermarkInfoProvider {
         ensureProviders();
         refreshGpsProviderState();
 
-        String locationText = prefs.isLocalisationEnabled() ? getLocationData() : "";
-        String utmText = prefs.isUtmEnabled() ? getUtmData() : "";
-        String customText = prefs.getWatermarkCustomText();
+        String locationText = settings.isLocationEnabled() ? getLocationData() : "";
+        String utmText = settings.isUtmEnabled() ? getUtmData() : "";
+        String customText = settings.getCustomText();
         String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
 
         String baseText;
@@ -217,17 +226,17 @@ public class WatermarkManager implements WatermarkInfoProvider {
         if (locationGeocoder == null) {
             locationGeocoder = new LocationGeocoder();
         }
-        if (LocationFeedGate.needsLocationData(prefs)) {
+        if (settings.needsLocationData()) {
             ensureLocationHelper();
         }
-        if (prefs.isSpeedEnabled() || prefs.isAltitudeEnabled()
-                || prefs.isCompassEnabled() || prefs.isAccuracyEnabled()) {
+        if (settings.isSpeedEnabled() || settings.isAltitudeEnabled()
+                || settings.isCompassEnabled() || settings.isAccuracyEnabled()) {
             ensureSensorProvider();
         }
-        if (prefs.isNoiseEnabled()) {
+        if (settings.isNoiseEnabled()) {
             ensureNoiseMonitor();
         }
-        if (prefs.isWeatherEnabled()) {
+        if (settings.isWeatherEnabled()) {
             ensureWeatherService();
         }
     }
@@ -266,11 +275,11 @@ public class WatermarkManager implements WatermarkInfoProvider {
     // ── Timestamp helpers ─────────────────────────────────────────────
 
     private String getCurrentTimestamp() {
-        return WatermarkTimestamp.now(prefs.isWatermarkDayEnabled());
+        return WatermarkTimestamp.now(settings.isDayEnabled());
     }
 
     private String getTimezoneSuffix() {
-        if (!prefs.isTimezoneEnabled()) return "";
+        if (!settings.isTimezoneEnabled()) return "";
         java.util.TimeZone tz = java.util.TimeZone.getDefault();
         int offsetMs = tz.getOffset(System.currentTimeMillis());
         int totalMinutes = offsetMs / 60000;
@@ -283,7 +292,7 @@ public class WatermarkManager implements WatermarkInfoProvider {
         } else {
             gmt = "GMT" + sign + hours + ":" + String.format(Locale.US, "%02d", minutes);
         }
-        if ("gmt_name".equals(prefs.getTimezoneFormat())) {
+        if ("gmt_name".equals(settings.getTimezoneFormat())) {
             gmt += " (" + tz.getID() + ")";
         }
         return " " + gmt;
@@ -315,10 +324,10 @@ public class WatermarkManager implements WatermarkInfoProvider {
     }
 
     private String getLocationData() {
-        if (!prefs.isLocalisationEnabled()) return "";
+        if (!settings.isLocationEnabled()) return "";
         if (!hasLocationPermission()) return "\nLocation: Permission denied";
         if (locationHelper == null) {
-            if (!LocationFeedGate.needsLocationData(prefs)) return "";
+            if (!settings.needsLocationData()) return "";
             ensureLocationHelper();
         }
         if (locationHelper == null) return "\nLocation: " + LOCATING;
@@ -329,14 +338,14 @@ public class WatermarkManager implements WatermarkInfoProvider {
         }
 
         long now = System.currentTimeMillis();
-        long intervalMs = prefs.getWatermarkUpdateInterval();
+        long intervalMs = settings.getUpdateInterval();
         boolean cacheEmpty = cachedLocationWatermarkText.isEmpty();
         if (cacheEmpty || now - lastLocationWatermarkUpdateMs >= intervalMs) {
             String locData = locationHelper.getLocationData();
             if (locData == null || !locData.contains("Lat:")) {
                 cachedLocationWatermarkText = "";
             } else {
-                String format = prefs.getWatermarkLocationFormat();
+                String format = settings.getLocationFormat();
                 if ("address".equals(format) && locationGeocoder != null) {
                     GeoPoint geoPoint = locationHelper.getCurrentLocation();
                     if (geoPoint != null) {
@@ -371,11 +380,11 @@ public class WatermarkManager implements WatermarkInfoProvider {
 
     /** UTM is independent of the location-overlay toggle, matching the settings preview. */
     private String getUtmData() {
-        if (!prefs.isUtmEnabled()) return "";
+        if (!settings.isUtmEnabled()) return "";
         if (!hasLocationPermission()) return "\nUTM: Permission denied";
         if (!cachedGpsProviderEnabled) return "\nUTM: " + GPS_OFF;
         if (locationHelper == null) {
-            if (!LocationFeedGate.needsLocationData(prefs)) return "\nUTM: " + LOCATING;
+            if (!settings.needsLocationData()) return "\nUTM: " + LOCATING;
             ensureLocationHelper();
         }
         if (locationHelper == null) return "\nUTM: " + LOCATING;
@@ -405,7 +414,7 @@ public class WatermarkManager implements WatermarkInfoProvider {
         boolean gpsOn = cachedGpsProviderEnabled;
         StringBuilder sb = new StringBuilder();
 
-        if (prefs.isSpeedEnabled()) {
+        if (settings.isSpeedEnabled()) {
             ensureSensorProvider();
             if (!gpsOn) {
                 sb.append("\nSpeed: ").append(GPS_OFF);
@@ -417,7 +426,7 @@ public class WatermarkManager implements WatermarkInfoProvider {
             }
         }
 
-        if (prefs.isAltitudeEnabled()) {
+        if (settings.isAltitudeEnabled()) {
             ensureSensorProvider();
             if (!gpsOn) {
                 sb.append("\nAlt: ").append(GPS_OFF);
@@ -429,7 +438,7 @@ public class WatermarkManager implements WatermarkInfoProvider {
             }
         }
 
-        if (prefs.isAccuracyEnabled()) {
+        if (settings.isAccuracyEnabled()) {
             ensureSensorProvider();
             if (!gpsOn) {
                 sb.append("\nAccuracy: ").append(GPS_OFF);
@@ -441,7 +450,7 @@ public class WatermarkManager implements WatermarkInfoProvider {
             }
         }
 
-        if (prefs.isCompassEnabled()) {
+        if (settings.isCompassEnabled()) {
             ensureSensorProvider();
             String direction = sensorDataProvider != null
                     ? sensorDataProvider.getCompassDirection() : null;
@@ -449,7 +458,7 @@ public class WatermarkManager implements WatermarkInfoProvider {
                     .append(direction == null || direction.isEmpty() ? "--" : direction);
         }
 
-        if (prefs.isNoiseEnabled()) {
+        if (settings.isNoiseEnabled()) {
             ensureNoiseMonitor();
             if (noiseMonitor != null && noiseMonitor.isRunning()) {
                 sb.append("\nNoise: ").append(noiseMonitor.getReadableDb());
@@ -458,7 +467,7 @@ public class WatermarkManager implements WatermarkInfoProvider {
             }
         }
 
-        if (prefs.isWeatherEnabled()) {
+        if (settings.isWeatherEnabled()) {
             ensureWeatherService();
             if (!gpsOn) {
                 sb.append("\nWeather: ").append(GPS_OFF);

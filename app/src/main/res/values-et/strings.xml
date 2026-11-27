@@ -3179,4 +3179,12 @@ Igavesti sinu.</string>
     <string name="patreon_content_desc">Toeta meid Patreonis</string>
     <string name="patreon_description">Kirjeldus määratakse koodis.</string>
     <string name="patreon_footer_text">Tehtud armastusega    FadSec Labis    </string>
+    <string name="watermark_info_cd">Vesimärgi teave</string>
+    <string name="watermark_info_title">Vesimärk</string>
+    <string name="watermark_info_intro_title">Kaks eraldi vesimärgi seadet</string>
+    <string name="watermark_info_intro_body">Selle ekraani vahekaardid ei ole lihtsalt eelvaate lüliti. Igal vahekaardil on oma vesimärgi seaded ja igaüks kehtib ainult selle salvestusliigi kohta.</string>
+    <string name="watermark_info_fadcam_title">FadCam</string>
+    <string name="watermark_info_fadcam_body">Kehtib kaamera videote ja kahekamera salvestuste kohta. Sellel vahekaardil tehtud muudatused mõjutavad ainult kaamerasalvestusi.</string>
+    <string name="watermark_info_fadrec_title">FadRec</string>
+    <string name="watermark_info_fadrec_body">Kehtib ainult ekraanisalvestuste kohta. Sellel vahekaardil tehtud muudatused mõjutavad ainult ekraanisalvestusi.</string>
 </resources>

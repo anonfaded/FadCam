@@ -3220,4 +3220,12 @@ Da tase da hamisha paara.</string>
     <string name="patreon_content_desc">Patreon ta zamong mali mard ka</string>
     <string name="patreon_description">Tafseel will be set in code.</string>
     <string name="patreon_footer_text">Made with    at FadSec Lab in</string>
+    <string name="watermark_info_cd">د اوبو نښې معلومات</string>
+    <string name="watermark_info_title">د اوبو نښه</string>
+    <string name="watermark_info_intro_title">د اوبو نښې لپاره دوه جلا تنظیمات</string>
+    <string name="watermark_info_intro_body">په دې سکرین کې ټبونه یوازې د مخکتنې بدلون نه دی. هر ټب خپل د اوبو نښې تنظیمات لري، او هر یو یې یوازې د همدې ډول ثبت لپاره دی.</string>
+    <string name="watermark_info_fadcam_title">FadCam</string>
+    <string name="watermark_info_fadcam_body">د کامرې ویډیو ثبت او دوه ګونې کامرې ثبت لپاره دی. په دې ټب کې هر بدلون یوازې د کامرې ثبت اغېز کوي.</string>
+    <string name="watermark_info_fadrec_title">FadRec</string>
+    <string name="watermark_info_fadrec_body">یوازې د سکرین ثبت لپاره دی. په دې ټب کې هر بدلون یوازې د سکرین ثبت اغېز کوي.</string>
 </resources>

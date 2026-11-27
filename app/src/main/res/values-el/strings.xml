@@ -3275,4 +3275,12 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="patreon_content_desc">Υποστηρίξτε μας στο Patreon</string>
     <string name="patreon_description">Η περιγραφή θα οριστεί στον κώδικα.</string>
     <string name="patreon_footer_text">Φτιαγμένο με στο FadSec Lab</string>
+    <string name="watermark_info_cd">Πληροφορίες υδατογραφήματος</string>
+    <string name="watermark_info_title">Υδατογράφημα</string>
+    <string name="watermark_info_intro_title">Δύο ξεχωριστές ρυθμίσεις υδατογραφήματος</string>
+    <string name="watermark_info_intro_body">Οι καρτέλες σε αυτή την οθόνη δεν είναι απλώς εναλλαγή προεπισκόπησης. Κάθε καρτέλα έχει τις δικές της ρυθμίσεις υδατογραφήματος και καθεμία ισχύει μόνο για αυτό το είδος εγγραφής.</string>
+    <string name="watermark_info_fadcam_title">FadCam</string>
+    <string name="watermark_info_fadcam_body">Ισχύει για εγγραφές βίντεο με κάμερα και εγγραφές διπλής κάμερας. Οτιδήποτε αλλάξετε σε αυτή την καρτέλα επηρεάζει μόνο τις εγγραφές κάμερας.</string>
+    <string name="watermark_info_fadrec_title">FadRec</string>
+    <string name="watermark_info_fadrec_body">Ισχύει μόνο για εγγραφές οθόνης. Οτιδήποτε αλλάξετε σε αυτή την καρτέλα επηρεάζει μόνο τις εγγραφές οθόνης.</string>
 </resources>

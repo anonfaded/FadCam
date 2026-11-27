@@ -4907,4 +4907,12 @@
     <string name="patreon_content_desc">ادعمنا على Patreon</string>
     <string name="patreon_description">سيتم تعيين الوصف في الكود.</string>
     <string name="patreon_footer_text">صُنع بـ    في FadSec Lab في   </string>
+    <string name="watermark_info_cd">معلومات العلامة المائية</string>
+    <string name="watermark_info_title">العلامة المائية</string>
+    <string name="watermark_info_intro_title">إعدادان منفصلان للعلامة المائية</string>
+    <string name="watermark_info_intro_body">التبويبان في هذه الشاشة ليسا مجرد مفتاح للمعاينة. كل تبويب يحتوي على إعدادات العلامة المائية الخاصة به، وكل واحد منها ينطبق فقط على ذلك النوع من التسجيل.</string>
+    <string name="watermark_info_fadcam_title">FadCam</string>
+    <string name="watermark_info_fadcam_body">ينطبق على تسجيلات الفيديو بالكاميرا وتسجيلات الكاميرا المزدوجة. أي تغيير تجريه في هذا التبويب يؤثر على تسجيلات الكاميرا فقط.</string>
+    <string name="watermark_info_fadrec_title">FadRec</string>
+    <string name="watermark_info_fadrec_body">ينطبق على تسجيلات الشاشة فقط. أي تغيير تجريه في هذا التبويب يؤثر على تسجيلات الشاشة فقط.</string>
 </resources>

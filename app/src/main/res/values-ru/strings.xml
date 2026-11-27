@@ -3844,4 +3844,12 @@
     <string name="patreon_content_desc">Поддержите нас на Patreon</string>
     <string name="patreon_description">Описание будет установлено в коде.</string>
     <string name="patreon_footer_text">Сделано    в FadSec Lab в   </string>
+    <string name="watermark_info_cd">О водяном знаке</string>
+    <string name="watermark_info_title">Водяной знак</string>
+    <string name="watermark_info_intro_title">Два отдельных набора настроек водяного знака</string>
+    <string name="watermark_info_intro_body">Вкладки на этом экране — не просто переключение предпросмотра. У каждой вкладки свои настройки водяного знака, и каждая применяется только к своему типу записи.</string>
+    <string name="watermark_info_fadcam_title">FadCam</string>
+    <string name="watermark_info_fadcam_body">Применяется к видеозаписям с камеры и записям с двойной камеры. Любое изменение на этой вкладке влияет только на записи с камеры.</string>
+    <string name="watermark_info_fadrec_title">FadRec</string>
+    <string name="watermark_info_fadrec_body">Применяется только к записям экрана. Любое изменение на этой вкладке влияет только на записи экрана.</string>
 </resources>

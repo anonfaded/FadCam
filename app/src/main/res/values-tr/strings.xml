@@ -3075,4 +3075,12 @@ Sonsuza dek senin.</string>
     <string name="patreon_content_desc">Bizi Patreon\'da destekleyin</string>
     <string name="patreon_description">Açıklama kod içinde ayarlanacak.</string>
     <string name="patreon_footer_text">Made with    at FadSec Lab in   </string>
+    <string name="watermark_info_cd">Filigran bilgisi</string>
+    <string name="watermark_info_title">Filigran</string>
+    <string name="watermark_info_intro_title">İki ayrı filigran ayarı</string>
+    <string name="watermark_info_intro_body">Bu ekrandaki sekmeler yalnızca önizleme değiştirmez. Her sekmenin kendi filigran ayarları vardır ve her biri yalnızca o kayıt türü için geçerlidir.</string>
+    <string name="watermark_info_fadcam_title">FadCam</string>
+    <string name="watermark_info_fadcam_body">Kamera video kayıtları ve çift kamera kayıtları için geçerlidir. Bu sekmede yaptığınız değişiklikler yalnızca kamera kayıtlarını etkiler.</string>
+    <string name="watermark_info_fadrec_title">FadRec</string>
+    <string name="watermark_info_fadrec_body">Yalnızca ekran kayıtları için geçerlidir. Bu sekmede yaptığınız değişiklikler yalnızca ekran kayıtlarını etkiler.</string>
 </resources>

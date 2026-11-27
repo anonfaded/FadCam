@@ -5093,4 +5093,12 @@
     <string name="patreon_content_desc">在 Patreon 上支持我们</string>
     <string name="patreon_description">描述信息将由代码设置。</string>
     <string name="patreon_footer_text">匠心打造于 FadSecLab</string>
+    <string name="watermark_info_cd">水印信息</string>
+    <string name="watermark_info_title">水印</string>
+    <string name="watermark_info_intro_title">两套独立的水印设置</string>
+    <string name="watermark_info_intro_body">此页面上的标签页不只是切换预览。每个标签页都有自己的水印设置，且仅适用于该类录制。</string>
+    <string name="watermark_info_fadcam_title">FadCam</string>
+    <string name="watermark_info_fadcam_body">适用于摄像头视频录制和双摄像头录制。在此标签页上的任何更改仅影响摄像头录制。</string>
+    <string name="watermark_info_fadrec_title">FadRec</string>
+    <string name="watermark_info_fadrec_body">仅适用于屏幕录制。在此标签页上的任何更改仅影响屏幕录制。</string>
 </resources>

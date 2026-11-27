@@ -3278,4 +3278,12 @@ Tuyas para siempre.</string>
     <string name="patreon_content_desc">Apóyanos en Patreon</string>
     <string name="patreon_description">La descripción se establecerá en el código.</string>
     <string name="patreon_footer_text">Hecho con    en FadSec Lab en   </string>
+    <string name="watermark_info_cd">Información de la marca de agua</string>
+    <string name="watermark_info_title">Marca de agua</string>
+    <string name="watermark_info_intro_title">Dos ajustes de marca de agua separados</string>
+    <string name="watermark_info_intro_body">Las pestañas de esta pantalla no son solo un cambio de vista previa. Cada pestaña tiene sus propios ajustes de marca de agua, y cada uno se aplica solo a ese tipo de grabación.</string>
+    <string name="watermark_info_fadcam_title">FadCam</string>
+    <string name="watermark_info_fadcam_body">Se aplica a grabaciones de vídeo con cámara y grabaciones con cámara doble. Cualquier cambio en esta pestaña afecta solo a las grabaciones de cámara.</string>
+    <string name="watermark_info_fadrec_title">FadRec</string>
+    <string name="watermark_info_fadrec_body">Se aplica solo a grabaciones de pantalla. Cualquier cambio en esta pestaña afecta solo a las grabaciones de pantalla.</string>
 </resources>

@@ -3432,4 +3432,12 @@ Milikmu selamanya.</string>
     <string name="patreon_content_desc">Dukung kami di Patreon</string>
     <string name="patreon_description">Deskripsi akan diatur dalam kode.</string>
     <string name="patreon_footer_text">Dibuat dengan penuh cinta di FadSec Lab di</string>
+    <string name="watermark_info_cd">Info tanda air</string>
+    <string name="watermark_info_title">Tanda air</string>
+    <string name="watermark_info_intro_title">Dua pengaturan tanda air terpisah</string>
+    <string name="watermark_info_intro_body">Tab di layar ini bukan sekadar pengalih pratinjau. Setiap tab memiliki pengaturan tanda air sendiri, dan masing-masing hanya berlaku untuk jenis rekaman tersebut.</string>
+    <string name="watermark_info_fadcam_title">FadCam</string>
+    <string name="watermark_info_fadcam_body">Berlaku untuk rekaman video kamera dan rekaman kamera ganda. Perubahan apa pun di tab ini hanya memengaruhi rekaman kamera.</string>
+    <string name="watermark_info_fadrec_title">FadRec</string>
+    <string name="watermark_info_fadrec_body">Hanya berlaku untuk rekaman layar. Perubahan apa pun di tab ini hanya memengaruhi rekaman layar.</string>
 </resources>
