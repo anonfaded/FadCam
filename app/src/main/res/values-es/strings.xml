@@ -3286,4 +3286,5 @@ Tuyas para siempre.</string>
     <string name="watermark_info_fadcam_body">Se aplica a grabaciones de vídeo con cámara y grabaciones con cámara doble. Cualquier cambio en esta pestaña afecta solo a las grabaciones de cámara.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Se aplica solo a grabaciones de pantalla. Cualquier cambio en esta pestaña afecta solo a las grabaciones de pantalla.</string>
+    <string name="update_fdroid_note">¿Instalado desde F-Droid? Ignora esto: la actualización llegará a F-Droid en unos días. ¿Instalado desde GitHub? Usa el botón de abajo para abrir la página de versiones y actualizar directamente.</string>
 </resources>

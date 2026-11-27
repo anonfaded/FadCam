@@ -3852,4 +3852,5 @@
     <string name="watermark_info_fadcam_body">Применяется к видеозаписям с камеры и записям с двойной камеры. Любое изменение на этой вкладке влияет только на записи с камеры.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Применяется только к записям экрана. Любое изменение на этой вкладке влияет только на записи экрана.</string>
+    <string name="update_fdroid_note">Установлено из F-Droid? Игнорируйте это — обновление появится в F-Droid через несколько дней. Установлено из GitHub? Используйте кнопку ниже, чтобы открыть страницу релизов и обновиться напрямую.</string>
 </resources>

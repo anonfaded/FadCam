@@ -3128,4 +3128,5 @@ Für immer dein.</string>
     <string name="watermark_info_fadcam_body">Gilt für Kamera-Videoaufnahmen und Dual-Kamera-Aufnahmen. Änderungen in diesem Tab betreffen nur Kameraaufnahmen.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Gilt nur für Bildschirmaufnahmen. Änderungen in diesem Tab betreffen nur Bildschirmaufnahmen.</string>
+    <string name="update_fdroid_note">Von F-Droid installiert? Ignoriere das — das Update erreicht F-Droid in ein paar Tagen. Von GitHub installiert? Nutze die Schaltfläche unten, um die Release-Seite zu öffnen und direkt zu aktualisieren.</string>
 </resources>

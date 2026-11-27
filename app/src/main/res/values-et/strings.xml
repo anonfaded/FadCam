@@ -3187,4 +3187,5 @@ Igavesti sinu.</string>
     <string name="watermark_info_fadcam_body">Kehtib kaamera videote ja kahekamera salvestuste kohta. Sellel vahekaardil tehtud muudatused mõjutavad ainult kaamerasalvestusi.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Kehtib ainult ekraanisalvestuste kohta. Sellel vahekaardil tehtud muudatused mõjutavad ainult ekraanisalvestusi.</string>
+    <string name="update_fdroid_note">Paigaldasid F-Droidist? Eira seda — uuendus jõuab F-Droidi mõne päeva jooksul. Paigaldasid GitHubist? Kasuta allolevat nuppu, et avada väljaannete leht ja uuendada otse.</string>
 </resources>

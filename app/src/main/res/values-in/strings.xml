@@ -3440,4 +3440,5 @@ Milikmu selamanya.</string>
     <string name="watermark_info_fadcam_body">Berlaku untuk rekaman video kamera dan rekaman kamera ganda. Perubahan apa pun di tab ini hanya memengaruhi rekaman kamera.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Hanya berlaku untuk rekaman layar. Perubahan apa pun di tab ini hanya memengaruhi rekaman layar.</string>
+    <string name="update_fdroid_note">Dipasang dari F-Droid? Abaikan ini — pembaruan akan tiba di F-Droid dalam beberapa hari. Dipasang dari GitHub? Gunakan tombol di bawah untuk membuka halaman rilis dan memperbarui langsung.</string>
 </resources>

@@ -4839,4 +4839,5 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="watermark_info_fadcam_body">S\'applique aux enregistrements vidéo par caméra et aux enregistrements à double caméra. Toute modification dans cet onglet n\'affecte que les enregistrements par caméra.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">S\'applique uniquement aux enregistrements d\'écran. Toute modification dans cet onglet n\'affecte que les enregistrements d\'écran.</string>
+    <string name="update_fdroid_note">Installé depuis F-Droid ? Ignorez ceci — la mise à jour arrivera sur F-Droid dans quelques jours. Installé depuis GitHub ? Utilisez le bouton ci-dessous pour ouvrir la page des versions et mettre à jour directement.</string>
 </resources>

@@ -3228,4 +3228,5 @@ Da tase da hamisha paara.</string>
     <string name="watermark_info_fadcam_body">د کامرې ویډیو ثبت او دوه ګونې کامرې ثبت لپاره دی. په دې ټب کې هر بدلون یوازې د کامرې ثبت اغېز کوي.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">یوازې د سکرین ثبت لپاره دی. په دې ټب کې هر بدلون یوازې د سکرین ثبت اغېز کوي.</string>
+    <string name="update_fdroid_note">Pa F-Droid install karay? Da la na kara — update ba pa chand wro sa F-Droid ta rasi. Pa GitHub install karay? Lando button istemal ka che release page pranazhe aw pa makhzam update kara.</string>
 </resources>

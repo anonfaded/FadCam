@@ -3083,4 +3083,5 @@ Sonsuza dek senin.</string>
     <string name="watermark_info_fadcam_body">Kamera video kayıtları ve çift kamera kayıtları için geçerlidir. Bu sekmede yaptığınız değişiklikler yalnızca kamera kayıtlarını etkiler.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Yalnızca ekran kayıtları için geçerlidir. Bu sekmede yaptığınız değişiklikler yalnızca ekran kayıtlarını etkiler.</string>
+    <string name="update_fdroid_note">F-Droid\'den mi yüklediniz? Bunu yok sayın — güncelleme birkaç gün içinde F-Droid\'e ulaşacak. GitHub\'dan mı yüklediniz? Doğrudan güncellemek için aşağıdaki düğmeyle sürümler sayfasını açın.</string>
 </resources>

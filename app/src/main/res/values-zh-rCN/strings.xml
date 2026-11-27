@@ -5101,4 +5101,5 @@
     <string name="watermark_info_fadcam_body">适用于摄像头视频录制和双摄像头录制。在此标签页上的任何更改仅影响摄像头录制。</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">仅适用于屏幕录制。在此标签页上的任何更改仅影响屏幕录制。</string>
+    <string name="update_fdroid_note">从 F-Droid 安装？请忽略此项 — 更新将在几天内到达 F-Droid。从 GitHub 安装？使用下方按钮打开发布页面并直接更新。</string>
 </resources>
