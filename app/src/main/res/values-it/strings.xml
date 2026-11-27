@@ -1180,13 +1180,13 @@
     <string name="faditor_export_cancelled">Esportazione annullata</string>
     <string name="faditor_export_failed">Esportazione fallita</string>
     <string name="export_eta_seconds">%1$ds</string>
-    <string name="export_eta_minutes">%1$dm %2$02ds</string>
-    <string name="export_eta_hours">%1$dh %2$dm</string>
+    <string name="export_eta_minutes">%1$dm</string>
+    <string name="export_eta_hours">%1$dh</string>
     <string name="export_complete">Completato</string>
     <string name="export_file_size">Dimensione file: %1$s</string>
     <string name="export_error_hint">Errore durante l\'esportazione</string>
     <string name="export_status">%1$d%%</string>
-    <string name="faditor_export_info">%1$d segmenti • %2$s</string>
+    <string name="faditor_export_info">%1$s • %2$d segmenti%3$s • H.264 + AAC</string>
     <string name="faditor_flip_title">Capovolgi</string>
     <string name="faditor_home_tagline">Modifica. Converti. Esporta.</string>
     <string name="faditor_new_project">Nuovo progetto</string>
@@ -1312,7 +1312,7 @@
     <string name="delete_video_error_null_toast">Errore: video non trovato</string>
     <string name="delete_videos_success_toast">%1$d video spostati nel cestino</string>
     <string name="delete_videos_partial_success_toast">%1$d spostati, %2$d falliti</string>
-    <string name="delete_videos_log">Eliminazione video: %1$d riusciti, %2$d falliti</string>
+    <string name="delete_videos_log">Eliminazione di %1$d video selezionati…</string>
     <string name="trash_auto_deleted_toast">Spostato nel cestino</string>
     <string name="trash_empty_toast_message">Il cestino è vuoto</string>
     <string name="trash_emptied_toast">Cestino svuotato</string>

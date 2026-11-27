@@ -187,7 +187,7 @@ android {
     // Current values: Lite free and Lite Pro both ship as v1.0.0. The version is
     // intentionally independent from the Full line (4.x) — each app has its own
     // applicationId, update repo and tag prefix (`lite-v*` for Lite tags).
-    val liteVersionCode = 2
+    val liteVersionCode = 1
     val liteVersionName = "1.0.0-beta1"
     val liteRepo = "FadCam-Lite"          // Lite (primary/stable) update feed
     val liteProVersionCode = 2
