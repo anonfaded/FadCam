@@ -18,42 +18,59 @@
         app:touch_target_height="26dp"
         />
 
-    <ImageButton
-        android:id="@+id/back_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_close"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:padding="16dp"
-        android:layout_margin="16dp"
-        app:tint="@android:color/white" />
-    
-    <!-- Info button (top right) -->
-    <ImageButton
-        android:id="@+id/info_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
-        android:src="@drawable/ic_info"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:padding="16dp"
-        android:layout_margin="16dp"
-        android:contentDescription="@string/video_menu_info"
-        app:tint="@android:color/white" />
-        
-    <!-- Reset zoom button (appears when video is zoomed) -->
-    <ImageButton
-        android:id="@+id/reset_zoom_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_zoom_out_map"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:padding="12dp"
-        android:layout_margin="16dp"
-        android:layout_gravity="top|end"
-        android:visibility="gone"
-        android:contentDescription="@string/desc_reset_zoom"
-        app:tint="@android:color/white" />
+    <!-- Top overlay: holds the back/info/zoom controls and absorbs the window insets so
+         they sit below the status bar instead of underneath it. match_parent but not
+         clickable, so touches that miss the buttons still reach the PlayerView. -->
+    <FrameLayout
+        android:id="@+id/player_top_controls"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageButton
+            android:id="@+id/back_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_close"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="16dp"
+            android:layout_margin="16dp"
+            android:contentDescription="@string/desc_close"
+            app:tint="@android:color/white" />
+
+        <!-- Info and zoom stack vertically: both were top|end, so the zoom-out button
+             landed on top of Info once pinch-zoom showed it. -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_margin="16dp"
+            android:orientation="vertical"
+            android:gravity="end">
+
+            <ImageButton
+                android:id="@+id/info_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_info"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:padding="16dp"
+                android:contentDescription="@string/video_menu_info"
+                app:tint="@android:color/white" />
+
+            <!-- Reset zoom button (appears when video is zoomed) -->
+            <ImageButton
+                android:id="@+id/reset_zoom_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:src="@drawable/ic_zoom_out_map"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:padding="12dp"
+                android:visibility="gone"
+                android:contentDescription="@string/desc_reset_zoom"
+                app:tint="@android:color/white" />
+        </LinearLayout>
+    </FrameLayout>
 
     <!-- Overlay indicator for quick 2x playback (appears while long-press is active) -->
     <TextView

@@ -57,6 +57,39 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private static final String EXTRA_POSITION_MS = "extra_position_ms";
     private boolean openPausedFromForensics = false;
     private ImageButton backButton;
+    /** Wrapper holding back/info/zoom; carries the status-bar inset so the buttons stay clear. */
+    private android.view.View playerTopControls;
+    /** Base top padding for the top controls, before the inset is added. */
+    private int playerTopControlsBasePad;
+
+    /**
+     * Keeps the back/info/zoom buttons out of the status bar.
+     *
+     * <p>The player runs edge-to-edge so the video can use the whole screen, which also means
+     * the overlay children start at y=0 — under the status bar. The activity hides the bars,
+     * but they reappear on a swipe (transient bars) and are never hidden at all on devices
+     * that decline to go immersive, so a pure "hide the bars" fix leaves the buttons
+     * unreachable. Padding the control container by the real inset handles both cases: with
+     * the bar hidden the inset is 0, and when it slides back the buttons move down with it.
+     */
+    private void applyTopControlsInsets() {
+        playerTopControls = findViewById(com.fadcam.R.id.player_top_controls);
+        if (playerTopControls == null) return;
+        playerTopControlsBasePad = playerTopControls.getPaddingTop();
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(
+                playerTopControls, (v, insets) -> {
+                    androidx.core.graphics.Insets bars = insets.getInsets(
+                            androidx.core.view.WindowInsetsCompat.Type.systemBars());
+                    v.setPadding(v.getPaddingLeft(),
+                            playerTopControlsBasePad + bars.top,
+                            v.getPaddingRight(),
+                            v.getPaddingBottom());
+                    return insets;
+                });
+        androidx.core.view.ViewCompat.requestApplyInsets(playerTopControls);
+    }
+
+
     private ImageButton infoButton;
     private ImageButton settingsButton; // For playback speed
     private TextView quickSpeedOverlay;
@@ -223,11 +256,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
         backButton = findViewById(com.fadcam.R.id.back_button);
         infoButton = findViewById(com.fadcam.R.id.info_button);
         resetZoomButton = findViewById(com.fadcam.R.id.reset_zoom_button);
+        applyTopControlsInsets();
         // Wire Material time slider if present in control layout
         try {
             timeSlider = playerView.findViewById(R.id.material_time_slider);
         } catch (Exception ignored) {}
-
     // Top buttons (back and info) should be visible by default and hide together with controls
     try { 
         backButton.setVisibility(View.VISIBLE); 
