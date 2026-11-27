@@ -38,55 +38,90 @@ public final class AssetInstaller {
     }
 
     /**
-     * Verifies and installs a completed download.
+     * Verifies and installs a completed download of one archive or file.
      *
-     * @param asset      the asset being installed
-     * @param store      where files live
-     * @param entry      the manifest entry that was downloaded
-     * @param downloaded the completed file, in the scratch directory
+     * <p>Kept for single-file assets. Use {@link #installAll} for assets made of several
+     * entries, because this clears the asset directory and would delete the entries
+     * already installed.
+     *
      * @throws AssetException when the hash does not match or unpacking fails
      */
     public static void install(@NonNull Asset asset, @NonNull AssetStore store,
                                @NonNull AssetManifest.Entry entry, @NonNull File downloaded) {
+        installAll(asset, store,
+                java.util.Collections.singletonList(entry),
+                java.util.Collections.singletonList(downloaded));
+    }
+
+    /**
+     * Verifies and installs a whole asset: every entry, in one pass.
+     *
+     * <p>All downloads are verified <b>before</b> the install directory is touched, so a
+     * bad second file cannot destroy a working first one. The directory is cleared once,
+     * at the start, rather than per entry — clearing per entry deleted the files installed
+     * by the previous iteration, which broke multi-file assets such as the two-graph model
+     * set.
+     *
+     * @param downloaded one file per entry, same order as {@code entries}
+     * @throws AssetException when any hash does not match or unpacking fails
+     */
+    public static void installAll(@NonNull Asset asset, @NonNull AssetStore store,
+                                  @NonNull List<AssetManifest.Entry> entries,
+                                  @NonNull List<File> downloaded) {
+        if (entries.size() != downloaded.size()) {
+            throw new AssetException(asset, "install called with " + entries.size()
+                    + " entries but " + downloaded.size() + " files");
+        }
         try {
-            // Verify before touching the install directory: never write unverified bytes.
-            String actual = AssetStore.sha256(downloaded);
-            if (!actual.equalsIgnoreCase(entry.sha256)) {
-                //noinspection ResultOfMethodCallIgnored
-                downloaded.delete();
-                throw new AssetException(asset, "checksum mismatch: expected "
-                        + entry.sha256 + " but got " + actual);
-            }
-            if (entry.size > 0 && downloaded.length() != entry.size) {
-                //noinspection ResultOfMethodCallIgnored
-                downloaded.delete();
-                throw new AssetException(asset, "size mismatch: expected " + entry.size
-                        + " but got " + downloaded.length());
-            }
-
-            File dir = store.dirFor(asset);
-            // Clear any previous attempt so a repair cannot leave stale siblings behind.
-            deleteContents(dir);
-
-            if (entry.isArchive()) {
-                unpackFlat(downloaded, dir, entry, asset);
-            } else {
-                File target = store.fileFor(asset, entry.file);
-                if (!downloaded.renameTo(target)) {
-                    copyFile(downloaded, target);
+            // Verify everything first. Never write unverified bytes into the asset dir.
+            for (int i = 0; i < entries.size(); i++) {
+                AssetManifest.Entry entry = entries.get(i);
+                File file = downloaded.get(i);
+                String actual = AssetStore.sha256(file);
+                if (!actual.equalsIgnoreCase(entry.sha256)) {
+                    throw new AssetException(asset, "checksum mismatch for " + entry.file
+                            + ": expected " + entry.sha256 + " but got " + actual);
+                }
+                if (entry.size > 0 && file.length() != entry.size) {
+                    throw new AssetException(asset, "size mismatch for " + entry.file
+                            + ": expected " + entry.size + " but got " + file.length());
                 }
             }
 
-            // Marker last: its presence is what makes hasAllFiles() report success.
-            AssetStore.writeTextAtomically(store.markerFor(asset, entry), entry.sha256);
-            FLog.i(TAG, "installed " + asset.id + " (" + entry.file + ")");
+            File dir = store.dirFor(asset);
+            // Clear any previous attempt exactly once, so a repair cannot leave stale
+            // siblings behind and a multi-entry asset is not cleared mid-install.
+            deleteContents(dir);
+
+            for (int i = 0; i < entries.size(); i++) {
+                AssetManifest.Entry entry = entries.get(i);
+                File source = downloaded.get(i);
+                if (entry.isArchive()) {
+                    unpackFlat(source, dir, entry, asset);
+                } else {
+                    File target = store.fileFor(asset, entry.file);
+                    if (!source.renameTo(target)) {
+                        copyFile(source, target);
+                    }
+                }
+            }
+
+            // Markers last: their presence is what makes hasAllFiles() report success, so a
+            // crash before this point leaves the asset looking uninstalled rather than
+            // installed-but-broken.
+            for (AssetManifest.Entry entry : entries) {
+                AssetStore.writeTextAtomically(store.markerFor(asset, entry), entry.sha256);
+            }
+            FLog.i(TAG, "installed " + asset.id + " (" + entries.size() + " file(s))");
         } catch (AssetException e) {
             throw e;
         } catch (Exception e) {
             throw new AssetException(asset, "could not install: " + e.getMessage(), e);
         } finally {
-            //noinspection ResultOfMethodCallIgnored
-            downloaded.delete();
+            for (File file : downloaded) {
+                //noinspection ResultOfMethodCallIgnored
+                file.delete();
+            }
         }
     }
 

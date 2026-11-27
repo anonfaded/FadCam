@@ -179,6 +179,10 @@ public class AssetDownloadService extends Service {
         registry.onDownloadStarted(asset);
         notifyListener(asset);
 
+        // Download every file first, then install the whole set in one pass. Installing per
+        // entry would clear the asset directory between them and delete the files just
+        // written, which is what broke the two-graph model asset.
+        List<File> completed = new ArrayList<>();
         for (AssetManifest.Entry entry : entries) {
             String url = manifest.baseUrl() + entry.file;
             File partial = store.partialFileFor(entry);
@@ -187,10 +191,11 @@ public class AssetDownloadService extends Service {
             new AssetDownloader(client).download(url, partial, (done, total) -> {
                 updateProgress(asset, done, total);
             });
-
-            updateNotification(getString(R.string.asset_download_verifying), asset, 0, 0);
-            AssetInstaller.install(asset, store, entry, partial);
+            completed.add(partial);
         }
+
+        updateNotification(getString(R.string.asset_download_verifying), asset, 0, 0);
+        AssetInstaller.installAll(asset, store, entries, completed);
 
         notifyListener(asset);
         FLog.i(TAG, "asset ready: " + asset.id);

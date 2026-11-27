@@ -1,7 +1,6 @@
 package com.fadcam.motion.domain.detector;
 
 import android.content.Context;
-import android.content.res.AssetManager;
 
 import androidx.annotation.Nullable;
 
@@ -49,9 +48,6 @@ import java.util.Locale;
 public final class RfDetrNanoDetector implements AiObjectDetector {
 
     private static final String TAG = "RfDetrNano";
-
-    private static final String GRAPH_A = "models/rfdetr_nano_graph_a.tflite";
-    private static final String GRAPH_B = "models/rfdetr_nano_graph_b.tflite";
 
     private static final int INPUT_SIZE = 384;
     private static final int NUM_QUERIES = 576;
@@ -162,10 +158,24 @@ public final class RfDetrNanoDetector implements AiObjectDetector {
         List<TensorBuffer> bIn = null;
         List<TensorBuffer> bOut = null;
         try {
-            AssetManager assets = context.getAssets();
-            a = CompiledModel.Companion.create(assets, GRAPH_A,
+            // The graphs are downloadable assets. When they ship inside the APK this
+            // resolves to the bundled copies; when they have been downloaded it resolves
+            // to files in app storage. CompiledModel.create takes an absolute path, which
+            // is a documented overload, so no AssetManager indirection is needed.
+            java.io.File graphAFile = com.fadcam.assets.AssetModels.graphFile(
+                    context, com.fadcam.assets.AssetModels.GRAPH_A);
+            java.io.File graphBFile = com.fadcam.assets.AssetModels.graphFile(
+                    context, com.fadcam.assets.AssetModels.GRAPH_B);
+            if (graphAFile == null || graphBFile == null) {
+                // Missing models are a normal, recoverable state, not a crash. The caller
+                // renders a download banner from this reason.
+                throw new com.fadcam.assets.AssetException(
+                        com.fadcam.assets.Asset.MODELS,
+                        "detection models are not downloaded yet");
+            }
+            a = CompiledModel.Companion.create(graphAFile.getAbsolutePath(),
                     gpuOptions(context, "rfdetr_nano_graph_a_1"));
-            b = CompiledModel.Companion.create(assets, GRAPH_B,
+            b = CompiledModel.Companion.create(graphBFile.getAbsolutePath(),
                     gpuOptions(context, "rfdetr_nano_graph_b_1"));
             resolveSlots(a, b);
             aIn = a.createInputBuffers();
@@ -656,7 +666,16 @@ public final class RfDetrNanoDetector implements AiObjectDetector {
     }
 
     private static void closeAll(List<TensorBuffer> buffers) {
+        // Called from the constructor's failure path, where any of these is still null
+        // because the failure happened before it was created. Iterating a null list here
+        // replaced the real error with a NullPointerException and hid the actual cause.
+        if (buffers == null) {
+            return;
+        }
         for (TensorBuffer buf : buffers) {
+            if (buf == null) {
+                continue;
+            }
             try {
                 buf.close();
             } catch (Throwable ignored) {
