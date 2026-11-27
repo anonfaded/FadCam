@@ -111,6 +111,9 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        // Load the ffmpeg runtime before any ffmpeg class is touched: this sheet probes
+        // durations through FFprobeKit.
+        com.fadcam.assets.AssetFfmpeg.ensureLoaded(requireContext());
         float dp = getResources().getDisplayMetrics().density;
         Typeface materialIcons = ResourcesCompat.getFont(requireContext(), R.font.materialicons);
 

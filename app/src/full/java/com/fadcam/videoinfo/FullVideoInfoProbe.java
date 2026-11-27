@@ -23,9 +23,25 @@ public class FullVideoInfoProbe implements VideoInfoProbe {
     private static final String TAG = "FullVideoInfoProbe";
 
     @Nullable
+    private final android.content.Context context;
+
+    public FullVideoInfoProbe() {
+        this(null);
+    }
+
+    public FullVideoInfoProbe(@Nullable android.content.Context context) {
+        this.context = context;
+    }
+
+    @Nullable
     @Override
     public FfprobeData probe(Uri videoUri) {
         if (videoUri == null) return null;
+        // Load the ffmpeg runtime before any ffmpeg class is touched: its static
+        // initialiser resolves the same libraries by bare name.
+        if (context != null) {
+            com.fadcam.assets.AssetFfmpeg.ensureLoaded(context);
+        }
         FfprobeData data = new FfprobeData();
         try {
             String filePath = getFFprobePath(videoUri);

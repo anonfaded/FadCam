@@ -32,6 +32,10 @@ public class FragmentedMp4Remuxer {
     
     public FragmentedMp4Remuxer(Context context) {
         this.context = context.getApplicationContext();
+        // Load the ffmpeg runtime here, before any ffmpeg class is touched. Doing it in
+        // the constructor means every path through this class is covered, rather than
+        // relying on each method to remember.
+        com.fadcam.assets.AssetFfmpeg.ensureLoaded(this.context);
     }
     
     /**

@@ -313,7 +313,8 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
 
         // Full builds: overlay richer ffprobe values (no-op in Lite)
         try {
-            FfprobeData extra = FeatureRegistry.features().createVideoInfoProbe().probe(videoUri);
+            FfprobeData extra = FeatureRegistry.features().createVideoInfoProbe(requireContext())
+                    .probe(videoUri);
             if (extra != null) {
                 if (extra.durationMs != null) metadata.duration = formatVideoDuration(extra.durationMs);
                 if (extra.bitrate != null) metadata.bitrate = formatBitrate(extra.bitrate);

@@ -28,6 +28,8 @@ public final class BatchFfmpegOpsImpl implements BatchFfmpegOps {
     @Override
     public BatchMediaActionService.ProcessResult exportStandardMp4(BatchMediaActionService svc,
             @NonNull Uri inputUri, int index, @NonNull BatchMediaActionTask task) {
+        // Load the ffmpeg runtime before touching any ffmpeg class.
+        com.fadcam.assets.AssetFfmpeg.ensureLoaded(svc);
         BatchMediaActionService.InputPathHolder input = null;
         BatchMediaActionService.OutputTarget outputTarget = null;
         try {
@@ -75,6 +77,8 @@ public final class BatchFfmpegOpsImpl implements BatchFfmpegOps {
             @NonNull BatchMediaActionTask task,
             @Nullable BatchMediaActionService.MergeProgressListener listener
     ) {
+        // Load the ffmpeg runtime before touching any ffmpeg class.
+        com.fadcam.assets.AssetFfmpeg.ensureLoaded(svc);
         if (inputUris.size() < 2) {
             return new BatchMediaActionService.MergeResult(false, inputUris.size());
         }

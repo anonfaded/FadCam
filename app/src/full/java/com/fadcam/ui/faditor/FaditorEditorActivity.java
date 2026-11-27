@@ -492,6 +492,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Load the ffmpeg runtime before any ffmpeg class is touched anywhere in the
+        // editor. Its static initialiser resolves the libraries by bare name, so this must
+        // happen first.
+        com.fadcam.assets.AssetFfmpeg.ensureLoaded(this);
+
         // Sheets opened from the editor are separate windows; without this they bring the
         // status and navigation bars back over the fullscreen editor.
         com.fadcam.ui.utils.ImmersiveDialogs.install(this);
