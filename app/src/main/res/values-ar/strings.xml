@@ -3293,13 +3293,13 @@
 
     <string name="stream_instructions">كيفية الاستخدام</string>
 
-    <string name="stream_instr_1">1. فعّل تبديل بدء الخادم</string>
+    <string name="stream_instr_1">1. فعّل مفتاح خادم البث أعلاه</string>
 
-    <string name="stream_instr_2">2. انسخ عنوان URL لبث HLS من نقاط نهاية الخادم</string>
+    <string name="stream_instr_2">2. انسخ رابط الخادم</string>
 
-    <string name="stream_instr_3">3. افتح VLC أو أي مشغل HLS على نفس WiFi</string>
+    <string name="stream_instr_3">3. افتح الرابط في أي متصفح على نفس شبكة WiFi</string>
 
-    <string name="stream_instr_4">4. الصق URL في مشغل الوسائط للمشاهدة المباشرة</string>
+    <string name="stream_instr_4">4. تُفتح لوحة التحكم هناك. اضغط زر البدء نفسه الموجود في الرئيسية والذي تستخدمه للتسجيل — يُبث الفيديو إلى لوحة التحكم ويُعرض مباشرة</string>
 
     <string name="stream_network_info">مطلوب شبكة WiFi نفسها للبث</string>
 

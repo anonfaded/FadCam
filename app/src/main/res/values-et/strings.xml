@@ -1929,10 +1929,10 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="stream_bitrate">Bitikiirus: %1$s</string>
     <string name="stream_codec">Koodek: H.264</string>
     <string name="stream_instructions">Kuidas kasutada</string>
-    <string name="stream_instr_1">1. Lülita serveri käivitamine sisse</string>
-    <string name="stream_instr_2">2. Kopeeri HLS voogedastuse URL serveri lõpp-punktidest</string>
-    <string name="stream_instr_3">3. Ava VLC või mõni muu HLS mängija samas WiFi-s</string>
-    <string name="stream_instr_4">4. Kleebi URL meediamängijasse otseülekande vaatamiseks</string>
+    <string name="stream_instr_1">1. Lülita ülal sisse voogedastusserveri lüliti</string>
+    <string name="stream_instr_2">2. Kopeeri serveri URL</string>
+    <string name="stream_instr_3">3. Ava see link mis tahes brauseris samas WiFi-võrgus</string>
+    <string name="stream_instr_4">4. Seal avaneb juhtpaneel. Vajuta avalehel sama käivitusnuppu, mida kasutad salvestamiseks — video voogesitatakse juhtpaneelile ja esitatakse otse</string>
     <string name="stream_network_info">Voogedastuseks on vajalik sama WiFi võrk</string>
     <string name="battery_estimate_title">Hinnanguline voogedastuse aeg jäänud</string>
     <string name="battery_estimate_disclaimer" formatted="false">Põhineb reaalse maailma testil: 8 tundi pidevat voogedastust 61% aku langusega 5000mAh seadmel. Uuenda oma seadme mahutavust allpool isikupärastatud hinnangute jaoks.</string>

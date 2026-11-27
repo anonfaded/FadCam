@@ -2043,10 +2043,10 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
 
     <!-- Instructions -->
     <string name="stream_instructions">Cómo usar</string>
-    <string name="stream_instr_1">1. Activa el interruptor Iniciar servidor</string>
-    <string name="stream_instr_2">2. Copia la URL de transmisión HLS desde Endpoints del servidor</string>
-    <string name="stream_instr_3">3. Abre VLC o cualquier reproductor HLS en la misma WiFi</string>
-    <string name="stream_instr_4">4. Pega la URL en el reproductor para ver en vivo</string>
+    <string name="stream_instr_1">1. Activa el interruptor Servidor de transmisión arriba</string>
+    <string name="stream_instr_2">2. Copia la URL del servidor</string>
+    <string name="stream_instr_3">3. Abre ese enlace en cualquier navegador en la misma WiFi</string>
+    <string name="stream_instr_4">4. Ahí se abre el panel. Pulsa el mismo botón de inicio de Inicio que usas para grabar — el vídeo se transmite al panel y se reproduce en directo</string>
     <string name="stream_network_info">Se requiere la misma red WiFi para transmitir</string>
 
     <!-- Remote Security -->

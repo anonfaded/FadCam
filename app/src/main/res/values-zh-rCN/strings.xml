@@ -1147,10 +1147,10 @@
     <string name="stream_bitrate">比特率: %1$s</string>
     <string name="stream_codec">编码: H.264</string>
     <string name="stream_instructions">使用方法</string>
-    <string name="stream_instr_1">1. 开启“启动服务器”开关</string>
-    <string name="stream_instr_2">2. 从服务器端点复制 HLS 流 URL</string>
-    <string name="stream_instr_3">3. 在同一 WiFi 下打开 VLC 或任何 HLS 播放器</string>
-    <string name="stream_instr_4">4. 在媒体播放器中粘贴 URL 以观看直播</string>
+    <string name="stream_instr_1">1. 开启上方的流媒体服务器开关</string>
+    <string name="stream_instr_2">2. 复制服务器 URL</string>
+    <string name="stream_instr_3">3. 在同一 WiFi 网络下用任意浏览器打开该链接</string>
+    <string name="stream_instr_4">4. 控制台会在此打开。在主页按下与录制相同的启动按钮 — 视频会传输到控制台并实时播放</string>
     <string name="stream_network_info">流媒体播放需要连接到同一 WiFi 网络</string>
 <!-- audio_device_type_ble_headset -->
 <string name="audio_device_type_ble_headset">BLE耳机</string>

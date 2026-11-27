@@ -3226,13 +3226,13 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="stream_instructions">How to Use</string>
 
-<string name="stream_instr_1">1. Turn on Start Server toggle</string>
+<string name="stream_instr_1">1. Activez l\'interrupteur Serveur de flux ci-dessus</string>
 
-<string name="stream_instr_2">2. Copy HLS Stream URL from Server Endpoints</string>
+<string name="stream_instr_2">2. Copiez l\'URL du serveur</string>
 
-<string name="stream_instr_3">3. Open VLC or any HLS player on same WiFi</string>
+<string name="stream_instr_3">3. Ouvrez ce lien dans n\'importe quel navigateur sur le même WiFi</string>
 
-<string name="stream_instr_4">4. Paste URL in media player to watch live</string>
+<string name="stream_instr_4">4. Le tableau de bord s\'ouvre. Appuyez sur le même bouton de démarrage que pour enregistrer depuis l\'accueil — la vidéo est diffusée vers le tableau de bord et jouée en direct</string>
 
 <string name="stream_network_info">Same WiFi network required for streaming</string>
 

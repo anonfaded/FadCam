@@ -2155,10 +2155,10 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="stream_fragments">Gepuffert: %1$d Segmente</string>
     <string name="stream_idle">Leerlauf – Aufnahme starten zum Streamen</string>
     <string name="stream_inactive">Server inaktiv :(</string>
-    <string name="stream_instr_1">1. Schalte den Start-Server-Umschalter ein</string>
-    <string name="stream_instr_2">2. Kopiere die HLS-Stream-URL von den Server-Endpunkten</string>
-    <string name="stream_instr_3">3. Öffne VLC oder einen anderen HLS-Player im selben WLAN</string>
-    <string name="stream_instr_4">4. Füge die URL in den Media-Player ein, um live zu sehen</string>
+    <string name="stream_instr_1">1. Schalte den Stream-Server-Umschalter oben ein</string>
+    <string name="stream_instr_2">2. Kopiere die Server-URL</string>
+    <string name="stream_instr_3">3. Öffne den Link in einem beliebigen Browser im selben WLAN</string>
+    <string name="stream_instr_4">4. Dort öffnet sich das Dashboard. Drücke auf der Startseite dieselbe Aufnahmetaste wie zum Aufnehmen — das Video wird zum Dashboard gestreamt und live abgespielt</string>
     <string name="stream_instructions">Anleitung</string>
     <string name="stream_memory_label">Arbeitsspeicher</string>
     <string name="stream_network_info">Gleiches WLAN für Streaming erforderlich</string>

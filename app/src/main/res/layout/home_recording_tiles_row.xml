@@ -15,9 +15,10 @@
     <!-- AF mode toggle (continuous / off) — lock status icon bottom-right -->
     <FrameLayout
         android:layout_width="0dp"
-        android:layout_height="@dimen/home_tile_height"
+        android:layout_height="match_parent"
         android:layout_weight="1"
-        android:layout_marginEnd="@dimen/home_tile_gap">
+        android:layout_marginEnd="@dimen/home_tile_gap"
+        android:minHeight="@dimen/home_tile_height">
 
         <TextView
             android:id="@+id/tile_af_toggle"

@@ -839,10 +839,10 @@
     <string name="stream_bitrate">Bit hızı: %1$s</string>
     <string name="stream_codec">Codec: H.264</string>
     <string name="stream_instructions">Nasıl Kullanılır</string>
-    <string name="stream_instr_1">1. Sunucu Başlat anahtarını açın</string>
-    <string name="stream_instr_2">2. Sunucu Uç Noktalarından HLS Yayın URL\'sini kopyalayın</string>
-    <string name="stream_instr_3">3. Aynı WiFi\'da VLC veya herhangi bir HLS oynatıcı açın</string>
-    <string name="stream_instr_4">4. Canlı izlemek için URL\'yi medya oynatıcıya yapıştırın</string>
+    <string name="stream_instr_1">1. Yukarıdaki Yayın Sunucusu anahtarını açın</string>
+    <string name="stream_instr_2">2. Sunucu URL\'sini kopyalayın</string>
+    <string name="stream_instr_3">3. Bu bağlantıyı aynı WiFi\'daki herhangi bir tarayıcıda açın</string>
+    <string name="stream_instr_4">4. Kontrol paneli orada açılır. Ana ekranda kayıt için kullandığınız aynı başlat düğmesine basın — video panele yayınlanır ve canlı oynatılır</string>
     <string name="stream_network_info">Yayın için aynı WiFi ağı gerekiyor</string>
     <string name="battery_estimate_title">Tahmini Kalan Yayın Süresi</string>
     <string name="battery_estimate_disclaimer" formatted="false">Gerçek dünya testine göre: 5000mAh bir cihazda %%61 pil tüketimiyle 8 saat kesintisiz yayın. Kişiselleştirilmiş tahminler için aşağıdan cihaz kapasitenizi güncelleyin.</string>

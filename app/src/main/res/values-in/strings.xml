@@ -2099,10 +2099,10 @@ Apakah Anda ingin beralih ke H.264 dan mulai merekam?</string>
     
     <!-- Instructions -->
     <string name="stream_instructions">Cara Menggunakan</string>
-    <string name="stream_instr_1">1. Aktifkan toggle Mulai Server</string>
-    <string name="stream_instr_2">2. Salin URL Stream HLS dari Endpoint Server</string>
-    <string name="stream_instr_3">3. Buka VLC atau pemutar HLS apa pun di WiFi yang sama</string>
-    <string name="stream_instr_4">4. Tempel URL di pemutar media untuk menonton langsung</string>
+    <string name="stream_instr_1">1. Aktifkan toggle Server Streaming di atas</string>
+    <string name="stream_instr_2">2. Salin URL Server</string>
+    <string name="stream_instr_3">3. Buka tautan itu di browser apa pun pada WiFi yang sama</string>
+    <string name="stream_instr_4">4. Dasbor akan terbuka di sana. Tekan tombol mulai yang sama di Beranda seperti saat merekam — video dialirkan ke dasbor dan diputar langsung</string>
     <string name="stream_network_info">Jaringan WiFi yang sama diperlukan untuk streaming</string>
     
     <!-- Remote Security -->

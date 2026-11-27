@@ -1336,10 +1336,10 @@
     
     <!-- Instructions -->
     <string name="stream_instructions">Как использовать</string>
-    <string name="stream_instr_1">1. Включите переключатель "Запустить сервер"</string>
-    <string name="stream_instr_2">2. Скопируйте URL HLS-стрима из Конечных точек сервера</string>
-    <string name="stream_instr_3">3. Откройте VLC или любой HLS-плеер в той же WiFi-сети</string>
-    <string name="stream_instr_4">4. Вставьте URL в медиаплеер для просмотра вживую</string>
+    <string name="stream_instr_1">1. Включите переключатель «Сервер трансляции» выше</string>
+    <string name="stream_instr_2">2. Скопируйте URL сервера</string>
+    <string name="stream_instr_3">3. Откройте эту ссылку в любом браузере в той же сети WiFi</string>
+    <string name="stream_instr_4">4. Там откроется панель управления. Нажмите на главном экране ту же кнопку запуска, что и для записи — видео транслируется на панель и воспроизводится в реальном времени</string>
     <string name="stream_network_info">Требуется та же WiFi-сеть для стриминга</string>
     
     <!-- Remote Security -->

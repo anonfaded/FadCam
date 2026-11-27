@@ -1886,10 +1886,10 @@
     <string name="stream_bitrate">Bitrate: %1$s</string>
     <string name="stream_codec">Codec: H.264</string>
     <string name="stream_instructions">Come usare</string>
-    <string name="stream_instr_1">1. Attiva server</string>
-    <string name="stream_instr_2">2. Copia URL HLS</string>
-    <string name="stream_instr_3">3. Apri VLC sulla stessa WiFi</string>
-    <string name="stream_instr_4">4. Incolla URL</string>
+    <string name="stream_instr_1">1. Attiva l\'interruttore Server di streaming qui sopra</string>
+    <string name="stream_instr_2">2. Copia l\'URL del server</string>
+    <string name="stream_instr_3">3. Apri il link in qualsiasi browser sulla stessa WiFi</string>
+    <string name="stream_instr_4">4. Si apre la dashboard. Premi sulla Home lo stesso pulsante di avvio che usi per registrare — il video viene trasmesso alla dashboard e riprodotto in diretta</string>
     <string name="stream_network_info">Richiede stessa rete WiFi</string>
     <string name="battery_estimate_title">Durata batteria stimata</string>
     <string name="battery_estimate_disclaimer" formatted="false">Basato su test reali.</string>

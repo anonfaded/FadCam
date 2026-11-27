@@ -1963,10 +1963,10 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="stream_fragments">Buffered: %1$d segments</string>
     <string name="stream_idle">Idle - Recording shuru ka to stream</string>
     <string name="stream_inactive">Server inactive :(</string>
-    <string name="stream_instr_1">1. Turn on Shuru Server toggle</string>
-    <string name="stream_instr_2">2. HLS Stream URL Server Endpoints na copy ka</string>
-    <string name="stream_instr_3">3. VLC ya kom ham HLS player pa same WiFi ke khola</string>
-    <string name="stream_instr_4">4. Live ogorlo dapara URL media player ke paste ka</string>
+    <string name="stream_instr_1">1. Dapara Stream Server toggle on kawa</string>
+    <string name="stream_instr_2">2. Server URL copy ka</string>
+    <string name="stream_instr_3">3. Pa same WiFi network ke kha ao browser ke khola</string>
+    <string name="stream_instr_4">4. Dasboard ogorlo khuligi. Home pa wahi start button press ka jo recording dapara use kawa — video dasboard ta stream higi ao live chaligi</string>
     <string name="stream_instructions">How to Use</string>
     <string name="stream_memory_label">Memory</string>
     <string name="stream_network_info">Same WiFi network required for streaming</string>

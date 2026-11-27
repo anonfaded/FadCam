@@ -1988,10 +1988,10 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="stream_codec">Κωδικοποιητής: H.264</string>
     <!-- Instructions -->
     <string name="stream_instructions">Οδηγίες Χρήσης</string>
-    <string name="stream_instr_1">1. Ενεργοποιήστε τον διακόπτη Έναρξης Διακομιστή</string>
-    <string name="stream_instr_2">2. Αντιγράψτε το URL Ροής HLS από τα Τελικά Σημεία</string>
-    <string name="stream_instr_3">3. Ανοίξτε το VLC ή οποιοδήποτε πρόγραμμα αναπαραγωγής HLS στο ίδιο WiFi</string>
-    <string name="stream_instr_4">4. Επικολλήστε το URL στο πρόγραμμα αναπαραγωγής για ζωντανή προβολή</string>
+    <string name="stream_instr_1">1. Ενεργοποιήστε τον διακόπτη Διακομιστή Ροής παραπάνω</string>
+    <string name="stream_instr_2">2. Αντιγράψτε το URL του διακομιστή</string>
+    <string name="stream_instr_3">3. Ανοίξτε τον σύνδεσμο σε οποιοδήποτε πρόγραμμα περιήγησης στο ίδιο WiFi</string>
+    <string name="stream_instr_4">4. Εκεί ανοίγει ο πίνακας ελέγχου. Πατήστε το ίδιο κουμπί εκκίνησης στην Αρχική που χρησιμοποιείτε για εγγραφή — το βίντεο μεταδίδεται στον πίνακα και αναπαράγεται ζωντανά</string>
     <string name="stream_network_info">Απαιτείται ίδιο δίκτυο WiFi για ροή</string>
     <!-- Remote Security -->
     <string name="battery_estimate_title">Εκτιμώμενος Χρόνος Ροής που Απομένει</string>
