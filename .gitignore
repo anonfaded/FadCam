@@ -50,3 +50,5 @@ TASKS.md
 feedback.md
 tasks/*
 .commandcode/settings.json
+# Downloadable-assets upload staging (generated, ~99 MB, never committed)
+/assets-upload/

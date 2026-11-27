@@ -1,10 +1,146 @@
 # Downloadable Assets — Product Plan
 
-**Status:** PLANNED — not started
+**Status:** IN PROGRESS — load path proven, assets prepared, code not started
 **Created:** 2026-11-23
-**Blocked by:** Lite release must ship first
+**Updated:** 2026-11-27 (spike results + corrections folded in)
+**Branch:** `feat/downloadable-assets` (own worktree, PRs per step)
 **Scope:** Move heavy native binaries and models out of the APK into downloadable,
 user-managed assets with an in-app download manager.
+
+---
+
+## 0. Verified by spike, 2026-11-27 — read this first
+
+Everything below this section was written before anything was executed. The spike
+(`app/src/androidTest/java/com/fadcam/AssetLoadSpikeTest.java`) replaced several
+assumptions with measured facts. **Where this section disagrees with any later
+section, this section wins.**
+
+### 0.1 Spike result — all four cases pass on both physical devices
+
+Built with opencv/ffmpeg/`libc++_shared` **completely absent from the APK**
+(`-PspikeNoBundledNative=true`), so no bundled copy could satisfy the load.
+
+| Case | Pixel 7 Pro (API 37) | TECNO KG5k (API 30) |
+|---|---|---|
+| OpenCV `System.load` from `filesDir` + run MOG2 | ✅ `5.1.0` | ✅ `5.1.0` |
+| `OpenCVLoader.initLocal()` after that | ✅ `true` | ✅ `true` |
+| ffmpeg `System.load` chain + `FFmpegKit.execute()` | ✅ `returnCode=0`, `6.0` | ✅ `returnCode=0`, `6.0` |
+| `CompiledModel.create(absolutePath)` | ✅ | ✅ |
+
+### 0.2 Correcting §2.1 — the old evidence proved nothing
+
+`NativeLoadFromStorageTest` copies out **`libLiteRt.so`**, which is the single
+easiest case: its only dependencies are `libdl libGLESv3 libEGL libm liblog libc`
+— no C++ runtime — and LiteRT makes **zero** internal `System.loadLibrary` calls.
+It was never evidence for OpenCV or ffmpeg. Replaced by the spike above.
+
+### 0.3 The load mechanism — no fork, no patch, no reflection
+
+`System.load(absolutePath)` makes the library resident under its soname; the
+library's own internal `System.loadLibrary("opencv_java5")` / `System.loadLibrary("avcodec")`
+then resolves to that already-resident copy via the linker's loaded-library list.
+Proved with the **unmodified** `ffmpeg-kit-full-6.0-2.LTS.aar`.
+
+So §5.2.5's "evaluate FFmpegKitNext / build our own wrapper" is **not needed**,
+and no patched `NativeLoader` is required. Load order is the only contract:
+
+```
+libc++_shared.so  →  leaf libs  →  root libs
+```
+
+### 0.4 Correcting §2.2 — the read-only rule is NOT currently active
+
+Real gating condition: **device API >= 37 AND `targetSdk >= 37`**.
+
+We are `targetSdk = 36`, so on the API 37 Pixel a deliberately writable `.so`
+**loaded successfully** (verified). `setReadOnly()` is therefore not mandatory
+today.
+
+**Decision: adopt it anyway.** It is one syscall, it is correct code on every API
+level, and it becomes mandatory the day `targetSdk` reaches 37 (D1). `NativeReadOnlyRequirementTest`
+now asserts the real gating condition so it fails loudly if Google changes it.
+
+### 0.5 `libc++_shared.so` must ship inside the asset bundles
+
+It is declared only by the OpenCV AAR. After Phase 3 nothing in the APK needs it
+(LiteRT does not), so it must travel in the bundle and load first.
+
+OpenCV's AAR and ffmpeg's AAR ship **different builds** of it. Both work — the
+spike ran ffmpeg against OpenCV's copy with `returnCode=0`. **Ship OpenCV's copy
+in both zips**, so the two bundles can never disagree about the C++ runtime.
+Cost: 1.2 MB duplication. Do not build a dependency graph to save it.
+
+### 0.6 AGP gotcha — `pickFirsts` overrides `excludes`
+
+Excluding `**/libc++_shared.so` while `pickFirsts` also names it silently keeps
+the file. The spike build had to drop the `pickFirsts` entry under the flag.
+Expect this again in Phase 3.
+
+### 0.7 Measured sizes (clean builds, libraries genuinely absent)
+
+| APK | before | after removing opencv + ffmpeg + libc++ |
+|---|---|---|
+| arm64 | 150.6 MB | **91.1 MB** |
+| universal | 201.3 MB | **101.6 MB** |
+
+Universal still carries the 53.6 MB of models → ~48 MB once Phase 1 lands, which
+meets the ~50–60 MB target.
+
+### 0.8 Compression, measured
+
+| Payload | Raw | Zipped | Saving | Decision |
+|---|---|---|---|---|
+| OpenCV arm64 | 32.42 MB | 11.95 MB | 63% | **zip** |
+| ffmpeg arm64 | 24.63 MB | 11.99 MB | 51% | **zip** |
+| Models | 53.62 MB | 48.53 MB | 9.5% | **ship raw** |
+
+`.so` compresses heavily (symbol tables). `.tflite` does not. Zipping a 46 MB
+model would need 46 MB temp + 46 MB final on disk for a 9.5% gain — not worth it.
+Raw download also means the downloaded file *is* the verified artifact.
+
+### 0.9 16 KB alignment — resolved, nothing to fix
+
+Per [Support 16 KB page sizes](https://developer.android.com/guide/practices/page-sizes),
+the requirement applies to **64-bit** ABIs only.
+
+- **arm64-v8a: every `.so` is `p_align = 0x4000`** ✅
+- **armeabi-v7a: OpenCV + its `libc++_shared` are `0x1000`** — harmless, 32-bit.
+
+So §9/E14's CI gate should assert alignment for **arm64 only**, or it will fail
+on correctly-built v7a libraries.
+
+### 0.10 Open caveats
+
+- **`armeabi-v7a` is unverified on hardware.** No 32-bit device is attached
+  (both phones report arm64 first). Structure and file set are correct, but the
+  v7a path has not been *run*. Deferred by decision; verify before Phase 3 ships.
+- **`FFmpegKitConfig`'s static initialiser** calls `NativeLoader.loadFFmpeg()` the
+  instant any `com.arthenica.ffmpegkit` class is touched, so the absolute-path
+  loads must complete **before** the first ffmpeg class reference. This is a real
+  ordering constraint on `AssetRegistry`, not a style preference.
+
+### 0.11 Asset upload set — 6 binaries + 1 manifest + docs
+
+Generated reproducibly by `tools/build-assets-upload.sh` into `assets-upload/`
+(git-ignored; delete once uploaded and verified).
+
+| File | Size | ABI |
+|---|---|---|
+| `opencv-5.1.0-arm64-v8a.zip` | 11.95 MB | arm64 |
+| `opencv-5.1.0-armeabi-v7a.zip` | 9.75 MB | v7a |
+| `ffmpeg-kit-full-6.0.2-lts-arm64-v8a.zip` | 11.99 MB | arm64 |
+| `ffmpeg-kit-full-6.0.2-lts-armeabi-v7a.zip` | 11.43 MB | v7a |
+| `rfdetr-nano-v1.0-graph-a.tflite` | 46.38 MB | any |
+| `rfdetr-nano-v1.0-graph-b.tflite` | 7.24 MB | any |
+| `LICENSES.zip` | 0.07 MB | — |
+| `manifest-v1.0.json` | — | — |
+
+Per-ABI zips save ~21 MB for every arm64 user versus a universal bundle.
+
+Nothing is rebuilt or patched. Verified byte-identical to the shipped AARs by
+SHA-256, with exactly one documented exception: `libc++_shared.so` inside the
+ffmpeg bundles is OpenCV's copy (§0.5).
 
 ---
 
@@ -292,15 +428,65 @@ Reliability details:
 **Repo:** <https://github.com/fadsec-lab/fadcam-assets> — confirmed public.
 
 **Tag:** `assets-v1.0` (never deleted; old tags stay forever)
+**Release title:** `FadCam downloadable assets v1.0`
+**Release body:** "Binaries for FadCam's on-demand feature downloads. Not an app
+release — do not download these manually unless you are debugging. See README."
+
+### 5.0 How to publish — exact steps
+
+All files are already built in `assets-upload/` by
+`tools/build-assets-upload.sh`. Regenerate any time; it wipes and rebuilds.
+
+```bash
+# 1. from the worktree, make sure the folder is current
+./tools/build-assets-upload.sh
+
+# 2. create the release (draft first, so nothing is public half-finished)
+gh release create assets-v1.0 -R fadsec-lab/fadcam-assets \
+  --title "FadCam downloadable assets v1.0" \
+  --notes "Binaries for FadCam's on-demand feature downloads. Not an app release." \
+  --draft
+
+# 3. upload every file
+gh release upload assets-v1.0 -R fadsec-lab/fadcam-assets assets-upload/*
+
+# 4. verify what landed
+gh release view assets-v1.0 -R fadsec-lab/fadcam-assets
+
+# 5. publish it (this creates the immutable tag -> assets-v1.0)
+gh release edit assets-v1.0 -R fadsec-lab/fadcam-assets --draft=false
+```
+
+**After publishing, verify the URLs resolve before writing any app code:**
+
+```bash
+curl -sIL https://github.com/fadsec-lab/fadcam-assets/releases/download/assets-v1.0/opencv-5.1.0-arm64-v8a.zip | head -1
+# expect: HTTP/2 200
+```
+
+Then confirm one hash end to end:
+
+```bash
+gh release download assets-v1.0 -R fadsec-lab/fadcam-assets \
+  -p 'opencv-5.1.0-arm64-v8a.zip' -D /tmp/verify
+shasum -a 256 /tmp/verify/opencv-5.1.0-arm64-v8a.zip
+# must equal the sha256 for that file in assets-upload/manifest-v1.0.json
+```
+
+**Rules:** never delete or force-push `assets-v1.0` — installed apps pin those
+URLs forever. A future change is a new tag (`assets-v1.1`), never an edit.
 
 ### 5.1 Assets
 
+Built and hash-verified; see §0.11 for sizes. OpenCV is a **zip**, not a bare
+`.so`, because it must carry `libc++_shared.so`.
+
 ```
-opencv-5.1.0-arm64-v8a.so
-opencv-5.1.0-armeabi-v7a.so
-ffmpeg-kit-full-6.0.2-lts-arm64-v8a.zip
+opencv-5.1.0-arm64-v8a.zip                 # libopencv_java5.so + libc++_shared.so
+opencv-5.1.0-armeabi-v7a.zip
+ffmpeg-kit-full-6.0.2-lts-arm64-v8a.zip    # 10 .so including libc++_shared.so
 ffmpeg-kit-full-6.0.2-lts-armeabi-v7a.zip
-rfdetr-nano-v1.0-graph-a.tflite
+rfdetr-nano-v1.0-graph-a.tflite            # raw, not zipped (§0.8)
 rfdetr-nano-v1.0-graph-b.tflite
 LICENSES.zip                  # every res/raw/license*.txt from the ffmpeg AAR
 BUILDING.md                   # exact build recipe (see §5.2.2)
@@ -308,6 +494,10 @@ SOURCE-OFFER.md               # GPL-3.0 source offer (see §5.2.3)
 README.md                     # what this repo is, why assets are separate
 manifest-v1.0.json            # sha256 + size + ABI + license per asset
 ```
+
+`manifest-v1.0.json` is generated alongside the binaries, so its hashes cannot
+drift from the files. The app ships its **own copy** of this manifest inside the
+APK and verifies against that — never against the server (§4.4).
 
 ### 5.2 ffmpeg-kit provenance — the actual situation
 
@@ -658,58 +848,96 @@ These are **not** in this plan; listed so they aren't forgotten.
 
 ## 11. Phases
 
-### Phase 0 — Foundations (no user-visible change)
+**Legend:** `[x]` done · `[~]` done but needs user action · `[ ]` not started
 
-- [x] Repo exists: <https://github.com/fadsec-lab/fadcam-assets> (public, empty)
-- [ ] Assets repo: `README.md`, `BUILDING.md` (§5.2.2), `SOURCE-OFFER.md` (§5.2.3)
-- [ ] Create `assets-v1.0` tag with all assets (§5.1) + `LICENSES.zip`
-- [ ] Publish `manifest-v1.0.json` with sha256 + size + ABI + license per asset
-- [ ] Record ffmpeg-kit provenance + GPL position in the repo README (§5.2.1)
-- [ ] Confirm the tag is treated as immutable (never deleted, never force-pushed)
-- [ ] Add `AssetRegistry` + `Asset` enum + state machine (§4.2)
-- [ ] Add `AssetStore` (paths, manifest read/write, atomic swap)
-- [ ] Add `DownloadService` (OkHttp + `dataSync` FGS, resume, sha256) modelled on
-      `FileOperationService`; persist byte offset for restart
-- [ ] Unit tests: state transitions, hash mismatch, resume, ABI selection
-- [ ] Instrumented test: download→verify→load on both test devices
+### Phase 0 — Prove the load path  ← DONE, this gated everything
 
-### Phase 1 — Models (56 MB)
+- [x] Spike test written: `AssetLoadSpikeTest` (4 cases, both levels)
+- [x] Stripped APK build (`-PspikeNoBundledNative=true`) so no bundled copy exists
+- [x] OpenCV loads from `filesDir` + runs MOG2 — API 37 and API 30
+- [x] `OpenCVLoader.initLocal()` resolves to resident soname — both devices
+- [x] ffmpeg loads from `filesDir` + `FFmpegKit.execute()` returns 0 — both
+- [x] `CompiledModel.create(absolutePath)` works — both
+- [x] Read-only rule gating condition verified empirically (`NativeReadOnlyRequirementTest`)
+- [x] `NativeLoadFromStorageTest` made re-runnable (was read-only after first run)
+- [x] 16 KB alignment audited: arm64 all `0x4000`, v7a `0x1000` is fine (§0.9)
+- [x] Byte-identity of every uploaded file vs shipped AAR verified by SHA-256
+- [x] `tools/build-assets-upload.sh` generates the upload set reproducibly
+
+### Phase 0.5 — Assets published (user action, then delete `assets-upload/`)
+
+- [ ] Assets repo docs: `README.md`, `BUILDING.md` (§5.2.2), `SOURCE-OFFER.md` (§5.2.3)
+- [~] Upload 6 binaries + `LICENSES.zip` + `manifest-v1.0.json` (§0.11)
+- [ ] Create release `assets-v1.0`, title **FadCam downloadable assets v1.0**
+- [ ] Confirm tag immutable (never deleted, never force-pushed)
+- [ ] Spot-check `SHA-256` of a downloaded asset matches `manifest-v1.0.json`
+- [ ] Delete `assets-upload/` once verified
+
+### Phase 1 — Foundations (no user-visible change)
+
+- [ ] `Asset` enum (OPENCV, FFMPEG, MODELS) + ABI resolution via
+      `Build.SUPPORTED_ABIS` (**not** `CPU_ABI` — §E8)
+- [ ] `AssetRegistry`: single source of truth, state computed live (§4.2)
+- [ ] Resolution order **must** be: loaded → `filesDir` → APK `lib/` → throw.
+      Header says APK first (D7); for the spike to have worked `filesDir` is what
+      matters, and APK-first is what keeps old bundled builds working. Keep D7.
+- [ ] `AssetStore`: paths, manifest read/write, atomic swap, `.tmp` cleanup
+- [ ] Loader: `libc++_shared` → leaves → root, **then** `setReadOnly()` before each
+      `System.load` (§0.4). ffmpeg loads must complete before any ffmpeg class is
+      referenced (§0.10)
+- [ ] `AssetMissingException` → caught at UI layer, never a crash
+- [ ] Unit tests: state transitions, hash mismatch, ABI selection, resume offsets
+
+### Phase 2 — Download engine
+
+- [ ] `DownloadService` on `dataSync` FGS, modelled on `FileOperationService` (246 lines)
+- [ ] OkHttp streaming + `Range` resume, throttled progress (~4 Hz)
+- [ ] sha256 verify against **APK-bundled** manifest, never the server
+- [ ] `onTimeout()` handled (Android 15+); `START_STICKY` rebuilds queue from
+      persisted state rather than the Intent
+- [ ] Unzip step for `.so` bundles only; models stay raw (§0.8)
+- [ ] Instrumented test: download → verify → load on both devices
+
+### Phase 3 — Models (53.6 MB, lowest risk)
 
 - [ ] Move `.tflite` out of `src/full/assets/models/`
-- [ ] Wire `RfDetrNanoDetector` to `AssetRegistry.require(MODELS)`
+- [ ] `RfDetrNanoDetector`: `create(AssetManager, …)` → `create(File, …)` (public API)
 - [ ] Banner in Motion Lab + Digital Forensics
-- [ ] Verify detection on both test devices after download
-- [ ] Verify boxes/evidence JPEG unaffected
+- [ ] Verify detection on both devices after download; boxes/evidence JPEG unaffected
 
-### Phase 2 — OpenCV (51 MB)
+### Phase 4 — OpenCV (32 MB arm64)
 
-- [ ] Remove `org.opencv:opencv` dependency from Gradle
-- [ ] Replace `OpenCVLoader.initLocal()` with `AssetRegistry`-driven `System.load`
+- [ ] Remove `org.opencv:opencv` Gradle dependency
+- [ ] Replace `OpenCVLoader.initLocal()` with registry-driven load (+ keep
+      `initLocal()` after, it resolves to the resident soname — §0.3)
 - [ ] Banner in Motion Lab
 - [ ] Verify MOG2 motion detection end-to-end on both devices
 
-### Phase 3 — ffmpeg (~35 MB)
+### Phase 5 — ffmpeg (24.6 MB arm64)
 
 - [ ] Remove `app/libs/ffmpeg-kit-full-6.0-2.LTS.aar` from repo
-- [ ] Replace `FFmpegKit` initialisation with registry-driven load
+- [ ] Registry-driven load before first ffmpeg class reference (§0.10)
+- [ ] Also stop excluding `pickFirsts` for `libc++_shared` (§0.6)
 - [ ] Banners in Faditor + Records + Streaming surfaces (§6)
 - [ ] Verify Faditor export, remux, batch ops, video info on both devices
 
-### Phase 4 — Download manager UI
+### Phase 6 — Download manager UI
 
 - [ ] Settings screen (§7.1)
 - [ ] Per-feature banners (§7.2)
 - [ ] Delete / repair / update actions
-- [ ] Strings in all 13 locales
+- [ ] Strings in all 12 locales + `values` (repo has 12, not 13)
 
-### Phase 5 — Release hardening
+### Phase 7 — Release hardening
 
-- [ ] Verify no asset is referenced by Lite (`grep` + build)
-- [ ] CI gate: `p_align >= 0x4000` for every published `.so`
+- [ ] Verify no asset referenced by Lite (`grep` + build + `unzip -l`)
+- [ ] CI gate: `p_align >= 0x4000` for **arm64 only** (§0.9)
 - [ ] CI gate: no `OpenCVLoader`/`FFmpegKit` outside Full
-- [ ] Reproducible-build check: APK identical without network
-- [ ] F-Droid MR with provenance explanation
-- [ ] Docs: `docs/features/downloadable-assets.md`
+- [ ] Offline build check: APK builds and runs with features showing banners
+- [ ] `armeabi-v7a` verified on real 32-bit hardware (deferred, §0.10)
+- [x] ~~F-Droid reproducibility of the ffmpeg kit~~ — not needed; F-Droid
+      supplied the AAR, assets are opt-in downloads, not part of the APK
+- [ ] Docs: `docs/features/downloadable-assets.md` (only after feature complete)
 
 ---
 
