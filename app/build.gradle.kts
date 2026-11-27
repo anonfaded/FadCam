@@ -463,7 +463,21 @@ android {
             // there is nothing left to de-duplicate. Removing the pickFirsts entry matters:
             // it takes precedence over excludes for the same path, so leaving it in would
             // silently keep libc++_shared.so in the APK.
-            excludes += listOf("**/libc++_shared.so", "**/libopencv_java5.so")
+            // Every native library that ships as a downloadable asset is listed here. The
+            // Java/C++ wrappers stay in the APK; only the .so files move out.
+            excludes += listOf(
+                "**/libc++_shared.so",
+                "**/libopencv_java5.so",
+                "**/libavcodec.so",
+                "**/libavformat.so",
+                "**/libavfilter.so",
+                "**/libavdevice.so",
+                "**/libavutil.so",
+                "**/libswscale.so",
+                "**/libswresample.so",
+                "**/libffmpegkit.so",
+                "**/libffmpegkit_abidetect.so",
+            )
             // TEST HOOK, not a shipping path. Builds a Full APK with the libraries we
             // intend to move to downloadable assets left out, so AssetLoadSpikeTest can
             // prove they load from filesDir with no bundled copy to fall back on:

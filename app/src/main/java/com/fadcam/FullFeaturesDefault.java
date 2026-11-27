@@ -29,7 +29,8 @@ public final class FullFeaturesDefault implements FullFeatures {
 
     @Override
     @androidx.annotation.NonNull
-    public com.fadcam.videoinfo.VideoInfoProbe createVideoInfoProbe() {
+    public com.fadcam.videoinfo.VideoInfoProbe createVideoInfoProbe(
+            android.content.Context ctx) {
         return uri -> null;
     }
 

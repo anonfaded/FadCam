@@ -63,15 +63,13 @@ public class AssetRegistryTest {
     }
 
     @Test
-    public void opencvAndModelsAreNoLongerBundled() {
+    public void noAssetIsBundledAnyMore() {
         AssetRegistry reg = AssetRegistry.get(ctx());
-        // OpenCV and the models left the APK. ffmpeg is still bundled until its own PR.
-        assertFalse("OpenCV must not report BUNDLED any more",
-                reg.isBundled(Asset.OPENCV));
-        assertFalse("models must not report BUNDLED any more",
-                reg.isBundled(Asset.MODELS));
-        assertTrue("ffmpeg still ships in the APK at this point",
-                reg.isBundled(Asset.FFMPEG));
+        // All three heavy payloads left the APK. This is the assertion that would catch a
+        // regression where one quietly gets packaged again.
+        for (Asset a : Asset.values()) {
+            assertFalse(a.id + " must not report BUNDLED any more", reg.isBundled(a));
+        }
         System.out.println(TAG + " REGISTRY opencv=" + reg.state(Asset.OPENCV)
                 + " ffmpeg=" + reg.state(Asset.FFMPEG)
                 + " models=" + reg.state(Asset.MODELS));
@@ -92,19 +90,24 @@ public class AssetRegistryTest {
     public void leftoverFilesReportCorruptForAssetsNotInTheApk() {
         AssetRegistry reg = AssetRegistry.get(ctx());
         AssetStore store = reg.store();
-        // ffmpeg: still bundled, so drive the on-disk checks directly rather than through
-        // state(), which correctly prefers BUNDLED.
+        // Drive the on-disk checks directly so this does not depend on what happens to be
+        // installed on the test device.
         Asset asset = Asset.FFMPEG;
 
-        // This build ships OpenCV in the APK, so BUNDLED correctly wins the resolution
-        // order and masks on-disk state. To exercise the on-disk branch, the test drives
-        // AssetStore directly — that is the code the DOWNLOADING/MISSING/CORRUPT states
-        // depend on once the libraries leave the APK.
-        File dir = store.dirFor(asset);
-        File fake = new File(dir, "libavcodec.so");
+        // Drive AssetStore directly so this never depends on what is installed.
+        File fake = store.fileFor(asset, "libavcodec.so");
         List<AssetManifest.Entry> entries = reg.entriesFor(asset);
+        // Start from a clean directory: the asset may already be installed by another test,
+        // in which case createNewFile() returns false and the assertion below would fail for
+        // the wrong reason.
+        if (fake.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            fake.setWritable(true);
+            //noinspection ResultOfMethodCallIgnored
+            fake.delete();
+        }
         try {
-            assertTrue(fake.createNewFile());
+            assertTrue("could not create the fake member", fake.createNewFile());
             System.out.println(TAG + " REGISTRY staged " + fake.getName()
                     + " len=" + fake.length() + " expected=" + entries.get(0).size);
             assertFalse("a wrong-sized leftover file must not count as installed",
@@ -123,13 +126,16 @@ public class AssetRegistryTest {
         AssetRegistry reg = AssetRegistry.get(ctx());
         // A download in flight must be reported as DOWNLOADING regardless of what is on
         // disk, because the UI shows progress for the in-flight work.
-        reg.onDownloadStarted(Asset.FFMPEG);
+        reg.onDownloadStarted(Asset.OPENCV);
         try {
-            assertEquals(AssetState.DOWNLOADING, reg.state(Asset.FFMPEG));
+            assertEquals(AssetState.DOWNLOADING, reg.state(Asset.OPENCV));
         } finally {
-            reg.onDownloadFinished(Asset.FFMPEG);
+            reg.onDownloadFinished(Asset.OPENCV);
         }
-        assertEquals("once finished, the bundled copy is reported again",
-                AssetState.BUNDLED, reg.state(Asset.FFMPEG));
+        // Once finished, whatever is on disk decides: READY if installed, otherwise absent.
+        AssetState after = reg.state(Asset.OPENCV);
+        assertTrue("after the download flag clears, state must be resolved from disk, got "
+                + after, after == AssetState.READY || after == AssetState.MISSING
+                || after == AssetState.CORRUPT);
     }
 }

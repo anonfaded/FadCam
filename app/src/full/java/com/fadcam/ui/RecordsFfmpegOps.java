@@ -58,6 +58,8 @@ public final class RecordsFfmpegOps {
     }
 
     private static long probePath(Context context, String filePath) {
+        // Load the ffmpeg runtime before touching any ffmpeg class.
+        com.fadcam.assets.AssetFfmpeg.ensureLoaded(context);
         try {
             MediaInformationSession session = FFprobeKit.getMediaInformation(filePath);
             MediaInformation info = session.getMediaInformation();

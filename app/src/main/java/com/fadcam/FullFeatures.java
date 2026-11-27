@@ -30,7 +30,7 @@ public interface FullFeatures {
 
     /** FFprobe metadata provider (Full-only); Lite receives a no-op probe. */
     @androidx.annotation.NonNull
-    com.fadcam.videoinfo.VideoInfoProbe createVideoInfoProbe();
+    com.fadcam.videoinfo.VideoInfoProbe createVideoInfoProbe(Context ctx);
 
     /** TFLite AI object detector (Full-only); null in Lite. */
     @Nullable

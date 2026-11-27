@@ -51,8 +51,9 @@ public final class FullFeaturesImpl implements FullFeatures {
 
     @Override
     @androidx.annotation.NonNull
-    public com.fadcam.videoinfo.VideoInfoProbe createVideoInfoProbe() {
-        return new com.fadcam.videoinfo.FullVideoInfoProbe();
+    public com.fadcam.videoinfo.VideoInfoProbe createVideoInfoProbe(
+            android.content.Context ctx) {
+        return new com.fadcam.videoinfo.FullVideoInfoProbe(ctx);
     }
 
     @Override
