@@ -525,7 +525,8 @@ public class RecordingService extends Service {
                 if (openCvExpected) {
                     try {
                         com.fadcam.motion.domain.detector.MotionDetector backend =
-                                com.fadcam.FeatureRegistry.features().createOpenCvMotionDetector();
+                                com.fadcam.FeatureRegistry.features()
+                                .createOpenCvMotionDetector(getApplicationContext());
                         if (backend == null) {
                             throw new IllegalStateException("OpenCV factory returned null");
                         }

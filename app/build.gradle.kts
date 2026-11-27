@@ -459,9 +459,11 @@ android {
             // pickFirsts must be dropped for the spike build: pickFirsts wins over
             // excludes for the same path, so leaving it in would silently keep
             // libc++_shared.so in the APK and make the load test prove nothing.
-            if (!project.hasProperty("spikeNoBundledNative")) {
-                pickFirsts += listOf("**/libc++_shared.so")
-            }
+            // libc++_shared.so and the OpenCV runtime now arrive with the download, so
+            // there is nothing left to de-duplicate. Removing the pickFirsts entry matters:
+            // it takes precedence over excludes for the same path, so leaving it in would
+            // silently keep libc++_shared.so in the APK.
+            excludes += listOf("**/libc++_shared.so", "**/libopencv_java5.so")
             // TEST HOOK, not a shipping path. Builds a Full APK with the libraries we
             // intend to move to downloadable assets left out, so AssetLoadSpikeTest can
             // prove they load from filesDir with no bundled copy to fall back on:

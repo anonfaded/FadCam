@@ -40,7 +40,7 @@ public final class FullFeaturesDefault implements FullFeatures {
     }
 
     @Override
-    public com.fadcam.motion.domain.detector.MotionDetector createOpenCvMotionDetector() {
+    public com.fadcam.motion.domain.detector.MotionDetector createOpenCvMotionDetector(android.content.Context ctx) {
         return null;
     }
 

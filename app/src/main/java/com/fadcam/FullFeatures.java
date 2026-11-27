@@ -38,7 +38,7 @@ public interface FullFeatures {
 
     /** OpenCV MOG2 motion detector (Full-only); null in Lite (Lite uses frame-diff by design). */
     @Nullable
-    com.fadcam.motion.domain.detector.MotionDetector createOpenCvMotionDetector();
+    com.fadcam.motion.domain.detector.MotionDetector createOpenCvMotionDetector(Context ctx);
 
     /**
      * Motion Lab settings screen (Full-only). Returns null in Lite, which has no

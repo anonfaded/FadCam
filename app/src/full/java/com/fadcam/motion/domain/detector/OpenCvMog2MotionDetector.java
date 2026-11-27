@@ -2,6 +2,8 @@ package com.fadcam.motion.domain.detector;
 
 import android.media.Image;
 
+import androidx.annotation.Nullable;
+
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -85,6 +87,23 @@ public class OpenCvMog2MotionDetector implements MotionDetector, MotionDebugInfo
     private int lastBlobCount = 0;
 
     public OpenCvMog2MotionDetector() {
+        this(null);
+    }
+
+    /**
+     * @param context used to resolve a downloaded OpenCV runtime. Pass null on builds where
+     *                the libraries are still bundled, or from tests that have already
+     *                initialised the runtime.
+     * @throws com.fadcam.assets.AssetException when the runtime is not installed, so the
+     *         caller can show a download banner instead of crashing
+     */
+    public OpenCvMog2MotionDetector(@Nullable android.content.Context context) {
+        if (context != null) {
+            // Resolves a downloaded runtime, or falls through to OpenCV's own loader when
+            // the libraries still ship in the APK. Throws AssetException when neither is
+            // available, which the UI renders as a one-time download prompt.
+            com.fadcam.assets.AssetOpenCv.ensureLoaded(context);
+        }
         boolean inited = OpenCVLoader.initLocal();
         if (!inited) {
             throw new IllegalStateException("OpenCV native runtime not available");
