@@ -7,7 +7,7 @@ FORMAT GUIDELINES:
 
 # FadCam Lite Changelog
 
-## 1.0.0
+## FadCam Lite v1.0.0
 - First release. FadCam's recording engine in a ~14 MB app instead of ~186 MB.
 - **Hybrid MP4** recording that survives crashes, power loss, and sudden shutdowns.
 - Background recording with the screen off, plus bodycam and dashcam use.

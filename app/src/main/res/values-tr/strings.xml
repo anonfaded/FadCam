@@ -992,6 +992,8 @@
     <string name="screen_rec_bitrate_high_hint">Yüksek değerler kaliteyi artırır</string>
     <string name="screen_rec_orientation_portrait">Portre</string>
     <string name="screen_rec_orientation_landscape">Yatay</string>
+    <string name="screen_rec_orientation_auto">Otomatik</string>
+    <string name="screen_rec_orientation_auto_value">Otomatik (%1$s)</string>
     <string name="watermark_speed_title">Hız (km/s)</string>
     <string name="watermark_speed_off">Kapalı</string>
     <string name="watermark_speed_on">Açık — GPS uydu verilerinden hız</string>
@@ -3083,5 +3085,5 @@ Sonsuza dek senin.</string>
     <string name="watermark_info_fadcam_body">Kamera video kayıtları ve çift kamera kayıtları için geçerlidir. Bu sekmede yaptığınız değişiklikler yalnızca kamera kayıtlarını etkiler.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Yalnızca ekran kayıtları için geçerlidir. Bu sekmede yaptığınız değişiklikler yalnızca ekran kayıtlarını etkiler.</string>
-    <string name="update_fdroid_note">F-Droid\'den mi yüklediniz? Bunu yok sayın — güncelleme birkaç gün içinde F-Droid\'e ulaşacak. GitHub\'dan mı yüklediniz? Doğrudan güncellemek için aşağıdaki düğmeyle sürümler sayfasını açın.</string>
+    <string name="update_fdroid_note">F-Droid\'den mi yüklediniz? Bunu yok sayın — güncelleme birkaç gün içinde F-Droid\'e ulaşacak. GitHub\'dan mı yüklediniz? Doğrudan güncellemek için GitHub düğmesiyle sürümler sayfasını açın.</string>
 </resources>

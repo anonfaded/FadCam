@@ -2050,6 +2050,8 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="note_screen_codec">Wähle den Codec für die Bildschirmaufnahme\n(Standard: %1$s)\nTipp: H.265 (HEVC) erzeugt bei gleicher Qualität kleinere Dateien. Hat dieses Gerät keinen nutzbaren HEVC-Encoder, nimmt FadCam automatisch in H.264 auf.</string>
     <string name="screen_rec_orientation">Ausrichtung</string>
     <string name="screen_rec_orientation_landscape">Querformat</string>
+    <string name="screen_rec_orientation_auto">Automatisch</string>
+    <string name="screen_rec_orientation_auto_value">Automatisch (%1$s)</string>
     <string name="screen_rec_orientation_portrait">Hochformat</string>
     <string name="screen_rec_resolution">Auflösung</string>
     <string name="screen_rec_settings_subtitle">Qualität, Audio &amp; Ausgabeeinstellungen</string>
@@ -3128,5 +3130,5 @@ Für immer dein.</string>
     <string name="watermark_info_fadcam_body">Gilt für Kamera-Videoaufnahmen und Dual-Kamera-Aufnahmen. Änderungen in diesem Tab betreffen nur Kameraaufnahmen.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Gilt nur für Bildschirmaufnahmen. Änderungen in diesem Tab betreffen nur Bildschirmaufnahmen.</string>
-    <string name="update_fdroid_note">Von F-Droid installiert? Ignoriere das — das Update erreicht F-Droid in ein paar Tagen. Von GitHub installiert? Nutze die Schaltfläche unten, um die Release-Seite zu öffnen und direkt zu aktualisieren.</string>
+    <string name="update_fdroid_note">Von F-Droid installiert? Ignoriere das — das Update erreicht F-Droid in ein paar Tagen. Von GitHub installiert? Nutze die GitHub-Schaltfläche, um die Release-Seite zu öffnen und direkt zu aktualisieren.</string>
 </resources>

@@ -2300,6 +2300,8 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="screen_rec_bitrate_high_hint">Valores más altos mejoran la calidad</string>
     <string name="screen_rec_orientation_portrait">Retrato</string>
     <string name="screen_rec_orientation_landscape">Paisaje</string>
+    <string name="screen_rec_orientation_auto">Automático</string>
+    <string name="screen_rec_orientation_auto_value">Automático (%1$s)</string>
 
     <!-- Extended Watermark Features -->
     <string name="watermark_speed_title">Velocidad (km/h)</string>
@@ -3286,5 +3288,5 @@ Tuyas para siempre.</string>
     <string name="watermark_info_fadcam_body">Se aplica a grabaciones de vídeo con cámara y grabaciones con cámara doble. Cualquier cambio en esta pestaña afecta solo a las grabaciones de cámara.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Se aplica solo a grabaciones de pantalla. Cualquier cambio en esta pestaña afecta solo a las grabaciones de pantalla.</string>
-    <string name="update_fdroid_note">¿Instalado desde F-Droid? Ignora esto: la actualización llegará a F-Droid en unos días. ¿Instalado desde GitHub? Usa el botón de abajo para abrir la página de versiones y actualizar directamente.</string>
+    <string name="update_fdroid_note">¿Instalado desde F-Droid? Ignora esto: la actualización llegará a F-Droid en unos días. ¿Instalado desde GitHub? Usa el botón de GitHub para abrir la página de versiones y actualizar directamente.</string>
 </resources>

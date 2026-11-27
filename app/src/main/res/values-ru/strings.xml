@@ -2949,6 +2949,8 @@
     <string name="screen_rec_bitrate_high_hint">Более высокие значения улучшают качество</string>
     <string name="screen_rec_orientation_portrait">Портретная</string>
     <string name="screen_rec_orientation_landscape">Альбомная</string>
+    <string name="screen_rec_orientation_auto">Авто</string>
+    <string name="screen_rec_orientation_auto_value">Авто (%1$s)</string>
 
     <!-- Streaming Mode -->
     <string name="streaming_mode_title">Назначение трансляции</string>
@@ -3852,5 +3854,5 @@
     <string name="watermark_info_fadcam_body">Применяется к видеозаписям с камеры и записям с двойной камеры. Любое изменение на этой вкладке влияет только на записи с камеры.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Применяется только к записям экрана. Любое изменение на этой вкладке влияет только на записи экрана.</string>
-    <string name="update_fdroid_note">Установлено из F-Droid? Игнорируйте это — обновление появится в F-Droid через несколько дней. Установлено из GitHub? Используйте кнопку ниже, чтобы открыть страницу релизов и обновиться напрямую.</string>
+    <string name="update_fdroid_note">Установлено из F-Droid? Игнорируйте это — обновление появится в F-Droid через несколько дней. Установлено из GitHub? Используйте кнопку GitHub, чтобы открыть страницу релизов и обновиться напрямую.</string>
 </resources>

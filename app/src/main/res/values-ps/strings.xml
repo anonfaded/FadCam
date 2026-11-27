@@ -1795,6 +1795,8 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="note_screen_codec">Da skrin sabt codec wutaka\n(Talawala: %1$s)\nLarxhowuna: H.265 (HEVC) pa warta kayfiyat ke kochni fayluna war-kawi. Ka da wasila da karawalo war HEVC encoder wan-lari, FadCam ba pa automatiki dol H.264 ke sabt kri.</string>
     <string name="screen_rec_orientation">Samt</string>
     <string name="screen_rec_orientation_landscape">Landscape</string>
+    <string name="screen_rec_orientation_auto">اتوماتیک</string>
+    <string name="screen_rec_orientation_auto_value">اتوماتیک (%1$s)</string>
     <string name="screen_rec_orientation_portrait">Portrait</string>
     <string name="screen_rec_resolution">Resolution</string>
     <string name="screen_rec_settings_subtitle">Kaifiyat, audio &amp; output settings</string>
@@ -3228,5 +3230,5 @@ Da tase da hamisha paara.</string>
     <string name="watermark_info_fadcam_body">د کامرې ویډیو ثبت او دوه ګونې کامرې ثبت لپاره دی. په دې ټب کې هر بدلون یوازې د کامرې ثبت اغېز کوي.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">یوازې د سکرین ثبت لپاره دی. په دې ټب کې هر بدلون یوازې د سکرین ثبت اغېز کوي.</string>
-    <string name="update_fdroid_note">Pa F-Droid install karay? Da la na kara — update ba pa chand wro sa F-Droid ta rasi. Pa GitHub install karay? Lando button istemal ka che release page pranazhe aw pa makhzam update kara.</string>
+    <string name="update_fdroid_note">Pa F-Droid install karay? Da la na kara — update ba pa chand wro sa F-Droid ta rasi. Pa GitHub install karay? GitHub button istemal ka che release page pranazhe aw pa makhzam update kara.</string>
 </resources>

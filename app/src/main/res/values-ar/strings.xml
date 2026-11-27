@@ -3743,6 +3743,8 @@
     <string name="screen_rec_orientation_portrait">عمودي</string>
 
     <string name="screen_rec_orientation_landscape">أفقي</string>
+    <string name="screen_rec_orientation_auto">تلقائي</string>
+    <string name="screen_rec_orientation_auto_value">تلقائي (%1$s)</string>
 
     <string name="watermark_speed_title">السرعة (كم/ساعة)</string>
 
@@ -4915,5 +4917,5 @@
     <string name="watermark_info_fadcam_body">ينطبق على تسجيلات الفيديو بالكاميرا وتسجيلات الكاميرا المزدوجة. أي تغيير تجريه في هذا التبويب يؤثر على تسجيلات الكاميرا فقط.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">ينطبق على تسجيلات الشاشة فقط. أي تغيير تجريه في هذا التبويب يؤثر على تسجيلات الشاشة فقط.</string>
-    <string name="update_fdroid_note">ثبّت التطبيق من F-Droid؟ تجاهل هذا — سيصل التحديث إلى F-Droid خلال أيام قليلة. ثبّته من GitHub؟ استخدم الزر أدناه لفتح صفحة الإصدارات والتحديث مباشرة.</string>
+    <string name="update_fdroid_note">ثبّت التطبيق من F-Droid؟ تجاهل هذا — سيصل التحديث إلى F-Droid خلال أيام قليلة. ثبّته من GitHub؟ استخدم زر GitHub لفتح صفحة الإصدارات والتحديث مباشرة.</string>
 </resources>

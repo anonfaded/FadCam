@@ -1619,8 +1619,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="update_version_arrow">  >>  </string>
     <!-- Shown on the update sheet. Deliberately a plain hint, not signature detection.
          An F-Droid build cannot install a GitHub-signed APK, so telling the user to wait is
-         both simpler and honest. -->
-    <string name="update_fdroid_note">Installed from F-Droid? Ignore this — the update reaches F-Droid in a few days. Installed from GitHub? Use the button below to open the release page and update directly.</string>
+         both simpler and honest. Position-neutral: the button sits above this note, and the
+         beta sheet orders its buttons differently. -->
+    <string name="update_fdroid_note">Installed from F-Droid? You can ignore this — the update reaches F-Droid in a few days. Installed from GitHub? Use the GitHub button to open the release page and update directly.</string>
     <!-- Update variations -->
     <string name="update_variation_1">Still on &lt;font color=\'#E43C3C\'>v%1$s&lt;/font>? That\'s... nostalgic.&lt;br>Meanwhile, &lt;font color=\'#77DD77\'>v%2$s&lt;/font> is out there making waves. Time to catch up!</string>
     <string name="update_variation_2">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font> is so last season.&lt;br>Meanwhile, &lt;font color=\'#77DD77\'>v%2$s&lt;/font> is ready to impress with new features and bug fixes. Upgrade for a better ride!</string>
@@ -2582,6 +2583,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="screen_rec_bitrate_high_hint">Higher values improve quality</string>
     <string name="screen_rec_orientation_portrait">Portrait</string>
     <string name="screen_rec_orientation_landscape">Landscape</string>
+    <!-- Auto follows the phone's position at the moment the recording starts. -->
+    <string name="screen_rec_orientation_auto">Auto</string>
+    <string name="screen_rec_orientation_auto_value">Auto (%1$s)</string>
 
 
     <!-- Extended Watermark Features -->

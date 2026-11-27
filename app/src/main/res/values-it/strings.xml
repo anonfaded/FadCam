@@ -2116,6 +2116,8 @@
     <string name="screen_rec_bitrate_high_hint">Mbps (max)</string>
     <string name="screen_rec_orientation_portrait">Verticale</string>
     <string name="screen_rec_orientation_landscape">Orizzontale</string>
+    <string name="screen_rec_orientation_auto">Automatico</string>
+    <string name="screen_rec_orientation_auto_value">Automatico (%1$s)</string>
     <string name="watermark_speed_title">Velocità</string>
     <string name="watermark_speed_off">Spento</string>
     <string name="watermark_speed_on">Acceso</string>
@@ -3178,5 +3180,5 @@ Tue per sempre.</string>
     <string name="watermark_info_fadcam_body">Si applica alle registrazioni video con fotocamera e alle registrazioni con doppia fotocamera. Qualsiasi modifica in questa scheda influisce solo sulle registrazioni con fotocamera.</string>
     <string name="watermark_info_fadrec_title">FadRec</string>
     <string name="watermark_info_fadrec_body">Si applica solo alle registrazioni dello schermo. Qualsiasi modifica in questa scheda influisce solo sulle registrazioni dello schermo.</string>
-    <string name="update_fdroid_note">Installato da F-Droid? Ignora questo — l\'aggiornamento arriverà su F-Droid tra qualche giorno. Installato da GitHub? Usa il pulsante qui sotto per aprire la pagina delle release e aggiornare direttamente.</string>
+    <string name="update_fdroid_note">Installato da F-Droid? Ignora questo — l\'aggiornamento arriverà su F-Droid tra qualche giorno. Installato da GitHub? Usa il pulsante GitHub per aprire la pagina delle release e aggiornare direttamente.</string>
 </resources>

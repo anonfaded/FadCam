@@ -46,4 +46,17 @@
         android:layout_width="match_parent" android:layout_height="40dp"
         android:text="@string/update_maybe_later" android:textColor="#999"/>
 
+    <!-- Same F-Droid hint as the stable sheet: Lite ships as beta, so this is the
+         sheet its users actually see. -->
+    <TextView
+        android:id="@+id/tvFdroidNoteBeta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="@string/update_fdroid_note"
+        android:textColor="#9E9E9E"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:lineSpacingExtra="2dp" />
+
 </LinearLayout>
