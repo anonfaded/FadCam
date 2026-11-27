@@ -44,6 +44,12 @@ public class NativeLoadFromStorageTest {
         File libDir = new File(context.getFilesDir(), "downloaded-libs");
         assertTrue("could not create lib dir", libDir.exists() || libDir.mkdirs());
         File target = new File(libDir, SOURCE_LIB);
+        // A previous run leaves this file read-only, so it must be removed before it can
+        // be written again. Without this the test only ever passes once per install.
+        if (target.exists() && !target.delete()) {
+            assertTrue("stale read-only " + SOURCE_LIB + " could not be replaced",
+                    target.setWritable(true) && target.delete());
+        }
 
         String abi = android.os.Build.SUPPORTED_ABIS[0];
         assertTrue("no usable ABI", abi != null && !abi.isEmpty());
