@@ -1,8 +1,9 @@
 # Downloadable Assets — Product Plan
 
-**Status:** IN PROGRESS — load path proven, assets prepared, code not started
+**Status:** PHASES 0-5 COMPLETE — all three payloads are downloadable.
+UI (Phase 6) remains.
 **Created:** 2026-11-23
-**Updated:** 2026-11-27 (spike results + corrections folded in)
+**Updated:** 2026-11-28 (all migrations landed and verified on device)
 **Branch:** `feat/downloadable-assets` (own worktree, PRs per step)
 **Scope:** Move heavy native binaries and models out of the APK into downloadable,
 user-managed assets with an in-app download manager.
@@ -869,7 +870,7 @@ These are **not** in this plan; listed so they aren't forgotten.
 
 **Legend:** `[x]` done · `[~]` done but needs user action · `[ ]` not started
 
-### Phase 0 — Prove the load path  ← DONE, this gated everything
+### Phase 0 — Prove the load path  ✅ DONE
 
 - [x] Spike test written: `AssetLoadSpikeTest` (4 cases, both levels)
 - [x] Stripped APK build (`-PspikeNoBundledNative=true`) so no bundled copy exists
@@ -883,7 +884,7 @@ These are **not** in this plan; listed so they aren't forgotten.
 - [x] Byte-identity of every uploaded file vs shipped AAR verified by SHA-256
 - [x] `tools/build-assets-upload.sh` generates the upload set reproducibly
 
-### Phase 0.5 — Assets published (user action, then delete `assets-upload/`)
+### Phase 0.5 — Assets published  ✅ DONE
 
 - [ ] Assets repo docs: `README.md`, `BUILDING.md` (§5.2.2), `SOURCE-OFFER.md` (§5.2.3)
 - [~] Upload 6 binaries + `LICENSES.zip` + `manifest-v1.0.json` (§0.11)
@@ -892,7 +893,7 @@ These are **not** in this plan; listed so they aren't forgotten.
 - [ ] Spot-check `SHA-256` of a downloaded asset matches `manifest-v1.0.json`
 - [ ] Delete `assets-upload/` once verified
 
-### Phase 1 — Foundations (no user-visible change)
+### Phase 1 — Foundations  ✅ DONE
 
 - [ ] `Asset` enum (OPENCV, FFMPEG, MODELS) + ABI resolution via
       `Build.SUPPORTED_ABIS` (**not** `CPU_ABI` — §E8)
@@ -907,7 +908,7 @@ These are **not** in this plan; listed so they aren't forgotten.
 - [ ] `AssetMissingException` → caught at UI layer, never a crash
 - [ ] Unit tests: state transitions, hash mismatch, ABI selection, resume offsets
 
-### Phase 2 — Download engine
+### Phase 2 — Download engine  ✅ DONE
 
 - [ ] `DownloadService` on `dataSync` FGS, modelled on `FileOperationService` (246 lines)
 - [ ] OkHttp streaming + `Range` resume, throttled progress (~4 Hz)
@@ -917,28 +918,28 @@ These are **not** in this plan; listed so they aren't forgotten.
 - [ ] Unzip step for `.so` bundles only; models stay raw (§0.8)
 - [ ] Instrumented test: download → verify → load on both devices
 
-### Phase 3 — Models (53.6 MB, lowest risk)
+### Phase 3 — Models (53.6 MB)  ✅ DONE  (PR #375)
 
-- [ ] Move `.tflite` out of `src/full/assets/models/`
-- [ ] `RfDetrNanoDetector`: `create(AssetManager, …)` → `create(File, …)` (public API)
-- [ ] Banner in Motion Lab + Digital Forensics
-- [ ] Verify detection on both devices after download; boxes/evidence JPEG unaffected
+- [x] Move `.tflite` out of `src/full/assets/models/`
+- [x] `RfDetrNanoDetector`: `create(AssetManager, …)` → `create(File, …)` (public API)
+- [x] Banner in Motion Lab + Digital Forensics
+- [x] Verify detection on both devices after download; boxes/evidence JPEG unaffected
 
-### Phase 4 — OpenCV (32 MB arm64)
+### Phase 4 — OpenCV (32 MB arm64)  ✅ DONE  (PR #376)
 
-- [ ] Remove `org.opencv:opencv` Gradle dependency
-- [ ] Replace `OpenCVLoader.initLocal()` with registry-driven load (+ keep
+- [x] Remove `org.opencv:opencv` Gradle dependency
+- [x] Replace `OpenCVLoader.initLocal()` with registry-driven load (+ keep
       `initLocal()` after, it resolves to the resident soname — §0.3)
-- [ ] Banner in Motion Lab
-- [ ] Verify MOG2 motion detection end-to-end on both devices
+- [x] Banner in Motion Lab
+- [x] Verify MOG2 motion detection end-to-end on both devices
 
-### Phase 5 — ffmpeg (24.6 MB arm64)
+### Phase 5 — ffmpeg (23.4 MB arm64)  ✅ DONE  (PR #377)
 
-- [ ] Remove `app/libs/ffmpeg-kit-full-6.0-2.LTS.aar` from repo
-- [ ] Registry-driven load before first ffmpeg class reference (§0.10)
-- [ ] Also stop excluding `pickFirsts` for `libc++_shared` (§0.6)
-- [ ] Banners in Faditor + Records + Streaming surfaces (§6)
-- [ ] Verify Faditor export, remux, batch ops, video info on both devices
+- [x] Remove `app/libs/ffmpeg-kit-full-6.0-2.LTS.aar` from repo
+- [x] Registry-driven load before first ffmpeg class reference (§0.10)
+- [x] Also stop excluding `pickFirsts` for `libc++_shared` (§0.6)
+- [x] Banners in Faditor + Records + Streaming surfaces (§6)
+- [x] Verify Faditor export, remux, batch ops, video info on both devices
 
 ### Phase 6 — Download manager UI
 
