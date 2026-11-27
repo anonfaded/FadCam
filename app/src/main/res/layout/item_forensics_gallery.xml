@@ -81,7 +81,7 @@
                         android:scaleX="0"
                         android:scaleY="0"
                         android:src="@drawable/avd_check_draw"
-                        android:tint="?attr/colorPrimary" />
+                        android:tint="?attr/homeRailAccent" />
                 </FrameLayout>
             </FrameLayout>
 

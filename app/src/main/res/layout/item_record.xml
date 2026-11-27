@@ -139,7 +139,7 @@
                     android:layout_height="@dimen/records_check_icon"
                     android:layout_gravity="center"
                     android:src="@drawable/avd_check_draw"
-                    app:tint="?attr/colorPrimary"
+                    app:tint="?attr/homeRailAccent"
                     android:scaleX="0"
                     android:scaleY="0"
                     android:alpha="0.0" />
