@@ -584,7 +584,8 @@ dependencies {
     // Model source (Apache-2.0):
     //   https://huggingface.co/litert-community/RF-DETR-Nano-LiteRT
     //   https://github.com/roboflow/rf-detr
-    // The two .tflite graphs are committed under app/src/full/assets/models/.
+    // The two .tflite graphs are NOT in the repo: they are downloadable assets, built
+    // and published from fadsec-lab/fadcam-assets. See that repo's README.
     val fullFlavors = listOf("default", "notesPro", "calcPro", "weatherPro")
     fullFlavors.forEach { flavor ->
         // RF-DETR needs the LiteRT CompiledModel GPU path; the legacy TFLite GPU
