@@ -1,0 +1,99 @@
+{
+  "schema": 1,
+  "assetSet": "assets-v1.0",
+  "baseUrl": "https://github.com/fadsec-lab/fadcam-assets/releases/download/assets-v1.0/",
+  "assets": [
+    {
+      "id": "opencv",
+      "abi": "arm64-v8a",
+      "file": "opencv-5.1.0-arm64-v8a.zip",
+      "sha256": "24a688b1da3a670865cc0453676484e75a5de4d4752c4ddfed4923e494bbfb56",
+      "size": 12533548,
+      "license": "Apache-2.0",
+      "name": "OpenCV",
+      "version": "5.1.0",
+      "members": [
+        "libc++_shared.so",
+        "libopencv_java5.so"
+      ]
+    },
+    {
+      "id": "ffmpeg",
+      "abi": "arm64-v8a",
+      "file": "ffmpeg-kit-full-6.0.2-lts-arm64-v8a.zip",
+      "sha256": "1af77e1bbb4618c4ce4d0942b7cba9f058ab86c073b0fc700700eb7cbd1df38e",
+      "size": 12572283,
+      "license": "GPL-3.0",
+      "name": "ffmpeg-kit-full",
+      "version": "6.0-2.LTS",
+      "members": [
+        "libavcodec.so",
+        "libavdevice.so",
+        "libavfilter.so",
+        "libavformat.so",
+        "libavutil.so",
+        "libc++_shared.so",
+        "libffmpegkit.so",
+        "libffmpegkit_abidetect.so",
+        "libswresample.so",
+        "libswscale.so"
+      ]
+    },
+    {
+      "id": "opencv",
+      "abi": "armeabi-v7a",
+      "file": "opencv-5.1.0-armeabi-v7a.zip",
+      "sha256": "532c2217c8d23401ce153db3ed3c2bf97c443adce284e01b5e3586f33ca1af12",
+      "size": 10224109,
+      "license": "Apache-2.0",
+      "name": "OpenCV",
+      "version": "5.1.0",
+      "members": [
+        "libc++_shared.so",
+        "libopencv_java5.so"
+      ]
+    },
+    {
+      "id": "ffmpeg",
+      "abi": "armeabi-v7a",
+      "file": "ffmpeg-kit-full-6.0.2-lts-armeabi-v7a.zip",
+      "sha256": "78702cb470ff98cd5992a3af5abab13c17f512a76363b64d215f074a22aa4e20",
+      "size": 11988702,
+      "license": "GPL-3.0",
+      "name": "ffmpeg-kit-full",
+      "version": "6.0-2.LTS",
+      "members": [
+        "libavcodec.so",
+        "libavdevice.so",
+        "libavfilter.so",
+        "libavformat.so",
+        "libavutil.so",
+        "libc++_shared.so",
+        "libffmpegkit.so",
+        "libffmpegkit_abidetect.so",
+        "libswresample.so",
+        "libswscale.so"
+      ]
+    },
+    {
+      "id": "models",
+      "abi": "universal",
+      "file": "rfdetr-nano-v1.0-graph-a.tflite",
+      "sha256": "de71a9c0c3fb2e1c617f3a79b2ce3541ea33b7ceb9bd5e7edd752b067efe33a1",
+      "size": 48634176,
+      "license": "Apache-2.0",
+      "name": "RF-DETR Nano graph_a",
+      "version": "1.0"
+    },
+    {
+      "id": "models",
+      "abi": "universal",
+      "file": "rfdetr-nano-v1.0-graph-b.tflite",
+      "sha256": "ced9a6b29f8196c6d66c9864a11f4fd2d7e23bb5ab2d0d83f49101f85321fc86",
+      "size": 7594960,
+      "license": "Apache-2.0",
+      "name": "RF-DETR Nano graph_b",
+      "version": "1.0"
+    }
+  ]
+}
