@@ -304,6 +304,10 @@
 
         <!-- File operation service for background copy/move/delete operations -->
         <service android:name=".service.FileOperationService" android:exported="false" android:foregroundServiceType="dataSync" />
+        <!-- Downloads optional heavy engines/models on demand. Full-only at runtime: the
+             class lives in src/full, so Lite never loads it, but the declaration is here
+             because both flavors share this manifest. -->
+        <service android:name=".assets.AssetDownloadService" android:exported="false" android:foregroundServiceType="dataSync" />
 
         <!-- Batch media action service for Records automation flows -->
         <service android:name=".service.BatchMediaActionService" android:exported="false" android:foregroundServiceType="dataSync" />
