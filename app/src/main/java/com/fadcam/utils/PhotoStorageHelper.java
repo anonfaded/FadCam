@@ -333,10 +333,11 @@ public final class PhotoStorageHelper {
                 paint.setTypeface(Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD));
             }
 
-            // Load FadCam icon - same resource used by video watermark
+            // Load FadCam icon - same resource used by video watermark (per-build brand art)
             Bitmap fadcamIcon = null;
             try {
-                fadcamIcon = BitmapFactory.decodeResource(context.getResources(), R.drawable.menu_icon_unknown);
+                fadcamIcon = BitmapFactory.decodeResource(
+                        context.getResources(), com.fadcam.utils.BrandAssets.logo());
             } catch (Exception ignored) {}
 
             // Icon bigger than text like video watermark (icon is ~2x text height)

@@ -614,7 +614,7 @@ public class WatermarkSettingsFragment extends Fragment {
             previewAdapter.setContent(
                     fadcamBase != null ? fadcamBase : getString(R.string.watermark_preview_funny),
                     fadrecBase != null ? fadrecBase : getString(R.string.watermark_preview_funny),
-                    buildIconDrawable(R.drawable.menu_icon_unknown),
+                    buildIconDrawable(com.fadcam.utils.BrandAssets.logo()),
                     buildIconDrawable(R.drawable.fadrec));
         }
     }

@@ -587,12 +587,17 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
                     requireContext(), R.color.colorHeading));
         }
         primary.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15);
-        TextView secondary = new TextView(requireContext());
-        secondary.setText(subtitle);
-        secondary.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), android.R.color.darker_gray));
-        secondary.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12);
         text.addView(primary);
-        text.addView(secondary);
+        // Only add the subtitle when there is one. An empty TextView still occupies a full
+        // line (font padding included), which made the title look like it was sitting above
+        // the row's centre instead of on it.
+        if (subtitle != null && !subtitle.trim().isEmpty()) {
+            TextView secondary = new TextView(requireContext());
+            secondary.setText(subtitle);
+            secondary.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), android.R.color.darker_gray));
+            secondary.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12);
+            text.addView(secondary);
+        }
         row.addView(text);
         android.widget.ImageView arrow = new android.widget.ImageView(requireContext());
         arrow.setLayoutParams(new LinearLayout.LayoutParams(dp(14), dp(14)));

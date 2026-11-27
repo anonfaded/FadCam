@@ -827,7 +827,7 @@ public class AppearanceSettingsFragment extends Fragment {
                 getString(R.string.header_logo_default),
                 null,
                 null,
-                R.drawable.menu_icon_unknown));
+                com.fadcam.utils.BrandAssets.logo()));
         items.add(new com.fadcam.ui.picker.OptionItem(
                 Constants.HEADER_LOGO_AVATAR,
                 getString(R.string.header_logo_avatar),

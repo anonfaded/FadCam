@@ -2042,7 +2042,7 @@ public class FadRecHomeFragment extends HomeFragment {
             double gbTotal = storageInfo.getTotalGB();
             Locale numLocale = "fr".equalsIgnoreCase(Locale.getDefault().getLanguage())
                 ? Locale.US : Locale.getDefault();
-            String availableSpace = String.format(numLocale, "%.2f GB", gbAvailable);
+            String availableSpace = String.format(numLocale, "%.2f", gbAvailable);
             float availableFraction = gbTotal > 0
                 ? (float) Math.max(0, Math.min(1, gbAvailable / gbTotal)) : 0f;
 
@@ -2053,7 +2053,8 @@ public class FadRecHomeFragment extends HomeFragment {
             latestElapsedDisplay = elapsedTimeText;
 
             final String finalRemaining   = remainingTimeText;
-            final String finalNumLocaleStr = String.format(numLocale, "/ %.2f GB", gbTotal);
+            // Unit once, after the total, using the localized unit rather than a hardcoded "GB".
+            final String finalNumLocaleStr = String.format(numLocale, "/ %.2f", gbTotal) + unitSuffix;
 
             getActivity().runOnUiThread(() -> {
                 if (getActivity() == null || !isAdded()) return;
@@ -2085,8 +2086,18 @@ public class FadRecHomeFragment extends HomeFragment {
                 if (tvEstimateSubtitle != null) tvEstimateSubtitle.setText(getString(R.string.recording_time_left));
 
                 // Storage row
-                if (tvSpaceTitle != null)    tvSpaceTitle.setText(availableSpace);
+                // The unit lives on the total; when the total is hidden it moves onto the
+                // available value so the row never loses its unit.
+                boolean totalVisible = sharedPreferencesManager.sharedPreferences.getBoolean(
+                        Constants.PREF_HOME_STORAGE_SHOW_TOTAL, true);
+                if (tvSpaceTitle != null) {
+                    tvSpaceTitle.setText(totalVisible
+                            ? availableSpace
+                            : String.format(numLocale,
+                                    getString(R.string.home_storage_format), gbAvailable));
+                }
                 if (tvSpaceTotal != null)    tvSpaceTotal.setText(finalNumLocaleStr);
+                applyStorageTotalVisibilityPreference();
                 if (tvSpaceSubtitle != null) tvSpaceSubtitle.setText(getString(R.string.storage_available_space));
                 if (storageProgressRing != null) storageProgressRing.setProgress(availableFraction);
 

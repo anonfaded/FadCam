@@ -36,6 +36,11 @@ import java.nio.FloatBuffer;
 
 public class GLWatermarkRenderer {
     private static final String TAG = "GLWatermarkRenderer";
+    /**
+     * Drawable-name key for the FadCam wordmark inside a watermark line. Not a resource name:
+     * {@link #getIconBitmap} maps it through BrandAssets so Lite and Full each get their own art.
+     */
+    private static final String FADCAM_ICON_TOKEN = "fadcam_brand";
     private static final int WATERMARK_BITMAP_WIDTH = 2400;
     private static final int WATERMARK_BITMAP_HEIGHT = 160;
     private static final String DF_OVERLAY_PREFIX = "__DF_OVERLAY__:";
@@ -1421,6 +1426,11 @@ public class GLWatermarkRenderer {
             try {
                 int resId = context.getResources().getIdentifier(
                         drawableName, "drawable", context.getPackageName());
+                if (resId == 0 && FADCAM_ICON_TOKEN.equals(drawableName)) {
+                    // The FadCam wordmark is resolved by resource id, not by name: Lite ships
+                    // its own artwork and must not be stamped with the Full logo.
+                    resId = com.fadcam.utils.BrandAssets.logo();
+                }
                 android.graphics.Bitmap bmp = (resId != 0)
                         ? android.graphics.BitmapFactory.decodeResource(context.getResources(), resId)
                         : null;
@@ -1456,7 +1466,7 @@ public class GLWatermarkRenderer {
             width += measureIconWidth("fadrec", iconLineH) + (padding * 0.25f);
         }
         if (line.contains("<FADCAM_ICON>")) {
-            width += measureIconWidth("menu_icon_unknown", iconLineH) + (padding * 0.25f);
+            width += measureIconWidth(FADCAM_ICON_TOKEN, iconLineH) + (padding * 0.25f);
         }
         return width;
     }
@@ -1573,7 +1583,7 @@ public class GLWatermarkRenderer {
                 }
             } else {
                 // Icon segment
-                String drawableName = isFadrec ? "fadrec" : "menu_icon_unknown";
+                String drawableName = isFadrec ? "fadrec" : FADCAM_ICON_TOKEN;
                 android.graphics.Bitmap iconBmp = getIconBitmap(drawableName);
                 if (iconBmp != null) {
                     float iconW = iconH * ((float) iconBmp.getWidth() / (float) iconBmp.getHeight());

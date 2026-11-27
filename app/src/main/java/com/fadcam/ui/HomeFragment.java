@@ -439,6 +439,15 @@ public class HomeFragment extends BaseFragment {
     /** Static view showing "/ XX.X GB" total device storage after tvSpaceTitle */
     protected TextView tvSpaceTotal;
 
+    /**
+     * Localized storage unit suffix, e.g. {@code " GB"}, {@code " ГБ"}, {@code " غيغابايت"}.
+     *
+     * <p>The unit is rendered once, after the total, so the row reads "1.13 / 229.08 GB"
+     * instead of repeating it. Subclasses that paint the same row use this too, which keeps
+     * the unit localized instead of hardcoding "GB".</p>
+     */
+    protected String unitSuffix = " GB";
+
     // Track last known good values for stats to prevent 0-value display during scans
     /**
      * Last known video stats for fallback when 0 is detected (race condition)
@@ -7049,7 +7058,15 @@ public class HomeFragment extends BaseFragment {
                 "fr".equalsIgnoreCase(displayLocale.getLanguage()))
             ? Locale.US
             : displayLocale;
-        final String availableSpace = String.format(
+        // The unit appears once, after the total ("1.13 / 229.08 GB"). When the total is
+        // hidden there is nothing else to carry it, so the available value keeps its own.
+        String storageUnit = String.format(numberFormatLocale,
+                getString(R.string.home_storage_format), gbTotal > 0d ? 1.0 : 0.0);
+        // Everything after the number, e.g. " GB" / " غيغابايت" / " ГБ".
+        unitSuffix = storageUnit.replaceAll("^[0-9.,]+", "");
+        final String unitSuffixForRow = unitSuffix;
+        final String availableSpace = String.format(numberFormatLocale, "%.2f", gbAvailable);
+        final String availableSpaceWithUnit = String.format(
             numberFormatLocale,
             getString(R.string.home_storage_format),
             gbAvailable
@@ -7164,21 +7181,27 @@ public class HomeFragment extends BaseFragment {
 
                     // Space row — value only on tvSpaceTitle, static total on tvSpaceTotal.
                     // Available space decreases during recording, so we animate DOWN.
+                    // The unit lives on the total ("1.13 / 229.08 GB"); if the total is hidden
+                    // it moves back onto the available value so the row never loses its unit.
+                    boolean totalVisible = sharedPreferencesManager == null
+                            || sharedPreferencesManager.sharedPreferences.getBoolean(
+                                    Constants.PREF_HOME_STORAGE_SHOW_TOTAL, true);
+                    final String spaceValue = totalVisible ? availableSpace : availableSpaceWithUnit;
                     if (tvSpaceTitle != null) {
                         String oldSpaceValue = tvSpaceTitle.getText() != null ? tvSpaceTitle.getText().toString() : "";
-                        if (!oldSpaceValue.equals(availableSpace)) {
+                        if (!oldSpaceValue.equals(spaceValue)) {
                             if (tvSpaceTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                                ((com.fadcam.ui.utils.AnimatedTextView) tvSpaceTitle).animateSlotDown(availableSpace, 400);
+                                ((com.fadcam.ui.utils.AnimatedTextView) tvSpaceTitle).animateSlotDown(spaceValue, 400);
                             } else {
-                                tvSpaceTitle.setText(availableSpace);
+                                tvSpaceTitle.setText(spaceValue);
                             }
                         }
                     }
                     if (tvSpaceTotal != null) {
-                        // Show static "/ XX.X GB" — set once, never animate.
-                        // Number only: the unit is already rendered just before the slash, and
-                        // repeating a long localized unit (e.g. "غيغابايت") overflowed the row.
-                        String totalStr = String.format(numberFormatLocale, "/ %.2f", gbTotal);
+                        // Show static "/ XX.X GB" — set once, never animate. The localized unit
+                        // is appended rather than hardcoded, so FR/RU/AR do not read "GB".
+                        String totalStr = String.format(numberFormatLocale, "/ %.2f", gbTotal)
+                                + unitSuffixForRow;
                         tvSpaceTotal.setText(totalStr);
                     }
                     applyStorageTotalVisibilityPreference();
@@ -10576,8 +10599,7 @@ public class HomeFragment extends BaseFragment {
             // Restore default FadCam text logo.
             stopHeaderBlinkLoop();
             ivAppTitle.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-            ivAppTitle.setImageResource(com.fadcam.BuildConfig.LITE_EDITION
-                    ? R.drawable.fadcam_lite_header_icon : R.drawable.menu_icon_unknown);
+            ivAppTitle.setImageResource(com.fadcam.utils.BrandAssets.logo());
         }
     }
 
@@ -10717,8 +10739,7 @@ public class HomeFragment extends BaseFragment {
         ivAppTitle = view.findViewById(R.id.ivAppTitle);
         if (ivAppTitle != null) {
             // Both editions ship their own header wordmark; same dimensions, different art.
-            ivAppTitle.setImageResource(com.fadcam.BuildConfig.LITE_EDITION
-                    ? R.drawable.fadcam_lite_header_icon : R.drawable.menu_icon_unknown);
+            ivAppTitle.setImageResource(com.fadcam.utils.BrandAssets.logo());
         }
         // Set up header logo click handler for Privacy Black Mode
         if (ivAppTitle != null) {
@@ -14496,7 +14517,7 @@ public class HomeFragment extends BaseFragment {
         storageProgressRing.setIndicatorStyle(viewStyle);
     }
 
-    private void applyStorageTotalVisibilityPreference() {
+    protected void applyStorageTotalVisibilityPreference() {
         if (sharedPreferencesManager == null || tvSpaceTotal == null) {
             return;
         }

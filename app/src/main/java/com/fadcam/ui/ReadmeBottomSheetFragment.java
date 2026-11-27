@@ -90,8 +90,9 @@ public class ReadmeBottomSheetFragment extends BottomSheetDialogFragment {
                 divider2.setBackgroundColor(0x33FFFFFF);
                 linksCard.addView(divider2);
 
-                // Discord row (third)
-                LinearLayout discordRow = buildActionRow(R.drawable.ic_discord, getString(R.string.discord_title), getString(R.string.readme_discord_subtitle));
+                // Discord row (third). Untinted so the brand mark keeps its own colours;
+                // the other two icons are monochrome and follow the row tint.
+                LinearLayout discordRow = buildActionRow(R.drawable.ic_discord, getString(R.string.discord_title), getString(R.string.readme_discord_subtitle), false);
                 discordRow.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
                 linksCard.addView(discordRow);
                 // Insert after mainCard
@@ -113,9 +114,23 @@ public class ReadmeBottomSheetFragment extends BottomSheetDialogFragment {
 
     /** Build a settings-style action row with leading icon, label + helper, trailing arrow. */
     private LinearLayout buildActionRow(int iconRes, String label, String helper){
+        return buildActionRow(iconRes, label, helper, true);
+    }
+
+    /**
+     * Build a settings-style action row.
+     *
+     * @param tintIcon false to keep the drawable's own colours, which is what brand marks such
+     *                 as the Discord logo need — tinting them grey erased the brand colour.
+     */
+    private LinearLayout buildActionRow(int iconRes, String label, String helper, boolean tintIcon){
         LinearLayout row = new LinearLayout(requireContext());
         row.setOrientation(LinearLayout.HORIZONTAL);
-    row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)));
+        // Height wraps so a subtitle that needs two lines (common in longer locales such as
+        // Arabic) is shown in full instead of being clipped by a fixed height.
+        row.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        row.setMinimumHeight(dp(48));
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
         row.setBackgroundResource(R.drawable.settings_home_row_bg);
         int padStart = dp(16), padEnd = dp(16);
@@ -125,7 +140,9 @@ public class ReadmeBottomSheetFragment extends BottomSheetDialogFragment {
         iconLp.setMarginEnd(dp(16));
         icon.setLayoutParams(iconLp);
         icon.setImageResource(iconRes);
-        icon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(requireContext(), android.R.color.darker_gray)));
+        if (tintIcon) {
+            icon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(requireContext(), android.R.color.darker_gray)));
+        }
         row.addView(icon);
         LinearLayout textContainer = new LinearLayout(requireContext());
         textContainer.setOrientation(LinearLayout.VERTICAL);

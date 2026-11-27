@@ -152,6 +152,11 @@ public class WatchCameraFragment extends Fragment {
         // long press → open WatchTrashFragment overlay (watch-optimised delete screen)
         View appTitle = view.findViewById(R.id.iv_watch_app_title);
         if (appTitle != null) {
+            // Wear uses the same per-build wordmark as the phone header and the watermark.
+            if (appTitle instanceof android.widget.ImageView) {
+                ((android.widget.ImageView) appTitle)
+                        .setImageResource(com.fadcam.utils.BrandAssets.logo());
+            }
             appTitle.setOnClickListener(v -> {
                 try {
                     SharedPreferencesManager sp = SharedPreferencesManager.getInstance(requireContext());

@@ -790,15 +790,25 @@ public class SettingsHomeFragment extends Fragment {
     /**
      * Explains where a link goes before leaving the app. Both destinations are outside the
      * app (a Google Form, and GitHub), so a one-tap jump into the browser is jarring.
+     *
+     * <p>Uses the shared confirmation bottom sheet rather than an AlertDialog so it matches
+     * the theming of every other confirmation in the app (Records uses the same sheet for
+     * delete). Not destructive: leaving the app is not a data loss, so the action row keeps
+     * the normal styling instead of the red delete tint.
      */
     private void confirmExternalLink(int titleRes, int bodyRes, String url) {
-        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                .setTitle(getString(titleRes))
-                .setMessage(getString(bodyRes))
-                .setPositiveButton(getString(R.string.dialog_continue),
-                        (dialog, which) -> openUrl(url))
-                .setNegativeButton(getString(R.string.dialog_cancel), null)
-                .show();
+        InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newConfirm(
+                getString(titleRes),
+                getString(R.string.dialog_continue),
+                "",
+                R.drawable.ic_open_in_new,
+                getString(bodyRes),
+                false);
+        sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
+            @Override public void onImportConfirmed(org.json.JSONObject json) { /* not used */ }
+            @Override public void onResetConfirmed() { openUrl(url); }
+        });
+        sheet.show(getParentFragmentManager(), "external_link_confirm_sheet");
     }
 
     /** Open the README dialog. */
