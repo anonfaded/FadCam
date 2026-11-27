@@ -3593,4 +3593,13 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="patreon_content_desc">Support on Patreon</string>
     <string name="patreon_description">Description will be set in code.</string>
     <string name="patreon_footer_text">Made with    at FadSec Lab in   </string>
+
+    <!-- Downloadable assets (Full only) -->
+    <string name="asset_download_channel_name">Asset downloads</string>
+    <string name="asset_download_channel_desc">Downloading engines and models for Faditor, motion detection and object detection</string>
+    <string name="asset_download_preparing">Preparing download</string>
+    <string name="asset_download_in_progress">Downloading</string>
+    <string name="asset_download_verifying">Verifying</string>
+    <string name="asset_download_failed">Download failed</string>
+    <string name="asset_download_cancel">Cancel</string>
 </resources>
