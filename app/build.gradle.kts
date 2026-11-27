@@ -455,7 +455,38 @@ android {
         jniLibs {
             excludes += listOf("**/x86/**", "**/x86_64/**", "**/mips/**", "**/mips64/**")
             // OpenCV and ffmpeg-kit both bundle libc++_shared.so. Keep one copy.
-            pickFirsts += listOf("**/libc++_shared.so")
+            //
+            // pickFirsts must be dropped for the spike build: pickFirsts wins over
+            // excludes for the same path, so leaving it in would silently keep
+            // libc++_shared.so in the APK and make the load test prove nothing.
+            if (!project.hasProperty("spikeNoBundledNative")) {
+                pickFirsts += listOf("**/libc++_shared.so")
+            }
+            // TEST HOOK, not a shipping path. Builds a Full APK with the libraries we
+            // intend to move to downloadable assets left out, so AssetLoadSpikeTest can
+            // prove they load from filesDir with no bundled copy to fall back on:
+            //
+            //   ./gradlew :app:assembleDefaultDebug -PspikeNoBundledNative=true
+            //
+            // Without the flag nothing changes. Removed by the PR that actually deletes
+            // these libraries from the APK.
+            if (project.hasProperty("spikeNoBundledNative")) {
+                excludes += listOf(
+                    "**/libopencv_java5.so",
+                    "**/libavcodec.so",
+                    "**/libavformat.so",
+                    "**/libavfilter.so",
+                    "**/libavdevice.so",
+                    "**/libavutil.so",
+                    "**/libswscale.so",
+                    "**/libswresample.so",
+                    "**/libffmpegkit.so",
+                    "**/libffmpegkit_abidetect.so",
+                    // Nothing else in the APK depends on it (LiteRT does not) and both
+                    // OpenCV and ffmpeg do, so it has to ship inside the asset bundles.
+                    "**/libc++_shared.so",
+                )
+            }
             // Enable 16KB page size alignment for Android 15 compatibility
             useLegacyPackaging = false
         }
