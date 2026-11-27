@@ -426,7 +426,11 @@
 
                             <TextView android:id="@+id/tv_recording_controls_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/recording_controls_title" android:textSize="@dimen/home_land_text_small" android:textStyle="bold" android:textColor="?attr/sectionHeaderColor" android:gravity="center" android:paddingStart="@dimen/home_land_gap" android:paddingEnd="@dimen/home_land_gap" android:paddingTop="0dp" android:paddingBottom="@dimen/home_land_gap_l" />
 
-                            <include android:id="@+id/includeRecordingTiles" layout="@layout/home_recording_tiles_row" android:layout_width="match_parent" android:layout_height="wrap_content" />
+                            <!-- Fixed height here: the row's root is match_parent, and a
+                                 wrap_content parent would hand it an AT_MOST spec (the
+                                 match_parent-in-wrap_content trap). Portrait gives it
+                                 height through layout_weight instead. -->
+                            <include android:id="@+id/includeRecordingTiles" layout="@layout/home_recording_tiles_row" android:layout_width="match_parent" android:layout_height="@dimen/home_tile_height" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>

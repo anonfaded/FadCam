@@ -122,7 +122,10 @@
 
     <com.fadcam.ui.widgets.EqualHeightRowLayout android:id="@+id/layoutCards" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="0dp" android:orientation="horizontal" android:clipChildren="false" android:clipToPadding="false">
 
-        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginEnd="@dimen/home_rail_gutter" android:layout_weight="1" android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false">
+        <!-- Column gutter: applied ONCE (here) and using the same dimen as the vertical
+             card gap, so the space between the two columns equals the space between
+             rows inside a column at every density. -->
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginEnd="@dimen/home_rail_card_gap" android:layout_weight="1" android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false">
 
         <com.google.android.material.card.MaterialCardView android:id="@+id/cardStorage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_rail_card_gap" android:layout_marginBottom="@dimen/home_rail_card_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="12dp" app:cardElevation="3dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
 
@@ -367,7 +370,7 @@
 
         </LinearLayout>
 
-        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="@dimen/home_rail_gutter" android:layout_weight="1" android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false">
 
             <com.google.android.material.card.MaterialCardView android:id="@+id/cardClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_rail_card_gap" android:clickable="true" android:focusable="true" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="2dp" app:rippleColor="#22FFFFFF" app:strokeWidth="0dp"
                 android:nextFocusUp="@+id/cardElapsedHero"
@@ -416,13 +419,15 @@
             <!-- Recording controls card: small horizontal tiles row placed below Stats -->
             <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginTop="@dimen/home_rail_card_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="1dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
 
-                <com.fadcam.ui.widgets.FillRemainingLinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical" android:padding="@dimen/home_card_padding" android:clipChildren="false" android:clipToPadding="false">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical" android:paddingStart="@dimen/home_card_padding" android:paddingTop="@dimen/home_card_padding" android:paddingEnd="@dimen/home_card_padding" android:paddingBottom="2dp" android:clipChildren="false" android:clipToPadding="false">
 
                     <TextView android:id="@+id/tv_recording_controls_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/recording_controls_title" android:textSize="@dimen/home_text_rail_section_title" android:textStyle="bold" android:textColor="?attr/sectionHeaderColor" android:gravity="center" android:paddingStart="4dp" android:paddingEnd="4dp" android:paddingTop="0dp" android:paddingBottom="@dimen/home_controls_title_pad_b" />
 
-                    <include android:id="@+id/includeRecordingTiles" layout="@layout/home_recording_tiles_row" android:layout_width="match_parent" android:layout_height="wrap_content" />
+                    <!-- layout_weight here, not a custom view: the row takes whatever
+                         height is left in the card after the title. -->
+                    <include android:id="@+id/includeRecordingTiles" layout="@layout/home_recording_tiles_row" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
 
-                </com.fadcam.ui.widgets.FillRemainingLinearLayout>
+                </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 

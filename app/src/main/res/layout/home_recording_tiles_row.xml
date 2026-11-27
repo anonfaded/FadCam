@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The row is stretched to fill the controls card on narrow screens, so it hands its
-     resolved height down to every tile (the glass pill is on the inner TextView, not
-     the FrameLayout — a wrap_content FrameLayout would leave it short). -->
-<com.fadcam.ui.widgets.EqualHeightRowLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- One row of three recording-control tiles. Heights are driven natively:
+     the parent card gives this row the leftover height (layout_weight), this row is
+     match_parent, and each tile is match_parent so the glass pill fills the tile. No
+     custom measurement — same idiom as every other row in the app. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:minHeight="@dimen/home_tile_height"
+    android:layout_height="match_parent"
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:paddingTop="2dp"
@@ -17,8 +17,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        android:layout_marginEnd="@dimen/home_tile_gap"
-        android:minHeight="@dimen/home_tile_height">
+        android:layout_marginEnd="@dimen/home_tile_gap">
 
         <TextView
             android:id="@+id/tile_af_toggle"
@@ -59,8 +58,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        android:layout_marginEnd="@dimen/home_tile_gap"
-        android:minHeight="@dimen/home_tile_height">
+        android:layout_marginEnd="@dimen/home_tile_gap">
 
         <TextView
             android:id="@+id/tile_exp"
@@ -103,8 +101,7 @@
     <FrameLayout
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:minHeight="@dimen/home_tile_height">
+        android:layout_weight="1">
 
         <TextView
             android:id="@+id/tile_zoom"
@@ -143,4 +140,4 @@
             android:includeFontPadding="false" />
     </FrameLayout>
 
-</com.fadcam.ui.widgets.EqualHeightRowLayout>
+</LinearLayout>

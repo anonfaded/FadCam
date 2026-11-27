@@ -80,7 +80,6 @@
     <dimen name="home_header_hamburger_margin_end">12dp</dimen>
     <dimen name="home_header_hamburger_icon">24dp</dimen>
     <dimen name="home_rail_card_gap">4dp</dimen>
-    <dimen name="home_rail_gutter">3dp</dimen>
     <dimen name="home_row_margin_b">3dp</dimen>
     <dimen name="home_row_padding_h">2dp</dimen>
     <dimen name="home_row_padding_v">1dp</dimen>
