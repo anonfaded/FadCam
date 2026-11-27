@@ -115,37 +115,54 @@ public class HomeSidebarFragment extends DialogFragment {
         android.widget.TextView title = view.findViewById(R.id.tv_app_usage_title);
         android.widget.TextView value = view.findViewById(R.id.tv_app_usage);
         if (title == null || value == null) return;
+        boolean crossfade = animate
+                && title instanceof com.fadcam.ui.utils.AnimatedTextView
+                && value instanceof com.fadcam.ui.utils.AnimatedTextView;
         CharSequence titleText;
         CharSequence valueText;
         android.widget.TextView updated = view.findViewById(R.id.tv_app_updated);
+        // Grow/shrink the card instead of letting it jump when the update line is added or
+        // removed. The transition is started before the height-affecting change and runs for
+        // the fade-in half, so the extra line appears exactly as the card has room for it.
+        android.view.ViewGroup card = view.findViewById(R.id.card_app_usage);
+        if (crossfade && card != null) {
+            android.transition.AutoTransition grow = new android.transition.AutoTransition();
+            grow.setDuration(CROSSFADE_IN_HALF_MS);
+            grow.setStartDelay(CROSSFADE_IN_HALF_MS);
+            grow.setInterpolator(new android.view.animation.DecelerateInterpolator());
+            grow.excludeTarget(R.id.tv_app_usage_title, true);
+            grow.excludeTarget(R.id.tv_app_usage, true);
+            grow.excludeTarget(R.id.tv_app_updated, true);
+            grow.excludeTarget(R.id.tv_app_usage_icon, true);
+            android.transition.TransitionManager.beginDelayedTransition(card, grow);
+        }
         if (usageShowsInstallDate) {
             titleText = getString(R.string.app_usage_installed_on);
             valueText = com.fadcam.utils.AppUsageAge.installedAt(requireContext());
             if (updated != null) {
                 updated.setText(getString(R.string.app_usage_updated_on) + "\n"
                         + com.fadcam.utils.AppUsageAge.updatedAt(requireContext()));
-                setUpdatedLineVisible(updated, true);
+                setUpdatedLineVisible(updated, true, animate);
             }
         } else {
             titleText = com.fadcam.utils.AppUsageAge.title(requireContext());
             valueText = com.fadcam.utils.AppUsageAge.value(requireContext());
-            setUpdatedLineVisible(updated, false);
+            setUpdatedLineVisible(updated, false, animate);
         }
         android.widget.TextView icon = view.findViewById(R.id.tv_app_usage_icon);
         CharSequence iconGlyph = usageShowsInstallDate ? "download" : "history";
-        if (animate
-                && title instanceof com.fadcam.ui.utils.AnimatedTextView
-                && value instanceof com.fadcam.ui.utils.AnimatedTextView) {
+        if (crossfade) {
             // Cross-fade, not the slot roll: the label swap changes the header's width (so a
             // slot roll re-centred the icon/title pair only at the end), and the value is
             // multi-line, which the slot animation clips to its first line. A cross-fade sets
             // the new text while the view is invisible, so both the re-centre and the re-wrap
             // happen out of sight.
-            ((com.fadcam.ui.utils.AnimatedTextView) title).animateCrossfade(titleText, 260);
-            ((com.fadcam.ui.utils.AnimatedTextView) value).animateCrossfade(valueText, 260);
-            // The icon lives in a fixed 24dp box, so the slot roll is safe there.
+            ((com.fadcam.ui.utils.AnimatedTextView) title).animateCrossfade(titleText, CROSSFADE_MS);
+            ((com.fadcam.ui.utils.AnimatedTextView) value).animateCrossfade(valueText, CROSSFADE_MS);
+            // The icon fades too: it sits beside the label, so a slot roll next to a fading
+            // label read as two unrelated animations.
             if (icon instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                ((com.fadcam.ui.utils.AnimatedTextView) icon).animateSlot(iconGlyph, 380);
+                ((com.fadcam.ui.utils.AnimatedTextView) icon).animateCrossfade(iconGlyph, CROSSFADE_MS);
             }
         } else {
             title.setText(titleText);
@@ -154,18 +171,40 @@ public class HomeSidebarFragment extends DialogFragment {
         }
     }
 
-    /** Fades the last-update line in/out instead of popping the row's height. */
-    private void setUpdatedLineVisible(android.widget.TextView updated, boolean visible) {
+    /** Full cross-fade length; each half (out, in) is therefore half of this. */
+    private static final long CROSSFADE_MS = 260;
+    /** The fade-in half of {@link #CROSSFADE_MS}, when the value's new text appears. */
+    private static final long CROSSFADE_IN_HALF_MS = CROSSFADE_MS / 2;
+
+    /**
+     * Fades the last-update line in step with the value above it: it appears during the
+     * cross-fade's second half (exactly when the install date's new text fades in) and leaves
+     * during the first half. Animating it on its own clock made it pop in ahead of the date.
+     */
+    private void setUpdatedLineVisible(android.widget.TextView updated, boolean visible, boolean animate) {
         if (updated == null) return;
         updated.animate().cancel();
         if (visible) {
             updated.setVisibility(android.view.View.VISIBLE);
             updated.setAlpha(0f);
-            updated.animate().alpha(1f).setDuration(200).start();
+            if (animate) {
+                updated.animate().alpha(1f)
+                        .setStartDelay(CROSSFADE_IN_HALF_MS)
+                        .setDuration(CROSSFADE_IN_HALF_MS)
+                        .start();
+            } else {
+                updated.setAlpha(1f);
+            }
         } else if (updated.getVisibility() == android.view.View.VISIBLE) {
-            updated.animate().alpha(0f).setDuration(120)
-                    .withEndAction(() -> updated.setVisibility(android.view.View.GONE))
-                    .start();
+            if (animate) {
+                updated.animate().alpha(0f)
+                        .setDuration(CROSSFADE_IN_HALF_MS)
+                        .withEndAction(() -> updated.setVisibility(android.view.View.GONE))
+                        .start();
+            } else {
+                updated.setAlpha(1f);
+                updated.setVisibility(android.view.View.GONE);
+            }
         }
     }
 

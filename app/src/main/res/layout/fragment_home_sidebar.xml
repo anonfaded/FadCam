@@ -1527,6 +1527,7 @@
             <!-- App age: the earlier centred block, in the display rows' own card, with their
                  row ripple. Tapping swaps the age for the exact install moment. -->
             <LinearLayout
+                android:id="@+id/card_app_usage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/sidebar_usage_card_margin_top"
