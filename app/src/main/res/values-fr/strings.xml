@@ -4558,6 +4558,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
     <string name="app_age_a_while">un moment</string>
     <string name="app_usage_installed_on">Installé le</string>
+    <string name="app_usage_updated_on">Mis à jour le</string>
     <string name="pro_dossier_header">FADSEC LAB // DOSSIER INTERNE</string>
     <string name="pro_dossier_eyes_only">CONFIDENTIEL</string>
     <string name="pro_dossier_subject">OBJET // PROTOCOLE DE MISE À NIVEAU</string>

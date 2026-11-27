@@ -1529,7 +1529,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="@dimen/sidebar_usage_card_margin_top"
                 android:orientation="vertical"
                 android:background="@drawable/settings_group_card_bg">
 
@@ -1548,31 +1548,44 @@
 
                         <com.fadcam.ui.utils.AnimatedTextView
                             android:id="@+id/tv_app_usage_icon"
-                            android:layout_width="24dp" android:layout_height="24dp"
+                            android:layout_width="@dimen/sidebar_usage_icon_box"
+                            android:layout_height="@dimen/sidebar_usage_icon_box"
                             android:fontFamily="@font/materialicons"
                             android:text="history" android:textColor="?attr/colorHeading"
-                            android:textSize="18sp" android:gravity="center"
+                            android:textSize="@dimen/sidebar_usage_icon_size" android:gravity="center"
                             android:importantForAccessibility="no" />
 
                         <com.fadcam.ui.utils.AnimatedTextView
                             android:id="@+id/tv_app_usage_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="2dp"
+                            android:layout_marginStart="@dimen/sidebar_usage_icon_gap"
                             android:fontFamily="sans-serif-medium"
+                            android:gravity="center"
                             android:textColor="?attr/pickerTextSecondary"
-                            android:textSize="10.5sp" />
+                            android:textSize="@dimen/sidebar_usage_title_size" />
                     </LinearLayout>
 
                     <com.fadcam.ui.utils.AnimatedTextView
                         android:id="@+id/tv_app_usage"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="3dp"
+                        android:layout_marginTop="@dimen/sidebar_usage_value_gap"
                         android:gravity="center"
                         android:minLines="2"
                         android:textColor="?attr/pickerTextPrimary"
-                        android:textSize="12sp" />
+                        android:textSize="@dimen/sidebar_usage_value_size" />
+
+                    <!-- Second line under the install date only; not shown in the age state -->
+                    <TextView
+                        android:id="@+id/tv_app_updated"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/sidebar_usage_updated_gap"
+                        android:gravity="center"
+                        android:textColor="?attr/pickerTextSecondary"
+                        android:textSize="@dimen/sidebar_usage_updated_size"
+                        android:visibility="gone" />
                 </LinearLayout>
             </LinearLayout>
 

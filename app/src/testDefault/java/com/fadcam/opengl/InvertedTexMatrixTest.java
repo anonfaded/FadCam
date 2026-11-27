@@ -103,27 +103,31 @@ public class InvertedTexMatrixTest {
         }
     }
 
-    /** The watermark quad must flip to the opposite corner, not stay on top. */
+    /**
+     * The watermark must stay upright and anchored to the same corner in every orientation.
+     *
+     * <p>It is composited in screen space over a frame that the camera matrix has already
+     * turned upright, so rotating it with the inversion only succeeded in turning readable
+     * text upside down and pushing it into the opposite corner.</p>
+     */
     @Test
-    public void watermarkQuadMovesToTheOppositeEdge() {
+    public void watermarkStaysUprightAndAnchoredInEveryOrientation() {
         // Mirrors computeWatermarkRectVertices for the default top-anchored placement.
         float topY = 1.0f;
         float ndcHeight = 0.1f;
         float ndcWidth = 0.6f;
-        float[] before = {-1.0f, topY, -1.0f + ndcWidth, topY,
+        float[] verts = {-1.0f, topY, -1.0f + ndcWidth, topY,
                 -1.0f, topY - ndcHeight, -1.0f + ndcWidth, topY - ndcHeight};
-        float[] after = new float[before.length];
-        for (int i = 0; i < before.length; i++) {
-            after[i] = -before[i];
-        }
-        // Top edge y=+1 becomes the bottom edge y=-1.
-        assertEquals(1f, before[1], 1e-4f);
-        assertEquals(-1f, after[1], 1e-4f);
-        // Left-anchored x=-1 becomes the right edge.
-        assertEquals(-1f, before[0], 1e-4f);
-        assertEquals(1f, after[0], 1e-4f);
-        // The quad keeps its size. Negation flips the sign, so compare magnitudes.
-        assertEquals(Math.abs(before[2] - before[0]), Math.abs(after[2] - after[0]), 1e-4f);
-        assertEquals(Math.abs(before[5] - before[1]), Math.abs(after[5] - after[1]), 1e-4f);
+
+        // Anchored to the top edge, starting at the left edge.
+        assertEquals(-1f, verts[0], 1e-4f);
+        assertEquals(1f, verts[1], 1e-4f);
+        // Top edge stays above the bottom edge: the quad is not flipped.
+        assertTrue("top edge must sit above bottom edge", verts[1] > verts[5]);
+        // Left edge stays left of the right edge: the text is not mirrored.
+        assertTrue("left edge must sit left of right edge", verts[0] < verts[2]);
+        // Size is preserved.
+        assertEquals(ndcWidth, Math.abs(verts[2] - verts[0]), 1e-4f);
+        assertEquals(ndcHeight, Math.abs(verts[5] - verts[1]), 1e-4f);
     }
 }

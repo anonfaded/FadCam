@@ -280,12 +280,11 @@ public class GLWatermarkRenderer {
         this.recordingPipeline = pipeline;
     }
 
-    private float[] computeWatermarkRectVertices(float ndcWidth, float ndcHeight,
-            boolean inverted) {
+    private float[] computeWatermarkRectVertices(float ndcWidth, float ndcHeight) {
         // For screen recording (FadRec), position watermark with padding below the statusbar.
         // For camera recording (FadCam), position at the very top (no padding).
         float topY = 1.0f;
-        
+
         if (isScreenRecording) {
             // Position watermark with padding below the statusbar (typically ~25 dp = ~50-65 px at varying densities).
             // Estimate statusbar as ~3% of vertical screen height, convert to NDC coordinates:
@@ -294,23 +293,19 @@ public class GLWatermarkRenderer {
             float statusbarPaddingNdc = 0.06f; // ~50 px equivalent at 420 dpi for typical Android phones
             topY = 1.0f - statusbarPaddingNdc; // Shift down by statusbar padding
         }
-        
-        float[] verts = {
+
+        // The watermark is composited in screen space, on top of a frame that has ALREADY been
+        // turned upright by the camera matrix. It therefore must not follow the inversion of
+        // the scene: rotating it 180° turned readable text upside down and moved it to the
+        // bottom-right, which is what made an inverted recording look wrong. Keeping this quad
+        // fixed means the watermark reads normally in every orientation, which is what the
+        // frame's own uprightness already implies.
+        return new float[]{
                 -1.0f, topY, // Top left
                 -1.0f + ndcWidth, topY, // Top right
                 -1.0f, topY - ndcHeight, // Bottom left
                 -1.0f + ndcWidth, topY - ndcHeight // Bottom right
         };
-        if (inverted) {
-            // The recorded scene is rotated 180°, so the watermark turns with it — otherwise
-            // the file contains an upside-down scene with upright text. Rotating about the
-            // NDC centre is negating both axes, which also keeps the text glyphs readable
-            // once the video itself is turned the right way up.
-            for (int i = 0; i < verts.length; i++) {
-                verts[i] = -verts[i];
-            }
-        }
-        return verts;
     }
 
     private int dynamicBitmapWidth = 0;
@@ -322,8 +317,6 @@ public class GLWatermarkRenderer {
     private int lastWatermarkVpW = -1;
 
     private int lastWatermarkVpH = -1;
-    /** Part of the rect cache key: the watermark turns with the frame when inverted. */
-    private boolean lastWatermarkInverted = false;
     private int lastWatermarkBitmapW = -1;
     private int lastWatermarkBitmapH = -1;
     private float lastWatermarkNdcW = -1f;
@@ -935,11 +928,18 @@ public class GLWatermarkRenderer {
             boolean drawZoomFillBackdrop = false;
 
             if (pvW[0] > 0 && pvH[0] > 0) {
-                // Content dimensions = encoder output. The encoded frame is the only thing whose
-                // shape is guaranteed to match what is actually drawn, so the preview keeps the
-                // recorded aspect and letterboxes inside whatever space the card gives it.
-                int contentW = encoderWidth > 0 ? encoderWidth : videoWidth;
-                int contentH = encoderHeight > 0 ? encoderHeight : videoHeight;
+                // Content dimensions follow the shape the preview is drawing RIGHT NOW, not the
+                // frozen encoder shape. With Auto the phone can be turned after the pipeline was
+                // built, so the preview has to resize to the orientation in force at this moment.
+                // The texture matrix below reads the same helper, so box and content always
+                // agree — that agreement is what keeps the picture undistorted.
+                boolean previewLandscape = previewShapeIsLandscape();
+                int contentW = previewLandscape ? videoWidth : videoHeight;
+                int contentH = previewLandscape ? videoHeight : videoWidth;
+                if (contentW <= 0 || contentH <= 0) {
+                    contentW = encoderWidth > 0 ? encoderWidth : videoWidth;
+                    contentH = encoderHeight > 0 ? encoderHeight : videoHeight;
+                }
 
                 float contentAR = (float) contentW / contentH;
                 float surfaceAR = (float) pvW[0] / pvH[0];
@@ -1009,12 +1009,13 @@ public class GLWatermarkRenderer {
                 return;
             }
 
-            // Same matrix as the encoder path, so the preview always shows what is recorded:
-            // landscape samples the buffer directly, portrait uses the camera's own turn.
+            // The preview reads the live orientation so Auto follows the phone: turning it
+            // changes both the shape of the box above and the mapping here, and the two always
+            // agree because both call previewShapeIsLandscape(). Portrait keeps the camera's own
+            // turn; landscape samples the buffer directly (see rawBufferTexMatrix).
+            boolean previewLandscapeNow = previewShapeIsLandscape();
             float[] previewTexMatrix =
-                    SharedPreferencesManager.isLandscapeOrientation(userOrientationSetting)
-                            ? rawBufferTexMatrix()
-                            : texMatrix;
+                    previewLandscapeNow ? rawBufferTexMatrix() : texMatrix;
             // The inverted option rotates the frame, so it applies here too: what the user sees
             // is exactly what the file will contain.
             if (SharedPreferencesManager.shouldInvertOutput(userOrientationSetting)) {
@@ -1601,19 +1602,17 @@ public class GLWatermarkRenderer {
             ndcWidth *= shrink;
         }
 
-        boolean inverted = SharedPreferencesManager.shouldInvertOutput(userOrientationSetting);
         if (watermarkRectBuffer != null
                 && lastWatermarkVpW == vpW
                 && lastWatermarkVpH == vpH
                 && lastWatermarkBitmapW == dynamicBitmapWidth
                 && lastWatermarkBitmapH == dynamicBitmapHeight
-                && lastWatermarkInverted == inverted
                 && Math.abs(lastWatermarkNdcW - ndcWidth) < 0.0001f
                 && Math.abs(lastWatermarkNdcH - ndcHeight) < 0.0001f) {
             return;
         }
 
-        float[] rectVerts = computeWatermarkRectVertices(ndcWidth, ndcHeight, inverted);
+        float[] rectVerts = computeWatermarkRectVertices(ndcWidth, ndcHeight);
         watermarkRectBuffer = ByteBuffer.allocateDirect(rectVerts.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
@@ -1625,7 +1624,6 @@ public class GLWatermarkRenderer {
         lastWatermarkVpH = vpH;
         lastWatermarkBitmapW = dynamicBitmapWidth;
         lastWatermarkBitmapH = dynamicBitmapHeight;
-        lastWatermarkInverted = inverted;
         lastWatermarkNdcW = ndcWidth;
         lastWatermarkNdcH = ndcHeight;
     }
@@ -2778,6 +2776,29 @@ public class GLWatermarkRenderer {
     public void setEncoderDimensions(int width, int height) {
         this.encoderWidth = width;
         this.encoderHeight = height;
+    }
+
+    /**
+     * Shape the live preview should draw right now.
+     *
+     * <p>While a recording is in progress the preview must show the shape that recording was
+     * started with, because the encoder cannot change dimensions mid-file. Showing a different
+     * shape would misrepresent the file being written.</p>
+     *
+     * <p>When idle a fixed Portrait or Landscape applies as chosen, and Auto reads the display's
+     * current rotation so turning the phone updates the preview instead of leaving a stale
+     * shape behind.</p>
+     */
+    private boolean previewShapeIsLandscape() {
+        if (recordingPipeline != null && recordingPipeline.isRecording()) {
+            // Frozen at capture start — the value the renderer was built with.
+            return SharedPreferencesManager.isLandscapeOrientation(userOrientationSetting);
+        }
+        String stored = SharedPreferencesManager.getInstance(context).getVideoOrientation();
+        if (SharedPreferencesManager.ORIENTATION_AUTO.equalsIgnoreCase(stored)) {
+            return SharedPreferencesManager.isDisplaySideways(context);
+        }
+        return SharedPreferencesManager.isLandscapeOrientation(stored);
     }
 
     @Nullable

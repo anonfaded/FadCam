@@ -3001,6 +3001,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
 
     <string name="app_age_a_while">λίγο καιρό</string>
     <string name="app_usage_installed_on">Εγκαταστάθηκε στις</string>
+    <string name="app_usage_updated_on">Ενημερώθηκε τελευταία στις</string>
     <string name="pro_dossier_header">FADSEC LAB // ΕΣΩΤΕΡΙΚΟΣ ΦΑΚΕΛΟΣ</string>
     <string name="pro_dossier_eyes_only">ΑΥΣΤΗΡΑ ΕΜΠΙΣΤΕΥΤΙΚΟ</string>
     <string name="pro_dossier_subject">ΘΕΜΑ // ΠΡΩΤΟΚΟΛΛΟ ΑΝΑΒΑΘΜΙΣΗΣ</string>

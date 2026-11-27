@@ -45,15 +45,34 @@ public final class AppUsageAge {
         try {
             PackageInfo info = context.getPackageManager()
                     .getPackageInfo(context.getPackageName(), 0);
-            java.util.Date installed = new java.util.Date(info.firstInstallTime);
-            java.util.Locale locale = appLocale(context);
-            String day = new java.text.SimpleDateFormat("EEEE, d MMM yyyy", locale).format(installed);
-            String time = java.text.DateFormat.getTimeInstance(
-                    java.text.DateFormat.SHORT, locale).format(installed);
-            return day + " · " + time;
+            return moment(context, info.firstInstallTime);
         } catch (Exception e) {
             return "";
         }
+    }
+
+    /**
+     * The exact last-update moment, formatted like {@link #installedAt(Context)}. Equal to the
+     * install moment when the app has never been updated.
+     */
+    public static String updatedAt(Context context) {
+        try {
+            PackageInfo info = context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0);
+            return moment(context, info.lastUpdateTime);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /** Full weekday, abbreviated month and short time, in the app locale. */
+    private static String moment(Context context, long when) {
+        java.util.Date date = new java.util.Date(when);
+        java.util.Locale locale = appLocale(context);
+        String day = new java.text.SimpleDateFormat("EEEE, d MMM yyyy", locale).format(date);
+        String time = java.text.DateFormat.getTimeInstance(
+                java.text.DateFormat.SHORT, locale).format(date);
+        return day + " · " + time;
     }
 
     /** The age itself, open-ended ("1 year, 1 month, 5 days, 3 hours…"). */

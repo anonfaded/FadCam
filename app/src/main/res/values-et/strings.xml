@@ -2906,6 +2906,7 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
 
     <string name="app_age_a_while">mõnda aega</string>
     <string name="app_usage_installed_on">Paigaldatud</string>
+    <string name="app_usage_updated_on">Viimati uuendatud</string>
     <string name="pro_dossier_header">FADSEC LAB // SISEMINE TOIMIK</string>
     <string name="pro_dossier_eyes_only">KONFIDENTSIAALNE</string>
     <string name="pro_dossier_subject">TEEMA // UUENDUSPROTOKOLL</string>

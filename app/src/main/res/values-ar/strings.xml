@@ -4630,6 +4630,7 @@
 
     <string name="app_age_a_while">بعض الوقت</string>
     <string name="app_usage_installed_on">تاريخ التثبيت</string>
+    <string name="app_usage_updated_on">آخر تحديث في</string>
     <string name="pro_dossier_header">FADSEC LAB // ملف داخلي</string>
     <string name="pro_dossier_eyes_only">سري للغاية</string>
     <string name="pro_dossier_subject">الموضوع // بروتوكول الترقية</string>

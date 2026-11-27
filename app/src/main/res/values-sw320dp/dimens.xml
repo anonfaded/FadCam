@@ -98,4 +98,16 @@
          values; the wider label inset is what creates the breathing room. -->
     <dimen name="home_control_status_margin_e">7dp</dimen>
     <dimen name="home_hero_padding_v">4dp</dimen>
+
+    <!-- Home sidebar app-age card — normal phones (smallestWidth >= 320dp).
+         These are the sizes the card had before it was dimensioned. -->
+    <dimen name="sidebar_usage_card_margin_top">10dp</dimen>
+    <dimen name="sidebar_usage_icon_box">24dp</dimen>
+    <dimen name="sidebar_usage_icon_size">18sp</dimen>
+    <dimen name="sidebar_usage_icon_gap">2dp</dimen>
+    <dimen name="sidebar_usage_title_size">10.5sp</dimen>
+    <dimen name="sidebar_usage_value_size">12sp</dimen>
+    <dimen name="sidebar_usage_value_gap">3dp</dimen>
+    <dimen name="sidebar_usage_updated_size">10.5sp</dimen>
+    <dimen name="sidebar_usage_updated_gap">2dp</dimen>
 </resources> 

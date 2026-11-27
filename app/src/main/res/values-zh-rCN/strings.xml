@@ -4821,6 +4821,7 @@
 
     <string name="app_age_a_while">一段时间</string>
     <string name="app_usage_installed_on">安装于</string>
+    <string name="app_usage_updated_on">上次更新于</string>
     <string name="pro_dossier_header">FADSEC LAB // 内部档案</string>
     <string name="pro_dossier_eyes_only">仅限内部</string>
     <string name="pro_dossier_subject">事由 // 升级协议</string>

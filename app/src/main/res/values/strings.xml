@@ -3362,6 +3362,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
         <item quantity="other">%1$d minutes</item>
     </plurals>
     <string name="app_usage_installed_on">Installed on</string>
+    <string name="app_usage_updated_on">Last updated on</string>
     <string name="pro_showcase_notes_hint">Type to add a note</string>
     <string name="pro_showcase_weather_temp">24°</string>
     <string name="pro_showcase_weather_row1">Humidity</string>

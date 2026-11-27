@@ -2947,6 +2947,7 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
         <item quantity="other">%1$s daqiqe</item>
     </plurals>
     <string name="app_usage_installed_on">Install nita</string>
+    <string name="app_usage_updated_on">Wroostu update nita</string>
     <string name="pro_dossier_header">FADSEC LAB // DAKHILI DOSIER</string>
     <string name="pro_dossier_eyes_only">SIRRI</string>
     <string name="pro_dossier_subject">MAWZU // UPGRADE PROTOCOL</string>

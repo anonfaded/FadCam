@@ -117,21 +117,33 @@ public class HomeSidebarFragment extends DialogFragment {
         if (title == null || value == null) return;
         CharSequence titleText;
         CharSequence valueText;
+        android.widget.TextView updated = view.findViewById(R.id.tv_app_updated);
         if (usageShowsInstallDate) {
             titleText = getString(R.string.app_usage_installed_on);
             valueText = com.fadcam.utils.AppUsageAge.installedAt(requireContext());
+            if (updated != null) {
+                updated.setText(getString(R.string.app_usage_updated_on) + "\n"
+                        + com.fadcam.utils.AppUsageAge.updatedAt(requireContext()));
+                setUpdatedLineVisible(updated, true);
+            }
         } else {
             titleText = com.fadcam.utils.AppUsageAge.title(requireContext());
             valueText = com.fadcam.utils.AppUsageAge.value(requireContext());
+            setUpdatedLineVisible(updated, false);
         }
         android.widget.TextView icon = view.findViewById(R.id.tv_app_usage_icon);
         CharSequence iconGlyph = usageShowsInstallDate ? "download" : "history";
         if (animate
                 && title instanceof com.fadcam.ui.utils.AnimatedTextView
                 && value instanceof com.fadcam.ui.utils.AnimatedTextView) {
-            // Same slot-machine roll the elapsed-time digits use, glyph included.
-            ((com.fadcam.ui.utils.AnimatedTextView) title).animateSlot(titleText, 380);
-            ((com.fadcam.ui.utils.AnimatedTextView) value).animateSlot(valueText, 380);
+            // Cross-fade, not the slot roll: the label swap changes the header's width (so a
+            // slot roll re-centred the icon/title pair only at the end), and the value is
+            // multi-line, which the slot animation clips to its first line. A cross-fade sets
+            // the new text while the view is invisible, so both the re-centre and the re-wrap
+            // happen out of sight.
+            ((com.fadcam.ui.utils.AnimatedTextView) title).animateCrossfade(titleText, 260);
+            ((com.fadcam.ui.utils.AnimatedTextView) value).animateCrossfade(valueText, 260);
+            // The icon lives in a fixed 24dp box, so the slot roll is safe there.
             if (icon instanceof com.fadcam.ui.utils.AnimatedTextView) {
                 ((com.fadcam.ui.utils.AnimatedTextView) icon).animateSlot(iconGlyph, 380);
             }
@@ -139,6 +151,21 @@ public class HomeSidebarFragment extends DialogFragment {
             title.setText(titleText);
             value.setText(valueText);
             if (icon != null) icon.setText(iconGlyph);
+        }
+    }
+
+    /** Fades the last-update line in/out instead of popping the row's height. */
+    private void setUpdatedLineVisible(android.widget.TextView updated, boolean visible) {
+        if (updated == null) return;
+        updated.animate().cancel();
+        if (visible) {
+            updated.setVisibility(android.view.View.VISIBLE);
+            updated.setAlpha(0f);
+            updated.animate().alpha(1f).setDuration(200).start();
+        } else if (updated.getVisibility() == android.view.View.VISIBLE) {
+            updated.animate().alpha(0f).setDuration(120)
+                    .withEndAction(() -> updated.setVisibility(android.view.View.GONE))
+                    .start();
         }
     }
 

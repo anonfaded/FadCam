@@ -3569,6 +3569,7 @@
 
     <string name="app_age_a_while">некоторое время</string>
     <string name="app_usage_installed_on">Установлено</string>
+    <string name="app_usage_updated_on">Обновлено</string>
     <string name="pro_dossier_header">FADSEC LAB // ВНУТРЕННЕЕ ДЕЛО</string>
     <string name="pro_dossier_eyes_only">ТОЛЬКО ДЛЯ СВОИХ</string>
     <string name="pro_dossier_subject">ТЕМА // ПРОТОКОЛ ОБНОВЛЕНИЯ</string>

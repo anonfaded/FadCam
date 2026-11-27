@@ -262,4 +262,16 @@
          glyph never reaches the value badge in the corner. -->
     <dimen name="home_tile_icon_pad_bottom">11dp</dimen>
     <dimen name="home_hero_padding_v">5dp</dimen>
+
+    <!-- Home sidebar app-age card — wide phones (smallestWidth >= 400dp).
+         Slightly larger type keeps the card in proportion with the wider sheet. -->
+    <dimen name="sidebar_usage_card_margin_top">12dp</dimen>
+    <dimen name="sidebar_usage_icon_box">26dp</dimen>
+    <dimen name="sidebar_usage_icon_size">20sp</dimen>
+    <dimen name="sidebar_usage_icon_gap">3dp</dimen>
+    <dimen name="sidebar_usage_title_size">11.5sp</dimen>
+    <dimen name="sidebar_usage_value_size">13sp</dimen>
+    <dimen name="sidebar_usage_value_gap">3dp</dimen>
+    <dimen name="sidebar_usage_updated_size">11sp</dimen>
+    <dimen name="sidebar_usage_updated_gap">2dp</dimen>
 </resources>

@@ -2897,6 +2897,7 @@
 
     <string name="app_age_a_while">un po’</string>
     <string name="app_usage_installed_on">Installato il</string>
+    <string name="app_usage_updated_on">Ultimo aggiornamento il</string>
     <string name="pro_dossier_header">FADSEC LAB // DOSSIER INTERNO</string>
     <string name="pro_dossier_eyes_only">RISERVATO</string>
     <string name="pro_dossier_subject">OGGETTO // PROTOCOLLO DI UPGRADE</string>

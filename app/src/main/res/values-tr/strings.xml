@@ -2802,6 +2802,7 @@
 
     <string name="app_age_a_while">bir süredir</string>
     <string name="app_usage_installed_on">Yüklenme tarihi</string>
+    <string name="app_usage_updated_on">Son güncelleme</string>
     <string name="pro_dossier_header">FADSEC LAB // DAHİLİ DOSYA</string>
     <string name="pro_dossier_eyes_only">SADECE YETKİLİ</string>
     <string name="pro_dossier_subject">KONU // YÜKSELTME PROTOKOLÜ</string>

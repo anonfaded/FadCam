@@ -3160,6 +3160,7 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
 
     <string name="app_age_a_while">beberapa saat</string>
     <string name="app_usage_installed_on">Dipasang pada</string>
+    <string name="app_usage_updated_on">Terakhir diperbarui pada</string>
     <string name="pro_dossier_header">FADSEC LAB // DOSIER INTERNAL</string>
     <string name="pro_dossier_eyes_only">RAHASIA</string>
     <string name="pro_dossier_subject">SUBJEK // PROTOKOL UPGRADE</string>
