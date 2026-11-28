@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -71,6 +72,14 @@ public class AssetDetailSheet extends BottomSheetDialogFragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.sheet_asset_detail, container, false);
+
+        // Apply the app's sheet background explicitly, the same way PickerBottomSheetFragment
+        // does. The style alone does not resolve the themed gradient attributes because
+        // CustomBottomSheetDialogTheme is parented to Theme.MaterialComponents rather than the
+        // app theme, which is what makes the sheet look flat and square instead of matching
+        // every other sheet here.
+        view.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg_dynamic);
+
         Asset asset = asset();
         if (asset == null) {
             return view;
@@ -121,7 +130,7 @@ public class AssetDetailSheet extends BottomSheetDialogFragment {
     /** Builds the action rows from the app's shared picker item layout. */
     private void renderActions(@NonNull View view, @NonNull AssetRegistry registry,
                                @NonNull Asset asset, @NonNull AssetState state) {
-        ViewGroup actions = view.findViewById(R.id.detail_actions);
+        LinearLayout actions = view.findViewById(R.id.detail_actions);
         actions.removeAllViews();
 
         boolean usable = state.isUsable();
@@ -161,6 +170,9 @@ public class AssetDetailSheet extends BottomSheetDialogFragment {
                            @Nullable String subtitle) {
         View row = LayoutInflater.from(requireContext())
                 .inflate(R.layout.picker_bottom_sheet_item, parent, false);
+        // The picker row's own background is exactly what every sheet here uses: each row is
+        // its own card with the app ripple. Keep it.
+
         TextView leading = row.findViewById(R.id.picker_item_leading_symbol);
         TextView rowTitle = row.findViewById(R.id.picker_item_title);
         TextView rowSubtitle = row.findViewById(R.id.picker_item_subtitle);
