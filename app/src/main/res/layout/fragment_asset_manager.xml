@@ -76,6 +76,8 @@
                 android:layout_marginEnd="8dp"
                 android:layout_marginBottom="16dp"
                 android:text="@string/assets_intro"
+                android:clickable="true"
+                android:focusable="true"
                 android:textSize="13sp"
                 android:lineSpacingExtra="2dp"
                 android:textColor="?attr/colorOnSurfaceVariant"
@@ -128,15 +130,12 @@
                     style="@style/SettingsGroupRow"
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp">
-                    <TextView
+                    <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
-                        android:fontFamily="@font/materialicons"
-                        android:gravity="center"
-                        android:text="open_in_new"
-                        android:textSize="20sp"
-                        android:textColor="@android:color/darker_gray"
+                        android:src="@drawable/ic_github"
+                        android:tint="@android:color/darker_gray"
                         android:importantForAccessibility="no" />
                     <LinearLayout
                         android:layout_width="0dp"
@@ -168,45 +167,6 @@
                         android:importantForAccessibility="no" />
                 </LinearLayout>
 
-                <View style="@style/SettingsDivider" />
-
-                <LinearLayout
-                    android:id="@+id/row_asset_offline"
-                    style="@style/SettingsGroupRow"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
-                    <TextView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="16dp"
-                        android:fontFamily="@font/materialicons"
-                        android:gravity="center"
-                        android:text="wifi_off"
-                        android:textSize="20sp"
-                        android:textColor="@android:color/darker_gray"
-                        android:importantForAccessibility="no" />
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/assets_offline_row_title"
-                            android:textStyle="bold"
-                            android:textSize="15sp"
-                            android:textColor="?attr/colorHeading"
-                            android:textAlignment="viewStart" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/assets_offline_row_subtitle"
-                            android:textColor="@android:color/darker_gray"
-                            android:textSize="12sp"
-                            android:textAlignment="viewStart" />
-                    </LinearLayout>
-                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

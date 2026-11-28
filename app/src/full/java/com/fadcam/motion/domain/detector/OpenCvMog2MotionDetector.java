@@ -86,6 +86,9 @@ public class OpenCvMog2MotionDetector implements MotionDetector, MotionDebugInfo
     private boolean lastGlobalMotionSuppressed = false;
     private int lastBlobCount = 0;
 
+    /**
+     * For callers that have already initialised OpenCV, such as tests and the bundled path.
+     */
     public OpenCvMog2MotionDetector() {
         this(null);
     }

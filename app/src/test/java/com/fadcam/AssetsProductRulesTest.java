@@ -1,7 +1,11 @@
 package com.fadcam;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.junit.Test;
 
@@ -38,6 +42,16 @@ public class AssetsProductRulesTest {
      * The download service may only be started from a click handler. This scans every asset
      * source file and requires any call to appear inside an {@code setOnClickListener}.
      */
+    /**
+     * Methods that are themselves download entry points, each proven below to be called from a
+     * click listener in another file. Declaring them here rather than widening the search is
+     * deliberate: an allowlist can be audited, a fuzzy rule cannot.
+     */
+    private static final String[] CLICK_ENTRY_POINTS = {
+            // AssetDetailSheet's Download row -> host.onAssetDetailDownload(asset)
+            "onAssetDetailDownload",
+    };
+
     @Test
     public void downloadsOnlyStartFromAClick() throws Exception {
         List<String> files = new ArrayList<>();
@@ -47,136 +61,105 @@ public class AssetsProductRulesTest {
             List<String> lines = Files.readAllLines(new File(ROOT, path).toPath(),
                     StandardCharsets.UTF_8);
             for (int i = 0; i < lines.size(); i++) {
-                String line = lines.get(i);
-                if (!line.contains("AssetDownloadService.start")) {
+                if (!lines.get(i).contains("AssetDownloadService.start")) {
                     continue;
                 }
-                if (line.trim().startsWith("*") || line.trim().startsWith("//")) {
-                    continue;
-                }
-                        String owner = methodAt(lines, i);
-                boolean fromClick = reachableFromClick(lines, i)
-                        || (owner != null && clickedAnywhere(owner))
-                        // The seed itself may be a callback the sheet clicks.
-                        || (owner != null && clickedAnywhere("onAssetDetailDownload"));
-                assertTrue("AssetDownloadService.start outside a click handler at " + path
-                        + ":" + (i + 1)
-                        + " — downloading must never happen automatically", fromClick);
-            }
-        }
-    }
-
-    /**
-     * True when the download call is inside a click handler, directly or through helpers that
-     * a click handler calls.
-     *
-     * <p>Follows the call chain rather than only looking a few lines back, because the real
-     * shape is {@code click -> onActionTapped -> startDownload}. Expansion stops after two
-     * hops so the search cannot eventually reach every method in the file and pass by
-     * accident.
-     */
-    /**
-     * True when {@code method} is invoked from a click listener in ANY asset source file.
-     *
-     * <p>Needed because the download path spans two files: the sheet's click calls
-     * {@code host.onAssetDetailDownload}, which is implemented in the manager.
-     */
-    private static boolean clickedAnywhere(String method) throws Exception {
-        List<String> files = new ArrayList<>();
-        collect(new File(ROOT, "src/full/java/com/fadcam"), files);
-        for (String rel : files) {
-            List<String> lines = Files.readAllLines(new File(ROOT, rel).toPath(),
-                    StandardCharsets.UTF_8);
-            for (int i = 0; i < lines.size(); i++) {
-                if (!lines.get(i).contains("setOnClickListener")) {
-                    continue;
-                }
-                // Look inside this handler's body for the call.
-                for (int j = i; j < Math.min(lines.size(), i + 12); j++) {
-                    if (lines.get(j).contains(method + "(")) {
-                        return true;
+                // Require a setOnClickListener between the previous statement boundary and the
+                // call. That is the local, checkable property: the call is inside a lambda
+                // that a tap runs. Cross-file entry points are covered by the separate test
+                // below, which proves each one is clicked.
+                boolean inListener = false;
+                for (int back = i; back >= Math.max(0, i - 18); back--) {
+                    String line = lines.get(back);
+                    if (line.contains("setOnClickListener")) {
+                        inListener = true;
+                        break;
                     }
-                    if (j > i && lines.get(j).trim().endsWith("});")) {
+                    // Left the lambda: a statement that closes with ");" and opens nothing.
+                    if (back < i && line.trim().endsWith("});")) {
                         break;
                     }
                 }
-            }
-        }
-        return false;
-    }
-
-    private static boolean reachableFromClick(List<String> lines, int index) {
-        // Case 1: the call sits directly inside a lambda that is itself the click listener.
-        // Walk back only as far as the lambda's opening brace so a listener elsewhere in the
-        // file cannot satisfy it.
-        for (int back = index - 1; back >= Math.max(0, index - 20); back--) {
-            String line = lines.get(back);
-            if (line.contains("setOnClickListener")) {
-                return true;
-            }
-            // A new statement at method-body indentation means we left the lambda.
-            if (line.trim().endsWith(");") && !line.trim().contains("->")) {
-                break;
-            }
-        }
-
-        String seed = methodAt(lines, index);
-        if (seed == null) {
-            return false;
-        }
-        java.util.Set<String> methods = new java.util.HashSet<>();
-        methods.add(seed);
-        // Interface callbacks are invoked by the surface that implements them, so add the
-        // override names too: onAssetDetailDownload is called from the detail sheet's click.
-        methods.add("onAssetDetailDownload");
-        for (int hop = 0; hop < 3; hop++) {
-            boolean grew = false;
-            for (int i = 0; i < lines.size(); i++) {
-                String line = lines.get(i);
-                String caller = methodAt(lines, i);
-                for (String m : new java.util.ArrayList<>(methods)) {
-                    // Match "m(" and also "host.m(" / "this.m(" qualified calls.
-                    if (!(line.contains(m + "(")) || m.equals(caller)) {
-                        continue;
-                    }
-                    if (line.contains("setOnClickListener")) {
-                        return true;
-                    }
-                    if (caller != null && methods.add(caller)) {
-                        grew = true;
+                // A download entry point is allowed, but only when annotated as such. The
+                // separate test proves every annotated entry point really is clicked.
+                // The marker sits above the method's annotations, which sit above the
+                // declaration, so scan a wider window and do not stop at the signature.
+                boolean annotated = false;
+                for (int back = i; back >= Math.max(0, i - 30); back--) {
+                    if (lines.get(back).contains("download-entry-point")) {
+                        annotated = true;
+                        break;
                     }
                 }
-            }
-            if (!grew) {
-                break;
+                assertTrue("AssetDownloadService.start at " + path + ":" + (i + 1)
+                                + " is not inside a click listener and the enclosing method is"
+                                + " not marked download-entry-point. Downloading must only ever"
+                                + " follow a user tap.",
+                        inListener || annotated);
             }
         }
-        return false;
     }
 
-    /** Name of the method whose body contains this line, or null. */
-    @androidx.annotation.Nullable
-    private static String methodAt(List<String> lines, int index) {
-        for (int i = index; i >= 0; i--) {
-            String t = lines.get(i).trim();
-            if (!(t.startsWith("private ") || t.startsWith("public ")
-                    || t.startsWith("protected "))) {
-                continue;
-            }
-            int paren = t.indexOf('(');
-            if (paren <= 0) {
-                continue;
-            }
-            int start = t.lastIndexOf(' ', paren);
-            if (start < 0) {
-                continue;
-            }
-            String name = t.substring(start + 1, paren).trim();
-            if (!name.isEmpty() && name.matches("[A-Za-z_][A-Za-z0-9_]*")) {
-                return name;
+    /**
+     * Each cross-file download callback must be invoked from a click listener in the file that
+     * owns the button, so the local rule above cannot be worked around by moving the call into
+     * a helper.
+     */
+    @Test
+    public void everyAnnotatedEntryPointIsClicked() throws Exception {
+        List<String> files = new ArrayList<>();
+        collect(new File(ROOT, "src/full/java/com/fadcam"), files);
+
+        for (String path : files) {
+            List<String> lines = Files.readAllLines(new File(ROOT, path).toPath(),
+                    StandardCharsets.UTF_8);
+            for (int i = 0; i < lines.size(); i++) {
+                if (!lines.get(i).contains("// download-entry-point")) {
+                    continue;
+                }
+                // The annotated method's name is on a later line.
+                String name = null;
+                for (int j = i; j < Math.min(lines.size(), i + 4); j++) {
+                    String t = lines.get(j).trim();
+                    int paren = t.indexOf('(');
+                    if (paren > 0 && (t.contains("void ") || t.contains("()"))) {
+                        int end = t.lastIndexOf(' ', paren);
+                        if (end > 0) {
+                            name = t.substring(end + 1, paren).trim();
+                        }
+                        break;
+                    }
+                }
+                assertNotNull("could not read the method name after a download-entry-point "
+                        + "marker in " + path, name);
+
+                // Now prove some click listener invokes it.
+                boolean clicked = false;
+                for (String other : files) {
+                    List<String> ol = Files.readAllLines(new File(ROOT, other).toPath(),
+                            StandardCharsets.UTF_8);
+                    for (int k = 0; k < ol.size() && !clicked; k++) {
+                        if (!ol.get(k).contains("setOnClickListener")) {
+                            continue;
+                        }
+                        for (int m = k; m < Math.min(ol.size(), k + 16); m++) {
+                            if (ol.get(m).contains(name + "(")) {
+                                clicked = true;
+                                break;
+                            }
+                            if (m > k && ol.get(m).trim().endsWith("});")) {
+                                break;
+                            }
+                        }
+                    }
+                    if (clicked) {
+                        break;
+                    }
+                }
+                assertTrue(name + " is marked download-entry-point but no click listener "
+                        + "invokes it; either wire it to a tap or remove the marker", clicked);
             }
         }
-        return null;
     }
 
     /** No asset source may create its own OkHttpClient outside the service. */

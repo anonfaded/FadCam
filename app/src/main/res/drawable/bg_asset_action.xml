@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Filled action button. Used for the primary action in the download manager (Download /
+  Install a file), so it reads as a button rather than plain text.
+
+  Tinted from the theme accent at runtime via backgroundTint, so it follows light/dark and the
+  user's chosen accent instead of hardcoding a colour here.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FFFFFFFF" />
+    <corners android:radius="22dp" />
+</shape>

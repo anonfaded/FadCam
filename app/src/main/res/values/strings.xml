@@ -3605,15 +3605,15 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="assets_ready">Installed</string>
     <string name="assets_in_apk">Included in the app</string>
     <string name="assets_download">Download</string>
-    <string name="assets_repair">Repair</string>
+    <string name="assets_repair">Download again</string>
     <string name="assets_retry">Retry</string>
-    <string name="assets_installing">Installing…</string>
+    <string name="assets_installing">Installing\u2026</string>
     <string name="assets_import">Install a file I already have</string>
     <string name="assets_remove">Remove</string>
 
     <!-- Total line: "Using 88.4 MB" -->
-    <string name="assets_total">Using %1$s MB</string>
-    <string name="assets_total_none">Nothing downloaded</string>
+    <string name="assets_total">Using %1$s of storage</string>
+    <string name="assets_total_none">Not using any storage</string>
 
     <!-- About block. One paragraph, says where, why, and how it is checked. -->
     <string name="assets_about_body">These are separate open-source programs, published at github.com/fadsec-lab/fadcam-assets. They are downloaded only when you tap Download, never in the background. Each file is checked against a SHA-256 fingerprint built into this version of the app, so a damaged or altered file is refused. The build recipe and source links are published there too.</string>
@@ -3635,7 +3635,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <!-- Remove confirmation -->
     <string name="assets_remove_title">Remove %1$s?</string>
-    <string name="assets_remove_body">%1$s will stop working until you download or install it again. Recordings you already made are not affected.</string>
+    <string name="assets_remove_body">These FadCam features will stop working until you add it again: %1$s.\n\nRecordings you already made are not affected.</string>
 
     <!-- In-feature banner -->
     <string name="assets_banner_title">%1$s is needed for this</string>
@@ -3659,15 +3659,13 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="assets_size_download">%1$s MB</string>
     <string name="assets_size_both">%1$s MB</string>
     <string name="assets_size_installed">%1$s MB</string>
-    <string name="assets_intro">Some FadCam features stay off until you add a small open-source engine or model here. Nothing is downloaded until you tap Download.
-
-Everything is published openly at [github.com/fadsec-lab/fadcam-assets](https://github.com/fadsec-lab/fadcam-assets) along with the build recipe.</string>
-    <string name="assets_source_row_title">View on GitHub</string>
-    <string name="assets_source_row_subtitle">Build recipe, licences and source offer</string>
+    <string name="assets_intro">Some FadCam features stay off until you add a component here. Nothing downloads until you tap Download. All of it is open source, published at [github.com/fadsec-lab/fadcam-assets](https://github.com/fadsec-lab/fadcam-assets) with its build recipe.</string>
+    <string name="assets_source_row_title">Source and licences</string>
+    <string name="assets_source_row_subtitle">opens on GitHub</string>
     <string name="assets_offline_row_title">Installing without internet</string>
     <string name="assets_offline_row_subtitle">Download the file elsewhere, then add it to the component</string>
-    <string name="assets_import_hint">Pick the file you downloaded. It is checked against the fingerprint before use.</string>
-    <string name="assets_detail_used_by">Used by %1$s</string>
+    <string name="assets_import_hint">Choose the file on this device. It is checked before it is used.</string>
+    <string name="assets_detail_used_by">Needed for %1$s</string>
     <string name="assets_detail_meta">%1$s \u00b7 %2$s \u00b7 %3$s</string>
     <string name="assets_detail_features">FadCam features that need this</string>
     <string name="assets_detail_credit">Open source, published openly with its build recipe.</string>
@@ -3675,4 +3673,5 @@ Everything is published openly at [github.com/fadsec-lab/fadcam-assets](https://
     <string name="assets_feature_needs_download_ffmpeg">The Faditor editor needs the ffmpeg-kit download. Add it from Settings > Download manager.</string>
     <string name="assets_feature_needs_download_motion">Motion Lab needs a download before it can detect movement. Add it from Settings > Download manager.</string>
     <string name="assets_feature_needs_download_objects">Object detection needs the RF-DETR model download. Add it from Settings > Download manager.</string>
+    <string name="assets_detail_installed_size">%1$s MB on this device</string>
 </resources>

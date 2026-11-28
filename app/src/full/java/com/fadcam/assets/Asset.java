@@ -9,22 +9,21 @@ public enum Asset {
 
     /** Native OpenCV runtime, needed by MOG2 motion detection. */
     OPENCV("opencv", "OpenCV", "5.1.0", "Apache-2.0", true,
-            "Learns what the background looks like and flags what moves. Used by Motion Lab "
-                    + "to trigger recordings on movement.",
+            "Learns what the background looks like frame by frame, then flags what changes. "
+                    + "Far more reliable than comparing raw pixels, which trips on light and "
+                    + "shadow.",
             "Motion Lab"),
 
     /** Native ffmpeg runtime, needed by Faditor, remux, repair and batch export. */
     FFMPEG("ffmpeg", "ffmpeg-kit", "6.0.2 LTS", "GPL-3.0", true,
-            "Reads and rewrites video. Used by the Faditor editor to trim and export, by "
-                    + "Records to repair damaged files and merge clips, and by the player to "
-                    + "make recordings seekable.",
-            "Faditor editor", "Records repair and merge", "Video info", "Video player"),
+            "Reads and rewrites video files: cutting, re-encoding, merging and fixing "
+                    + "container metadata.",
+            "Faditor editor", "Records batch merge", "Video info", "Video player"),
 
     /** RF-DETR Nano detection graphs, needed by Motion Lab object detection. */
     MODELS("models", "RF-DETR Nano", "1.0", "Apache-2.0", false,
-            "Recognises people, vehicles and animals in a frame. Used by Motion Lab to "
-                    + "filter what triggers a recording, and by Digital Forensics to label "
-                    + "events in the timeline.",
+            "Recognises people, vehicles and animals in a single frame and reports where they "
+                    + "are, so recordings can react to what is in the scene.",
             "Motion Lab object filtering", "Digital Forensics");
 
     /** Stable key used in the manifest and on disk. */

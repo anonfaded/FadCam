@@ -3,6 +3,8 @@ package com.fadcam.playback;
 import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.content.Context;
+
+import androidx.annotation.Nullable;
 import android.net.Uri;
 import com.arthenica.ffmpegkit.FFmpegKit;
 import com.arthenica.ffmpegkit.FFmpegSession;
@@ -29,13 +31,22 @@ public class FragmentedMp4Remuxer {
     }
     
     private final Context context;
+    /** Non-null when ffmpeg is missing, so remuxing is skipped instead of attempted. */
+    @Nullable
+    private String remuxUnavailable;
     
     public FragmentedMp4Remuxer(Context context) {
         this.context = context.getApplicationContext();
-        // Load the ffmpeg runtime here, before any ffmpeg class is touched. Doing it in
-        // the constructor means every path through this class is covered, rather than
-        // relying on each method to remember.
-        com.fadcam.assets.AssetFfmpeg.ensureLoaded(this.context);
+        // Load the ffmpeg runtime here, before any ffmpeg class is touched. Doing it in the
+        // constructor means every path through this class is covered rather than relying on
+        // each method to remember. A missing engine disables remuxing (and therefore accurate
+        // seeking) but must not stop playback, so it is recorded and every remux call no-ops.
+        try {
+            com.fadcam.assets.AssetFfmpeg.ensureLoaded(this.context);
+        } catch (com.fadcam.assets.AssetException e) {
+            this.remuxUnavailable = e.getMessage();
+            FLog.i(TAG, "remux unavailable: " + e.getMessage());
+        }
     }
     
     /**
@@ -152,6 +163,12 @@ public class FragmentedMp4Remuxer {
      * @return The remuxed file, or null if remuxing failed.
      */
     public File remuxSync(File inputFile) {
+        if (remuxUnavailable != null) {
+            // ffmpeg is not installed. Return the original so playback still works; it just
+            // will not have precise seeking.
+            FLog.i(TAG, "skipping remux, ffmpeg missing: " + remuxUnavailable);
+            return inputFile;
+        }
         File outputFile = getRemuxedFile(inputFile);
         
         // Check if already remuxed
@@ -215,6 +232,13 @@ public class FragmentedMp4Remuxer {
      * @param callback Callback for completion and progress.
      */
     public void remuxAsync(File inputFile, RemuxCallback callback) {
+        if (remuxUnavailable != null) {
+            // Report the original file as the result: the caller plays it as-is.
+            if (callback != null) {
+                callback.onRemuxComplete(true, inputFile.getAbsolutePath());
+            }
+            return;
+        }
         File outputFile = getRemuxedFile(inputFile);
         
         // Check if already remuxed

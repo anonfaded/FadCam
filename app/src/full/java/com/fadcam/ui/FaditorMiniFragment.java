@@ -984,12 +984,42 @@ public class FaditorMiniFragment extends BaseFragment {
     }
 
     /**
+     * Explains that the editor needs its engine downloaded, and offers the shortcut there.
+     *
+     * <p>A bare toast would be a dead end: the user is told something is missing but not how
+     * to fix it. This opens the download manager's detail for ffmpeg instead.
+     */
+    private void showFfmpegRequired(@NonNull com.fadcam.assets.AssetException e) {
+        android.widget.Toast.makeText(requireContext(),
+                R.string.assets_feature_needs_download_ffmpeg,
+                android.widget.Toast.LENGTH_LONG).show();
+        try {
+            Object detail = Class.forName("com.fadcam.ui.AssetDetailSheet")
+                    .getMethod("newInstance", Class.forName("com.fadcam.assets.Asset"))
+                    .invoke(null, com.fadcam.assets.Asset.FFMPEG);
+            ((androidx.fragment.app.DialogFragment) detail)
+                    .show(getParentFragmentManager(), "asset_ffmpeg_required");
+        } catch (Exception ignored) {
+            // The toast already said what is missing; the sheet is a convenience.
+        }
+    }
+
+    /**
      * Launch the full-screen editor, optionally loading a saved project.
      *
      * @param videoUri  the video URI for playback
      * @param projectId the saved project ID to restore, or null for a new project
      */
     private void launchEditor(@NonNull Uri videoUri, @Nullable String projectId) {
+        // The editor cannot run without ffmpeg. Checking here means the user gets an
+        // explanation and a working screen, instead of the editor opening and immediately
+        // closing itself.
+        try {
+            com.fadcam.assets.AssetFfmpeg.ensureLoaded(requireContext());
+        } catch (com.fadcam.assets.AssetException e) {
+            showFfmpegRequired(e);
+            return;
+        }
         Intent intent = new Intent(requireContext(), FaditorEditorActivity.class);
         intent.setData(videoUri);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);

@@ -188,18 +188,37 @@ public class AssetDownloadService extends Service {
         // Download every file first, then install the whole set in one pass. Installing per
         // entry would clear the asset directory between them and delete the files just
         // written, which is what broke the two-graph model asset.
+        //
+        // Progress is measured across the whole asset, not per file. An asset can have several
+        // entries (the models have two graphs), and reporting each file's own 0-100 made the
+        // bar appear to finish and restart.
+        long assetTotal = 0L;
+        for (AssetManifest.Entry e : entries) {
+            assetTotal += e.size;
+        }
+
         List<File> completed = new ArrayList<>();
+        long alreadyDone = 0L;
         for (AssetManifest.Entry entry : entries) {
             String url = manifest.baseUrl() + entry.file;
             File partial = store.partialFileFor(entry);
             FLog.i(TAG, "fetching " + url + " -> " + partial.getName());
 
-            new AssetDownloader(client).download(url, partial, (done, total) -> {
-                updateProgress(asset, done, total);
+            final long base = alreadyDone;
+            final long total = assetTotal;
+            new AssetDownloader(client).download(url, partial, (done, ignored) -> {
+                updateProgress(asset, base + done, total);
             });
+            // Count what this entry actually contributed, so the next file starts where this
+            // one ended instead of resetting to zero.
+            alreadyDone += partial.length() > 0 ? partial.length() : entry.size;
             completed.add(partial);
         }
 
+        // Installing is not downloading. Push a distinct state so the ring stops rather than
+        // sitting at 100% while a 30 MB unzip runs.
+        lastPercent = -1;
+        notifyListener(asset);
         updateNotification(getString(R.string.asset_download_verifying), asset, 0, 0);
         AssetInstaller.installAll(asset, store, entries, completed);
 
