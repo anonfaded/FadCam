@@ -39,9 +39,32 @@ public class ForensicIntelligenceFragment extends com.fadcam.ui.BaseFragment {
         return inflater.inflate(R.layout.fragment_forensic_intelligence, container, false);
     }
 
+    /**
+     * Shows a download prompt when the detection model is missing.
+     *
+     * <p>Forensics needs RF-DETR to label events. Without it the timeline still opens but has
+     * nothing to classify, so the banner explains that before the user wonders why.
+     */
+    private void bindAssetBanner(@NonNull View view) {
+        android.widget.LinearLayout host = view.findViewById(R.id.forensics_asset_banner);
+        if (host == null) {
+            return;
+        }
+        host.removeAllViews();
+        host.setVisibility(View.GONE);
+        android.view.View banner = com.fadcam.ui.AssetBanner.create(
+                requireContext(), com.fadcam.assets.Asset.MODELS, a -> bindAssetBanner(view));
+        if (banner.getVisibility() != View.GONE) {
+            host.addView(banner);
+            host.setVisibility(View.VISIBLE);
+        }
+    }
+
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        bindAssetBanner(view);
 
         if (savedInstanceState == null) {
             showGallery();

@@ -562,7 +562,6 @@ app:layout_constraintTop_toTopOf="parent"
             </LinearLayout>
             <View style="@style/SettingsDivider" />
 
-
             <!-- Security -->
             <LinearLayout
                 android:id="@+id/group_security"
@@ -599,7 +598,6 @@ app:layout_constraintTop_toTopOf="parent"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
             <View style="@style/SettingsDivider" />
-
 
             <!-- Shortcuts (moved under General) -->
             <LinearLayout
@@ -698,6 +696,7 @@ app:layout_constraintTop_toTopOf="parent"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
+
 
             <View
                 android:id="@+id/divider_motion_lab"
@@ -1105,6 +1104,68 @@ app:layout_constraintTop_toTopOf="parent"
             <include android:id="@+id/group_mini_parking_marker" layout="@layout/item_mini_app_card" />
             <include android:id="@+id/group_mini_qr_generator" layout="@layout/item_mini_app_card" />
             <View android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.5" />
+        </LinearLayout>
+
+        <!-- Downloads Section: its own section, not an item under Advanced, because it is a
+             manager with its own screen rather than a preference. -->
+        <TextView
+            android:id="@+id/header_downloads"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/settings_section_downloads"
+            android:textColor="?attr/sectionHeaderColor"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/group_card_downloads"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/settings_group_card_bg">
+
+            <LinearLayout
+                android:id="@+id/row_asset_manager"
+                style="@style/SettingsGroupRow">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_download_small"
+                    android:tint="@android:color/darker_gray"
+                    android:importantForAccessibility="no" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/assets_title"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="?attr/colorHeading"
+                        android:textAlignment="viewStart" />
+                    <TextView
+                        android:id="@+id/value_asset_manager"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/assets_subtitle"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"
+                        android:textAlignment="viewStart" />
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginStart="8dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"
+                    android:importantForAccessibility="no" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- About Section Header -->

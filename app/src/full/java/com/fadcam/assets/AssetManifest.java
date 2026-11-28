@@ -53,10 +53,16 @@ public final class AssetManifest {
          */
         @Nullable
         public final List<String> members;
+        /**
+         * Bytes this entry occupies once installed, when known. For a raw asset that is the
+         * download size; for an archive it is the sum of the unpacked members, which is much
+         * larger than the compressed download. Zero when the manifest does not say.
+         */
+        public final long installedSize;
 
         Entry(String assetId, String abi, String file, String sha256, long size,
               String license, String displayName, String version,
-              @Nullable List<String> members) {
+              @Nullable List<String> members, long installedSize) {
             this.assetId = assetId;
             this.abi = abi;
             this.file = file;
@@ -66,6 +72,7 @@ public final class AssetManifest {
             this.displayName = displayName;
             this.version = version;
             this.members = members;
+            this.installedSize = installedSize;
         }
 
         /** True when this entry is an archive that must be unpacked. */
@@ -151,6 +158,21 @@ public final class AssetManifest {
         return universal == null ? null : universal;
     }
 
+    /**
+     * Total installed size in bytes, when the manifest records it. Falls back to 0 so the UI
+     * can say "installed" without inventing a number.
+     */
+    public long totalInstalledSize(@Nullable List<Entry> entries) {
+        if (entries == null) {
+            return 0L;
+        }
+        long sum = 0L;
+        for (Entry e : entries) {
+            sum += e.installedSize > 0 ? e.installedSize : e.size;
+        }
+        return sum;
+    }
+
     /** Total download size in bytes for the entries returned by resolve. */
     public long totalSize(@Nullable List<Entry> entries) {
         if (entries == null) {
@@ -197,7 +219,8 @@ public final class AssetManifest {
                     o.optString("license", ""),
                     o.optString("name", o.getString("file")),
                     o.optString("version", ""),
-                    members);
+                    members,
+                    o.optLong("installedSize", members == null ? 0L : 0L));
             List<Entry> list = byAsset.get(e.assetId);
             if (list == null) {
                 list = new ArrayList<>();

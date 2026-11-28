@@ -384,6 +384,13 @@ android {
         unitTests {
             // Robolectric provides Android framework classes on the JVM.
             isIncludeAndroidResources = true
+            all {
+                // JVM tests run with a per-module working directory, so relative repo paths
+                // do not resolve. Pass the module root explicitly for the source-hygiene
+                // checks, which inspect real files.
+                it.systemProperty("fadcamModuleDir", project.projectDir.absolutePath)
+                it.systemProperty("fadcamRepoDir", project.rootDir.absolutePath)
+            }
         }
     }
 

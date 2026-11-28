@@ -225,6 +225,11 @@ public final class AssetRegistry {
         return manifest.resolve(asset, ABIS);
     }
 
+    /** Installed size in bytes for this device, or 0 when the manifest does not say. */
+    public long installedSize(@NonNull Asset asset) {
+        return manifest == null ? 0L : manifest.totalInstalledSize(entriesFor(asset));
+    }
+
     /** Download size in bytes for this device, or 0 when unknown. */
     public long downloadSize(@NonNull Asset asset) {
         return manifest == null ? 0L : manifest.totalSize(entriesFor(asset));
@@ -296,6 +301,17 @@ public final class AssetRegistry {
         synchronized (downloadingSince) {
             downloadingSince.remove(asset);
         }
+    }
+
+    /**
+     * Announces that this asset's files changed outside the download service, so any listener
+     * can re-read state. Used by the manual importer.
+     *
+     * <p>State is never cached, so this is only a nudge for the UI; correctness does not
+     * depend on it.
+     */
+    public void notifyAssetChanged(@NonNull Asset asset) {
+        FLog.i(TAG, "asset changed: " + asset.id);
     }
 
     /** Deletes this asset's files. The feature falls back to MISSING on next read. */

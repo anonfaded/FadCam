@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Detail sheet for one asset.
+
+  Reuses the app's existing sheet chrome rather than inventing a layout: the same
+  picker_bottom_sheet_item row for every action, and settings_home_row_bg for the ripple, so
+  press feedback matches the rest of the app.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="24dp">
+
+    <TextView
+        android:id="@+id/detail_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorHeading"
+        android:textAlignment="viewStart" />
+
+    <TextView
+        android:id="@+id/detail_meta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="12sp"
+        android:textColor="?attr/pickerTextSecondary"
+        android:textAlignment="viewStart" />
+
+    <TextView
+        android:id="@+id/detail_purpose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:textSize="13sp"
+        android:lineSpacingExtra="2dp"
+        android:textColor="?attr/pickerTextPrimary"
+        android:textAlignment="viewStart" />
+
+    <TextView
+        android:id="@+id/detail_used_by"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textSize="12sp"
+        android:lineSpacingExtra="2dp"
+        android:textColor="?attr/pickerTextSecondary"
+        android:textAlignment="viewStart" />
+
+    <TextView
+        android:id="@+id/detail_hash"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textSize="10sp"
+        android:fontFamily="monospace"
+        android:textColor="?attr/pickerTextSecondary"
+        android:textAlignment="viewStart" />
+
+    <!-- Actions reuse the app's picker row, so ripple, height and typography match. -->
+    <LinearLayout
+        android:id="@+id/detail_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical" />
+</LinearLayout>

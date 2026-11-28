@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One component row: icon, name, one meta line, and a state indicator on the right.
+
+  The indicator is a small determinate ring while downloading (Material 3
+  CircularProgressIndicator), and a coloured check / download glyph once settled. Colour
+  carries the same meaning as the glyph, so the row is readable at a glance.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    style="@style/SettingsGroupRow"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <!-- Material icon ligature, matching the rest of Settings. Colour-coded per state. -->
+    <TextView
+        android:id="@+id/asset_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="16dp"
+        android:fontFamily="@font/materialicons"
+        android:gravity="center"
+        android:text="extension"
+        android:textSize="22sp"
+        android:textColor="@android:color/darker_gray"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/asset_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:textAlignment="viewStart" />
+
+        <TextView
+            android:id="@+id/asset_subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:textAlignment="viewStart" />
+    </LinearLayout>
+
+    <!-- Determinate ring while a download is in progress. Hidden otherwise. -->
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/asset_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:visibility="gone"
+        app:indicatorSize="32dp"
+        app:trackThickness="3dp"
+        app:indicatorColor="?attr/homeRailAccent"
+        app:trackColor="@android:color/darker_gray"
+        app:indicatorInset="0dp" />
+
+    <!-- Settled state: a glyph plus a short word. -->
+    <TextView
+        android:id="@+id/asset_action"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:textColor="?attr/homeRailAccent" />
+
+    <ImageView
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginStart="8dp"
+        android:src="@drawable/ic_arrow_right"
+        android:tint="@android:color/darker_gray"
+        android:importantForAccessibility="no" />
+</LinearLayout>

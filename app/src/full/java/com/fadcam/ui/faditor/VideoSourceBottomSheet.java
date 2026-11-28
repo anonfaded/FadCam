@@ -113,7 +113,15 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
                              @Nullable Bundle savedInstanceState) {
         // Load the ffmpeg runtime before any ffmpeg class is touched: this sheet probes
         // durations through FFprobeKit.
-        com.fadcam.assets.AssetFfmpeg.ensureLoaded(requireContext());
+        try {
+            com.fadcam.assets.AssetFfmpeg.ensureLoaded(requireContext());
+        } catch (com.fadcam.assets.AssetException e) {
+            // Report and continue: the sheet still lists files, it just cannot probe
+            // durations. Closing it would be a worse outcome than a partial screen.
+            android.widget.Toast.makeText(requireContext(),
+                    getString(R.string.assets_feature_needs_download_ffmpeg),
+                    android.widget.Toast.LENGTH_LONG).show();
+        }
         float dp = getResources().getDisplayMetrics().density;
         Typeface materialIcons = ResourcesCompat.getFont(requireContext(), R.font.materialicons);
 

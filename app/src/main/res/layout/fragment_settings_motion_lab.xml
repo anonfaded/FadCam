@@ -75,6 +75,15 @@
             android:paddingEnd="16dp"
             android:paddingBottom="24dp">
 
+            <!-- Filled at runtime with the download banner when OpenCV or the models are
+                 missing. Empty and GONE when everything is available. -->
+            <LinearLayout
+                android:id="@+id/motion_asset_banner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
             <LinearLayout
                 android:id="@+id/group_card_motion_debug"
                 android:layout_width="match_parent"

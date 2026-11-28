@@ -1901,6 +1901,7 @@ public class RecordsFragment extends BaseFragment implements
 
         setupRecyclerView();
         setupFabListeners();
+        mountAssetBanner(view);
 
         // Setup SwipeRefreshLayout
         if (swipeRefreshLayout != null) {
@@ -2065,6 +2066,41 @@ public class RecordsFragment extends BaseFragment implements
             }
         } catch (Exception e) {
             FLog.w(TAG, "Failed to show repair banner", e);
+        }
+    }
+
+    /**
+     * Shows a download prompt when the optional video engine is missing.
+     *
+     * <p>Created reflectively because RecordsFragment is shared with Lite, which does not
+     * compile the Full-only asset UI. Lite simply finds no class and shows nothing.
+     */
+    private void mountAssetBanner(@Nullable android.view.View root) {
+        if (root == null) {
+            return;
+        }
+        android.widget.LinearLayout host = root.findViewById(R.id.records_asset_banner);
+        if (host == null) {
+            return;
+        }
+        host.removeAllViews();
+        host.setVisibility(android.view.View.GONE);
+        try {
+            Class<?> banner = Class.forName("com.fadcam.ui.AssetBanner");
+            Class<?> assetClass = Class.forName("com.fadcam.assets.Asset");
+            Object ffmpeg = Enum.valueOf((Class) assetClass, "FFMPEG");
+            android.view.View v = (android.view.View) banner
+                    .getMethod("create", android.content.Context.class, assetClass,
+                            Class.forName("com.fadcam.ui.AssetBanner$OnDownloadRequested"))
+                    .invoke(null, requireContext(), ffmpeg, null);
+            if (v != null && v.getVisibility() != android.view.View.GONE) {
+                host.addView(v);
+                host.setVisibility(android.view.View.VISIBLE);
+            }
+        } catch (ClassNotFoundException e) {
+            // Lite: no asset UI compiled in. Nothing to show.
+        } catch (Exception e) {
+            FLog.w("RecordsFragment", "could not mount asset banner: " + e.getMessage());
         }
     }
 

@@ -3594,12 +3594,84 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="patreon_description">Description will be set in code.</string>
     <string name="patreon_footer_text">Made with    at FadSec Lab in   </string>
 
-    <!-- Downloadable assets (Full only) -->
-    <string name="asset_download_channel_name">Asset downloads</string>
-    <string name="asset_download_channel_desc">Downloading engines and models for Faditor, motion detection and object detection</string>
+    <!-- Downloadable assets manager (Full only).
+         Tone: state what a thing is and does. No feature list, no repeated explanation. -->
+    <string name="assets_title">Downloadable assets</string>
+    <string name="assets_section_engines">Available</string>
+    <string name="assets_section_about">Where these come from</string>
+
+    <!-- Row subtitle: "5.1.0 · 11.9 MB · Apache-2.0" -->
+    <string name="assets_row_meta">%1$s \u00b7 %2$s \u00b7 %3$s</string>
+    <string name="assets_ready">Installed</string>
+    <string name="assets_in_apk">Included in the app</string>
+    <string name="assets_download">Download</string>
+    <string name="assets_repair">Download again</string>
+    <string name="assets_retry">Retry</string>
+    <string name="assets_installing">Installing\u2026</string>
+    <string name="assets_import">Install a file I already have</string>
+    <string name="assets_remove">Remove</string>
+
+    <!-- Total line: "Using 88.4 MB" -->
+    <string name="assets_total">Using %1$s of storage</string>
+    <string name="assets_total_none">Not using any storage</string>
+
+    <!-- About block. One paragraph, says where, why, and how it is checked. -->
+    <string name="assets_about_body">These are separate open-source programs, published at github.com/fadsec-lab/fadcam-assets. They are downloaded only when you tap Download, never in the background. Each file is checked against a SHA-256 fingerprint built into this version of the app, so a damaged or altered file is refused. The build recipe and source links are published there too.</string>
+    <string name="assets_about_open">View the download page</string>
+    <string name="assets_about_offline">Offline or metered connection? Download the file elsewhere, then use \"Install a file I already have\" on the row it belongs to.</string>
+
+    <!-- Download progress and outcome -->
+    <string name="assets_toast_started">Downloading %1$s</string>
+    <string name="assets_toast_in_progress">This download is already running</string>
+    <string name="assets_toast_failed">%1$s could not be downloaded: %2$s</string>
+
+    <!-- Import -->
+    <string name="assets_import_installed">%1$s installed and checked</string>
+    <string name="assets_import_no_match">This file is not one of the files this version expects. Check that you have the right file for your phone.</string>
+    <string name="assets_import_wrong_abi">That file is for %1$s phones. This phone is %2$s, so it cannot run it.</string>
+    <string name="assets_import_failed">Could not install that file: %1$s</string>
+    <string name="assets_import_too_large">That file is far too large to be one of these.</string>
+    <string name="assets_import_unreadable">That file could not be read.</string>
+
+    <!-- Remove confirmation -->
+    <string name="assets_remove_title">Remove %1$s?</string>
+    <string name="assets_remove_body">These FadCam features will stop working until you add it again: %1$s.\n\nRecordings you already made are not affected.</string>
+
+    <!-- In-feature banner -->
+    <string name="assets_banner_title">%1$s is needed for this</string>
+    <string name="assets_banner_meta">%1$s MB · %2$s · open source</string>
+    <string name="assets_banner_manage">Manage downloads</string>
+
+    <!-- Notification channel and service -->
+    <string name="asset_download_channel_name">Downloads</string>
+    <string name="asset_download_channel_desc">Progress while an optional component downloads</string>
     <string name="asset_download_preparing">Preparing download</string>
     <string name="asset_download_in_progress">Downloading</string>
-    <string name="asset_download_verifying">Verifying</string>
+    <string name="asset_download_verifying">Checking the file</string>
     <string name="asset_download_failed">Download failed</string>
     <string name="asset_download_cancel">Cancel</string>
+    <string name="settings_section_downloads">Download manager</string>
+    <string name="assets_row_meta_installed">%1$s · %2$s on device · %3$s</string>
+    <string name="assets_row_meta_bundled">%1$s · included in the app · %3$s</string>
+    <string name="assets_pending_progress">%1$d%%</string>
+    <string name="assets_used_by">Used by: %1$s</string>
+    <string name="assets_subtitle">Engines and models you can add or remove</string>
+    <string name="assets_size_download">%1$s MB</string>
+    <string name="assets_size_both">%1$s MB</string>
+    <string name="assets_size_installed">%1$s MB</string>
+    <string name="assets_intro">Some FadCam features stay off until you add a component here. Nothing downloads until you tap Download. All of it is open source, published at [github.com/fadsec-lab/fadcam-assets](https://github.com/fadsec-lab/fadcam-assets) with its build recipe.</string>
+    <string name="assets_source_row_title">Source and licences</string>
+    <string name="assets_source_row_subtitle">opens on GitHub</string>
+    <string name="assets_offline_row_title">Installing without internet</string>
+    <string name="assets_offline_row_subtitle">Download the file elsewhere, then add it to the component</string>
+    <string name="assets_import_hint">Choose the file on this device. It is checked before it is used.</string>
+    <string name="assets_detail_used_by">Needed for %1$s</string>
+    <string name="assets_detail_meta">%1$s \u00b7 %2$s \u00b7 %3$s</string>
+    <string name="assets_detail_features">FadCam features that need this</string>
+    <string name="assets_detail_credit">Open source, published openly with its build recipe.</string>
+    <string name="assets_missing_warning">Features not listed inside a component keep working without it. Screen recording (FadRec) uses the device encoder, not these files.</string>
+    <string name="assets_feature_needs_download_ffmpeg">The Faditor editor needs the ffmpeg-kit download. Add it from Settings > Download manager.</string>
+    <string name="assets_feature_needs_download_motion">Motion Lab needs a download before it can detect movement. Add it from Settings > Download manager.</string>
+    <string name="assets_feature_needs_download_objects">Object detection needs the RF-DETR model download. Add it from Settings > Download manager.</string>
+    <string name="assets_detail_installed_size">%1$s MB on this device</string>
 </resources>

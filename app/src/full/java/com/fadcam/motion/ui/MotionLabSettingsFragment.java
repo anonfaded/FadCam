@@ -88,6 +88,33 @@ public class MotionLabSettingsFragment extends Fragment {
         bindViews(view);
         setupClickListeners(view);
         observeState();
+        bindAssetBanners(view);
+    }
+
+    /**
+     * Shows a download prompt for any engine this screen needs but does not have.
+     *
+     * <p>Each surface renders its own banner, per the plan: no shared layout does this for
+     * everyone. Recomputed on resume so a file deleted later brings the banner back.
+     */
+    private void bindAssetBanners(@NonNull View view) {
+        android.widget.LinearLayout host = view.findViewById(R.id.motion_asset_banner);
+        if (host == null) {
+            return;
+        }
+        host.removeAllViews();
+        host.setVisibility(android.view.View.GONE);
+        // Motion detection needs OpenCV; object detection needs the models. Both are
+        // optional downloads, so both can be missing independently.
+        for (com.fadcam.assets.Asset asset : new com.fadcam.assets.Asset[]{
+                com.fadcam.assets.Asset.OPENCV, com.fadcam.assets.Asset.MODELS}) {
+            android.view.View banner = com.fadcam.ui.AssetBanner.create(
+                    requireContext(), asset, a -> bindAssetBanners(view));
+            if (banner.getVisibility() != android.view.View.GONE) {
+                host.addView(banner);
+                host.setVisibility(android.view.View.VISIBLE);
+            }
+        }
     }
 
     private void initViewModel() {

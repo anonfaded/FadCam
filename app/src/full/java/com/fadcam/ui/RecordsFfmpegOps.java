@@ -58,8 +58,15 @@ public final class RecordsFfmpegOps {
     }
 
     private static long probePath(Context context, String filePath) {
-        // Load the ffmpeg runtime before touching any ffmpeg class.
-        com.fadcam.assets.AssetFfmpeg.ensureLoaded(context);
+        // Load the ffmpeg runtime before touching any ffmpeg class. A missing engine is a
+        // normal state, and this runs per visible row while scrolling, so it must degrade to
+        // "duration unknown" rather than throw.
+        try {
+            com.fadcam.assets.AssetFfmpeg.ensureLoaded(context);
+        } catch (com.fadcam.assets.AssetException e) {
+            FLog.i(TAG, "ffprobe unavailable, duration unknown: " + e.getMessage());
+            return -1;
+        }
         try {
             MediaInformationSession session = FFprobeKit.getMediaInformation(filePath);
             MediaInformation info = session.getMediaInformation();
