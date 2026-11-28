@@ -151,7 +151,16 @@ public class AssetManagerFragment extends BaseFragment
                 total += installedBytes(registry, asset);
             }
             if (i > 0) {
-                View divider = new View(requireContext(), null, 0, R.style.SettingsDivider);
+                // Built explicitly: a style's layout_width/height do not survive addView(),
+                // which is why the divider was invisible before.
+                View divider = new View(requireContext());
+                LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        Math.max(1, Math.round(getResources().getDisplayMetrics().density)));
+                dlp.setMargins(Math.round(14 * getResources().getDisplayMetrics().density), 0,
+                        Math.round(12 * getResources().getDisplayMetrics().density), 0);
+                divider.setLayoutParams(dlp);
+                divider.setBackgroundColor(0xFF262626);
                 rowsContainer.addView(divider);
             }
             View row = buildRow(registry, asset, state);
@@ -194,7 +203,7 @@ public class AssetManagerFragment extends BaseFragment
         // Size here is the download size only: this is a download manager, and that is the
         // number that matters. What it occupies once installed is on the detail sheet, where
         // the difference is worth understanding rather than confusing the list.
-        subtitle.setText(getString(R.string.assets_row_meta, asset.version,
+        subtitle.setText(getString(R.string.assets_row_meta, asset.displayVersion(),
                 getString(R.string.assets_size_download, AssetImporter.mb(registry.downloadSize(asset))),
                 asset.license));
 
@@ -217,13 +226,11 @@ public class AssetManagerFragment extends BaseFragment
             case READY:
                 action.setText(R.string.assets_ready);
                 action.setTextColor(green);
-                icon.setTextColor(green);
                 icon.setText("check_circle");
                 break;
             case BUNDLED:
                 action.setText(R.string.assets_in_apk);
                 action.setTextColor(muted);
-                icon.setTextColor(muted);
                 break;
             case DOWNLOADING: {
                 Integer pct = progress.get(asset);
@@ -239,7 +246,6 @@ public class AssetManagerFragment extends BaseFragment
                     action.setText(R.string.assets_installing);
                     action.setTextColor(accent);
                 }
-                icon.setTextColor(accent);
                 break;
             }
             case CORRUPT:
@@ -247,19 +253,16 @@ public class AssetManagerFragment extends BaseFragment
                 // action is to fetch it again; that is labelled as such and it works.
                 action.setText(R.string.assets_repair);
                 action.setTextColor(amber);
-                icon.setTextColor(amber);
                 icon.setText("error");
                 break;
             case FAILED:
                 action.setText(R.string.assets_retry);
                 action.setTextColor(amber);
-                icon.setTextColor(amber);
                 icon.setText("error");
                 break;
             default:
                 action.setText(R.string.assets_download);
                 action.setTextColor(accent);
-                icon.setTextColor(accent);
                 break;
         }
 

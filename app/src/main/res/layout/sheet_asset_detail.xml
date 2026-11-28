@@ -2,73 +2,115 @@
 <!--
   Detail sheet for one asset.
 
-  Reuses the app's existing sheet chrome rather than inventing a layout: the same
-  picker_bottom_sheet_item row for every action, and settings_home_row_bg for the ripple, so
-  press feedback matches the rest of the app.
+  Structure follows picker_bottom_sheet exactly: close button and title, then the action rows
+  in one container with dividers between them, then a footer of helper text at the bottom.
+  Nothing is wrapped in its own card, and no information sits above the rows.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:clipToOutline="true"
-    android:paddingStart="20dp"
-    android:paddingEnd="20dp"
-    android:paddingTop="16dp"
-    android:paddingBottom="24dp">
+    android:paddingTop="8dp"
+    android:paddingBottom="20dp"
+    android:paddingStart="14dp"
+    android:paddingEnd="12dp">
 
-    <TextView
-        android:id="@+id/detail_title"
+    <!-- Header: close button + title, identical to picker_bottom_sheet. -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="?attr/colorHeading"
-        android:textAlignment="viewStart" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="8dp"
+        android:paddingBottom="12dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp">
 
+        <ImageView
+            android:id="@+id/detail_close"
+            android:layout_width="31dp"
+            android:layout_height="31dp"
+            android:padding="8dp"
+            android:src="@drawable/ic_close"
+            android:scaleType="centerInside"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:tint="?attr/pickerTextSecondary"
+            android:contentDescription="@string/close" />
+
+        <TextView
+            android:id="@+id/detail_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:textAlignment="viewStart" />
+    </LinearLayout>
+
+    <View
+        android:id="@+id/detail_title_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#404040"
+        android:layout_marginBottom="8dp" />
+
+    <!-- One container holding every action row, with dividers added between them at runtime.
+         This is the picker_bottom_sheet list container, not a card per row. -->
+    <LinearLayout
+        android:id="@+id/detail_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg" />
+
+    <!-- Footer: the description, what needs it, the fingerprint. Text only, below the rows. -->
     <TextView
         android:id="@+id/detail_meta"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textSize="12sp"
-        android:textColor="?attr/pickerTextSecondary"
+        android:layout_marginTop="6dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
+        android:textSize="13sp"
+        android:textColor="@android:color/darker_gray"
         android:textAlignment="viewStart" />
 
     <TextView
         android:id="@+id/detail_purpose"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="8dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
         android:textSize="13sp"
         android:lineSpacingExtra="2dp"
-        android:textColor="?attr/pickerTextPrimary"
+        android:textColor="@android:color/darker_gray"
         android:textAlignment="viewStart" />
 
     <TextView
         android:id="@+id/detail_used_by"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:textSize="12sp"
+        android:layout_marginTop="6dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
+        android:textSize="13sp"
         android:lineSpacingExtra="2dp"
-        android:textColor="?attr/pickerTextSecondary"
+        android:textColor="@android:color/darker_gray"
         android:textAlignment="viewStart" />
 
     <TextView
         android:id="@+id/detail_hash"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
         android:textSize="10sp"
         android:fontFamily="monospace"
-        android:textColor="?attr/pickerTextSecondary"
+        android:textColor="@android:color/darker_gray"
         android:textAlignment="viewStart" />
-
-    <!-- Actions reuse the app's picker row, so ripple, height and typography match. -->
-    <LinearLayout
-        android:id="@+id/detail_actions"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:orientation="vertical" />
 </LinearLayout>

@@ -87,6 +87,11 @@ public class AssetDetailSheet extends BottomSheetDialogFragment {
         AssetRegistry registry = AssetRegistry.get(requireContext());
         AssetState state = registry.state(asset);
 
+        View close = view.findViewById(R.id.detail_close);
+        if (close != null) {
+            close.setOnClickListener(v -> dismiss());
+        }
+
         TextView title = view.findViewById(R.id.detail_title);
         TextView purpose = view.findViewById(R.id.detail_purpose);
         TextView usedBy = view.findViewById(R.id.detail_used_by);
@@ -105,7 +110,7 @@ public class AssetDetailSheet extends BottomSheetDialogFragment {
                 ? getString(R.string.assets_size_both, AssetImporter.mb(downloadSize),
                         AssetImporter.mb(installedSize))
                 : getString(R.string.assets_size_download, AssetImporter.mb(downloadSize));
-        String text = getString(R.string.assets_detail_meta, asset.version, sizes,
+        String text = getString(R.string.assets_detail_meta, asset.displayVersion(), sizes,
                 asset.license);
         if (state == AssetState.READY || state == AssetState.BUNDLED) {
             text = text + "  \u00b7  " + getString(R.string.assets_detail_installed_size,
@@ -127,67 +132,63 @@ public class AssetDetailSheet extends BottomSheetDialogFragment {
         return view;
     }
 
-    /** Builds the action rows from the app's shared picker item layout. */
+    /**
+     * Builds the action rows in one container with dividers between them, mirroring how
+     * PickerBottomSheetFragment lays out its list: rows share one surface and are separated by
+     * a 1dp line, rather than each being its own card.
+     */
     private void renderActions(@NonNull View view, @NonNull AssetRegistry registry,
                                @NonNull Asset asset, @NonNull AssetState state) {
         LinearLayout actions = view.findViewById(R.id.detail_actions);
         actions.removeAllViews();
-
         boolean usable = state.isUsable();
+
         if (!usable) {
-            View row = actionRow(actions, "download", accentColor(),
-                    getString(R.string.assets_download), null);
-            row.setOnClickListener(v -> {
-                Host host = host();
-                if (host != null) {
-                    host.onAssetDetailDownload(asset);
-                }
-                dismiss();
-            });
-            actions.addView(row);
+            addRow(actions, R.drawable.ic_download_small,
+                    getString(R.string.assets_download),
+                    getString(R.string.assets_download_hint,
+                            AssetImporter.mb(registry.downloadSize(asset))),
+                    false, v -> {
+                        Host host = host();
+                        if (host != null) {
+                            host.onAssetDetailDownload(asset);
+                        }
+                        dismiss();
+                    });
         }
 
         // Offline path, always offered: this is how a component is added with no connection.
-        View importRow = actionRow(actions, "folder_open", null,
-                getString(R.string.assets_import), getString(R.string.assets_import_hint));
-        importRow.setOnClickListener(v -> filePicker.launch(new String[]{"*/*"}));
-        actions.addView(importRow);
+        addRow(actions, R.drawable.ic_folder_open,
+                getString(R.string.assets_import), getString(R.string.assets_import_hint),
+                false, v -> filePicker.launch(new String[]{"*/*"}));
 
         if (usable && !registry.isBundled(asset)) {
-            View removeRow = actionRow(actions, "delete", 0xFFFF5252,
-                    getString(R.string.assets_remove), null);
-            removeRow.setOnClickListener(v -> confirmRemove(asset));
-            actions.addView(removeRow);
+            addRow(actions, R.drawable.ic_delete,
+                    getString(R.string.assets_remove),
+                    getString(R.string.assets_remove_hint,
+                            AssetImporter.mb(registry.installedSize(asset))),
+                    true, v -> confirmRemove(asset));
         }
+
+        // No trailing divider regardless of which rows were added: drop the last child if it
+        // is a divider. Cheaper than threading a "last" flag through every call site.
+        if (actions.getChildCount() > 0) {
+            View last = actions.getChildAt(actions.getChildCount() - 1);
+            if (last instanceof View && !(last instanceof LinearLayout)) {
+                actions.removeViewAt(actions.getChildCount() - 1);
+            }
+        }
+
+        com.fadcam.Utils.attachPressScaleToClickableRows(actions);
     }
 
-    /**
-     * One action row, inflated from {@code picker_bottom_sheet_item} so it inherits the app's
-     * ripple and row styling instead of a second implementation of the same idea.
-     */
-    private View actionRow(@NonNull ViewGroup parent, @NonNull String glyph,
-                           @Nullable Integer tint, @NonNull String title,
-                           @Nullable String subtitle) {
-        View row = LayoutInflater.from(requireContext())
-                .inflate(R.layout.picker_bottom_sheet_item, parent, false);
-        // The picker row's own background is exactly what every sheet here uses: each row is
-        // its own card with the app ripple. Keep it.
-
-        TextView leading = row.findViewById(R.id.picker_item_leading_symbol);
-        TextView rowTitle = row.findViewById(R.id.picker_item_title);
-        TextView rowSubtitle = row.findViewById(R.id.picker_item_subtitle);
-
-        leading.setVisibility(View.VISIBLE);
-        leading.setText(glyph);
-        if (tint != null) {
-            leading.setTextColor(tint);
-        }
-        rowTitle.setText(title);
-        if (subtitle != null && rowSubtitle != null) {
-            rowSubtitle.setVisibility(View.VISIBLE);
-            rowSubtitle.setText(subtitle);
-        }
-        return row;
+    /** Adds one row followed by a divider; a trailing divider is removed by the caller. */
+    private void addRow(@NonNull LinearLayout parent, int iconRes, @NonNull String title,
+                        @Nullable String subtitle, boolean destructive,
+                        @NonNull View.OnClickListener click) {
+        parent.addView(SheetRowBuilder.build(requireContext(), iconRes, title, subtitle,
+                destructive, click));
+        parent.addView(SheetRowBuilder.divider(requireContext()));
     }
 
     /**
@@ -258,12 +259,6 @@ public class AssetDetailSheet extends BottomSheetDialogFragment {
             sb.append(values[i]);
         }
         return sb.toString();
-    }
-
-    private int accentColor() {
-        android.util.TypedValue v = new android.util.TypedValue();
-        return requireContext().getTheme().resolveAttribute(R.attr.homeRailAccent, v, true)
-                ? v.data : 0xFFE8C77B;
     }
 
     @Nullable

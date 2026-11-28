@@ -14,6 +14,7 @@ Central hub for FadCam documentation, guides and development resources.
 - [Feature Badge System](features/feature-badge-system.md) — How the in-app "NEW" badges work.
 - [Weekly Pro Reminder](features/weekly-pro-reminder.md) — The weekly Pro briefing and its lifecycle.
 - [Motion Detection](features/motion-detection.md) — Automatic recording that starts when the scene moves.
+- [Downloadable Assets](features/downloadable-assets.md) — Engines and models downloaded on demand, and why they are not in the APK.
 - [Digital Forensics](features/digital-forensics.md) — Events, evidence snapshots and the live detection overlay.
 - [On-device AI and Machine Learning](ai/on-device-models.md) — The RF-DETR detector: what it recognises, how it is run, lifecycle, cost and tuning.
 - [Animation Components](architecture/animations.md) — Canvas scenes, the shared clock, and reuse rules.

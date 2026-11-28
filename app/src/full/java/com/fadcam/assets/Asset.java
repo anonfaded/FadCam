@@ -1,5 +1,7 @@
 package com.fadcam.assets;
 
+import androidx.annotation.NonNull;
+
 /**
  * A heavy payload that can live either inside the APK or in app-private storage.
  *
@@ -32,6 +34,15 @@ public enum Asset {
     public final String title;
     /** Component version, shown beside the name. */
     public final String version;
+
+    /**
+     * The version as displayed, always prefixed with "v" so it reads as a version rather than
+     * as part of the name. One place, so no surface can render it differently.
+     */
+    @NonNull
+    public String displayVersion() {
+        return "v" + version;
+    }
     /** SPDX identifier, shown in the UI. */
     public final String license;
     /** One sentence on what the component actually does for the user. */

@@ -3608,7 +3608,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="assets_repair">Download again</string>
     <string name="assets_retry">Retry</string>
     <string name="assets_installing">Installing\u2026</string>
-    <string name="assets_import">Install a file I already have</string>
+    <string name="assets_import">Install from a file</string>
     <string name="assets_remove">Remove</string>
 
     <!-- Total line: "Using 88.4 MB" -->
@@ -3664,7 +3664,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="assets_source_row_subtitle">opens on GitHub</string>
     <string name="assets_offline_row_title">Installing without internet</string>
     <string name="assets_offline_row_subtitle">Download the file elsewhere, then add it to the component</string>
-    <string name="assets_import_hint">Choose the file on this device. It is checked before it is used.</string>
+    <string name="assets_import_hint">Already have the file? Pick it here. No internet needed.</string>
     <string name="assets_detail_used_by">Needed for %1$s</string>
     <string name="assets_detail_meta">%1$s \u00b7 %2$s \u00b7 %3$s</string>
     <string name="assets_detail_features">FadCam features that need this</string>
@@ -3674,4 +3674,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="assets_feature_needs_download_motion">Motion Lab needs a download before it can detect movement. Add it from Settings > Download manager.</string>
     <string name="assets_feature_needs_download_objects">Object detection needs the RF-DETR model download. Add it from Settings > Download manager.</string>
     <string name="assets_detail_installed_size">%1$s MB on this device</string>
+    <string name="assets_download_hint">%1$s MB. Needs an internet connection.</string>
+    <string name="assets_remove_hint">Frees %1$s MB.</string>
 </resources>

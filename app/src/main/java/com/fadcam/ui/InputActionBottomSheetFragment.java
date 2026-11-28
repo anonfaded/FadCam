@@ -558,62 +558,13 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
      * Builds a standard action row. When destructive is true, applies a subtle red
      * tinted background consistent with PickerBottomSheetFragment's delete styling.
      */
-    private LinearLayout actionRow(int iconRes, String title, String subtitle, boolean destructive, View.OnClickListener click) {
-        LinearLayout row = new LinearLayout(requireContext());
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        row.setBackgroundResource(R.drawable.settings_home_row_bg);
-        row.setPadding(dp(16), dp(8), dp(16), dp(8));
-        row.setOnClickListener(click);
-        android.widget.ImageView icon = new android.widget.ImageView(requireContext());
-        LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(dp(24), dp(24));
-        iconLp.setMarginEnd(dp(16));
-        icon.setLayoutParams(iconLp);
-        icon.setImageResource(iconRes);
-        icon.setImageTintList(
-                android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(requireContext(), android.R.color.darker_gray)));
-        row.addView(icon);
-        LinearLayout text = new LinearLayout(requireContext());
-        text.setOrientation(LinearLayout.VERTICAL);
-        text.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView primary = new TextView(requireContext());
-        primary.setText(title);
-        primary.setTypeface(primary.getTypeface(), android.graphics.Typeface.BOLD);
-        android.util.TypedValue heading = new android.util.TypedValue();
-        if (requireContext().getTheme().resolveAttribute(R.attr.colorHeading, heading, true)) {
-            primary.setTextColor(heading.data);
-        } else {
-            primary.setTextColor(androidx.core.content.ContextCompat.getColor(
-                    requireContext(), R.color.colorHeading));
-        }
-        primary.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15);
-        text.addView(primary);
-        // Only add the subtitle when there is one. An empty TextView still occupies a full
-        // line (font padding included), which made the title look like it was sitting above
-        // the row's centre instead of on it.
-        if (subtitle != null && !subtitle.trim().isEmpty()) {
-            TextView secondary = new TextView(requireContext());
-            secondary.setText(subtitle);
-            secondary.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), android.R.color.darker_gray));
-            secondary.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12);
-            text.addView(secondary);
-        }
-        row.addView(text);
-        android.widget.ImageView arrow = new android.widget.ImageView(requireContext());
-        arrow.setLayoutParams(new LinearLayout.LayoutParams(dp(14), dp(14)));
-        arrow.setImageResource(R.drawable.ic_arrow_right);
-        arrow.setImageTintList(
-                android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(requireContext(), android.R.color.darker_gray)));
-        row.addView(arrow);
-
-        if (destructive) {
-            try {
-                // Apply subtle red overlay tint similar to PickerBottomSheetFragment
-                row.getBackground().mutate();
-                row.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0x33FF3B30));
-            } catch (Exception ignored) {}
-        }
-        return row;
+    private LinearLayout actionRow(int iconRes, String title, String subtitle,
+                                   boolean destructive, View.OnClickListener click) {
+        // Delegates to the shared builder so this sheet and the download manager cannot drift
+        // apart in row shape, icon tint or destructive treatment.
+        // This sheet places rows directly on its surface, so each row is its own card.
+        return SheetRowBuilder.build(requireContext(), iconRes, title, subtitle, destructive,
+                click, true);
     }
 
     /**

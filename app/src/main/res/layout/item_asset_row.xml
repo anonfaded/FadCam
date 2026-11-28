@@ -19,7 +19,7 @@
     android:clickable="true"
     android:focusable="true">
 
-    <!-- Material icon ligature, matching the rest of Settings. Colour-coded per state. -->
+    <!-- Neutral grey icon, same as every other settings row. -->
     <TextView
         android:id="@+id/asset_icon"
         android:layout_width="24dp"

@@ -139,7 +139,16 @@ public class AssetsProductRulesTest {
                     List<String> ol = Files.readAllLines(new File(ROOT, other).toPath(),
                             StandardCharsets.UTF_8);
                     for (int k = 0; k < ol.size() && !clicked; k++) {
-                        if (!ol.get(k).contains("setOnClickListener")) {
+                        // Either a literal listener, or a row built through the shared builder
+                        // whose final argument is the click lambda.
+                        // Three shapes exist in the app:
+                        //   setOnClickListener(...)          literal listener
+                        //   SheetRowBuilder.build(..., click) shared builder, click inline
+                        //   addRow(..., v -> {...})           local helper that attaches it
+                        boolean anchor = ol.get(k).contains("setOnClickListener")
+                                || ol.get(k).contains("SheetRowBuilder.build")
+                                || ol.get(k).contains("addRow(");
+                        if (!anchor) {
                             continue;
                         }
                         for (int m = k; m < Math.min(ol.size(), k + 16); m++) {

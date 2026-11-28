@@ -182,6 +182,21 @@ public class AssetDownloadService extends Service {
         }
 
         lastPercent = -1;
+        // Pre-flight the space. A 53 MB model that runs out of room halfway leaves the user
+        // with a failure and no explanation, and on a nearly-full phone that is the most
+        // likely way this fails. Need the download plus room to unpack it, which for a
+        // compressed archive is roughly twice the archive size.
+        long needed = 0L;
+        for (AssetManifest.Entry e : entries) {
+            needed += e.size * 2L;
+        }
+        long free = store.root().getUsableSpace();
+        if (free > 0 && free < needed) {
+            throw new AssetException(asset,
+                    "not enough free space: needs about " + (needed / 1048576)
+                            + " MB, " + (free / 1048576) + " MB available");
+        }
+
         registry.onDownloadStarted(asset);
         notifyListener(asset);
 
